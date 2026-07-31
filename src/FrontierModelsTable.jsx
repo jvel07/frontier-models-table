@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 // Gallery changelog, fetched at build time by scripts/fetch-changelog.mjs.
 import CHANGELOG from "./changelog.json";
+import { ProviderMark } from "./providerIcons.jsx";
 
 // Data current as of June 2026. Compiled from public provider docs, model cards,
 // and third-party architecture analyses. "—" = not publicly disclosed / N/A.
@@ -23,10 +24,19 @@ export const MODELS = [
     ],
     note: "The smaller of Sarvam AI's pair of Indian-language models: 30B total but only 2.4B active (8%) over 19 GQA layers with QK-Norm. Reasoning-oriented sparse MoE with a large vocabulary for strong Indic coverage. Among the cheapest models on the Artificial Analysis leaderboard." },
   { name: "Kimi K2.6", provider: "Moonshot", released: "2026/04", type: "Frontier", arch: "Sparse MoE", params: "1T", active: "32B",
-    attn: "MLA (Multi-head Latent Attn)", modality: "Text + vision", context: 256000, maxOut: null, license: "Modified MIT", open: true, intel: 44, training: null,
+    attn: "MLA (Multi-head Latent Attn)", modality: "Text + image", context: 256000, maxOut: null, license: "Modified MIT", open: true, intel: 44,
+    trainingSource: "Moonshot published no training details for K2.6 — neither its blog post nor its model card describes any stage, token budget or recipe. The pipeline below is Kimi K2.5's, taken from that model's technical report (arXiv 2602.02276), and is shown as the closest documented reference rather than as a description of K2.6. The one link Moonshot does state is architectural: the K2.6 model card says it \"has the same architecture as Kimi-K2.5, and the deployment method can be directly reused\". That covers architecture and deployment only — treat the stages here as K2.5's until Moonshot publishes K2.6's own.",
+    training: [
+      { label: "ViT training", tokens: "~1T", detail: "K2.5 builds its visual encoder separately first. MoonViT-3D is continually pre-trained from SigLIP on image-text and video-text pairs, where the text side mixes alt text, synthetic image and video captions, grounding boxes and OCR output. Unlike Kimi-VL this stage drops the contrastive loss and trains on caption cross-entropy alone. Alignment runs in two steps: MoonViT-3D is first aligned to Moonlight-16B-A3B via the caption loss over roughly 1T tokens at very low FLOPs, then a short second step updates only the MLP projector bridging the encoder to the 1T-parameter LLM." },
+      { label: "Joint pre-training", tokens: "15T", detail: "Rather than training a language model and grafting vision on afterwards, K2.5 resumes from a near-final Kimi K2 checkpoint and continues over roughly 15T vision-text tokens at 4K sequence length, improving language and multimodal ability together. The recipe extends K2's distribution by adding unique tokens, shifting proportions toward coding, and capping how many epochs any one source may contribute.",
+        curriculum: "The vision-to-text ratio was settled by ablation rather than convention. Standard practice introduces vision late and heavily — 50% of tokens or more — so Moonshot fixed the total vision-text budget and swept both the injection point and the ratio. The result inverted the usual advice: early fusion at a low vision ratio (about 10:90) beat mid-training at 20:80 and late training at 50:50 across vision knowledge, vision reasoning and OCR, while leaving text ability essentially untouched. The text corpus spans four domains — Web Text, Code, Mathematics and Knowledge — with most processing pipelines carried over from Kimi K2." },
+      { label: "Mid-training + long context", tokens: null, detail: "A third pre-training stage trains on higher-quality mid-training data and performs long-context activation, extending the window sequentially through YaRN interpolation." },
+      { label: "SFT", tokens: null, detail: "Follows the SFT pipeline established by Kimi K2. Candidate responses are synthesised from K2, K2 Thinking and a set of in-house expert models, with domain-specific generation pipelines combining human annotation, prompt engineering and multi-stage verification. The resulting instruction set targets interactive reasoning and precise tool calling rather than single-turn answers." },
+      { label: "RL", tokens: null, detail: "Runs inside a Unified Agentic Reinforcement Learning Environment supporting joint text-vision RL and PARL for agent swarms. The policy objective departs from K1.5 by adding token-level clipping, which limits the off-policy divergence that grows when responses come from a stale policy, alongside a squared log-ratio penalty for stability." },
+    ],
     note: "K3's immediate predecessor and still a strong open model. Keeps the K2/K2.5 DeepSeek-style backbone unchanged \u2014 1T total, 32B active (3.2%), 61 MLA layers, 384 experts \u2014 with gains coming from the multimodal and agentic training recipe rather than architecture. Note the contrast with K3, which broke from MLA to the KDA hybrid." },
   { name: "GLM-5.1", provider: "Zhipu", released: "2026/04", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
-    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: null, license: "MIT", open: true, intel: 40, training: null,
+    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + image", context: 202752, maxOut: null, license: "MIT", open: true, intel: 40, training: null,
     note: "The middle release in Zhipu's fast GLM-5 cadence (5 in Feb, 5.1 in Apr, 5.2 in Jun 2026). Architecture is identical to GLM-5 \u2014 744B/40B, 78 MLA layers with DeepSeek Sparse Attention, MTP-capable \u2014 with the entire gain coming from post-training aimed at long-horizon agentic coding." },
   { name: "Laguna XS.2", provider: "Poolside", released: "2026/04", type: "SLM", arch: "Sparse MoE", params: "33B", active: "3B",
     attn: "Sliding-window + global", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: null,
@@ -41,25 +51,25 @@ export const MODELS = [
     ],
     note: "The earlier Laguna small model (April 2026), distinct from the July XS 2.1 refresh. 33B total / 3B active (9.1%) over 30 sliding-window + 10 global layers, using gated GQA with QK-Norm, per-layer query-head counts (\u2018attention budgeting\u2019), a 512-token local window, sigmoid MoE routing and 1 shared plus top-8 routed experts. Apache 2.0 here, unlike the OpenMDW licence on the 2.1 releases." },
   { name: "Gemma 4 26B-A4B", provider: "Google", released: "2026/04", type: "SLM", arch: "Sparse MoE", params: "25.2B", active: "3.8B",
-    attn: "Sliding-window + global", modality: "Text + vision", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 26, training: null,
+    attn: "Sliding-window + global", modality: "Text + image + video", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 26, training: null,
     note: "The sparse sibling of the dense Gemma 4 31B: 25.2B total with 3.8B active (15.1%), using 128 experts of which 8 are routed plus 1 shared per token. Keeps the family's 5:1 sliding-window/global attention backbone with QK-Norm, unified K/V and p-RoPE on global layers, swapping only the dense FFNs for MoE layers. 25 sliding-window + 5 global layers, 262k vocabulary." },
   { name: "Claude Opus 5", provider: "Anthropic", released: "2026/07", type: "Frontier", arch: "Undisclosed", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 60, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 60, training: null,
     note: "Anthropic's new Opus-tier flagship, shipped 24 July 2026, succeeding Opus 4.8. Adds an 'xhigh' reasoning-effort mode and a Fast mode (~2.5x speed at 2x price). Positioned just below the Mythos-class Fable 5 \u2014 reported near-Fable intelligence at roughly half the cost. Architecture, parameters and training remain undisclosed, as with the rest of the Claude line. Intelligence figure reflects Artificial Analysis's own framing of Opus 5 as 'Fable 5 level intelligence at a lower cost per task' — the leaderboard snapshot checked had added Opus 5 evaluations but not yet a separate Index row, so treat 60 as provisional." },
   { name: "Claude Sonnet 5", provider: "Anthropic", released: "2026/06", type: "Mid", arch: "Undisclosed", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 53, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 53, training: null,
     note: "Sonnet tier crossed to 5 on 30 June 2026, becoming Anthropic's default high-volume workhorse. Roughly 63% on SWE-bench Pro against Opus 5's 79%, at about 0.6x the price. No architecture or training disclosure." },
   { name: "GPT-5.6 Sol", provider: "OpenAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + vision + audio", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 59, training: null,
+    attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 59, training: null,
     note: "Top variant of the GPT-5.6 family (9 July 2026), which ships three fixed tiers: Luna, Terra, Sol. Artificial Analysis reports Sol at roughly Fable 5's intelligence for about a third of the cost, and leading its Coding Agent Index at ~80. Token-efficient: ~15k tokens per Index task vs GPT-5.5's 16k. Architecture undisclosed." },
   { name: "GPT-5.6 Terra", provider: "OpenAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 55, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 55, training: null,
     note: "Middle tier of the GPT-5.6 family \u2014 OpenAI's intended production default. Reported to land just above Claude Fable 5 on the Artificial Analysis Coding Agent Index while sitting below Sol. No separate Intelligence Index figure published." },
   { name: "GPT-5.6 Luna", provider: "OpenAI", released: "2026/07", type: "Mid", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 51, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 51, training: null,
     note: "Cheapest, highest-volume tier of the GPT-5.6 family. Reported to outperform Claude Opus 4.8 on the Coding Agent Index despite the lower tier. Along with Sol it sits on Artificial Analysis's intelligence-vs-cost Pareto frontier (Terra does not)." },
   { name: "Grok 4.5", provider: "xAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Sparse + long-context", modality: "Text + vision", context: 500000, maxOut: null, license: "Proprietary", open: false, intel: 54, training: null,
+    attn: "Sparse + long-context", modality: "Text + image", context: 500000, maxOut: null, license: "Proprietary", open: false, intel: 54, training: null,
     note: "xAI's flagship as of 8 July 2026, trained in partnership with Cursor and aimed at coding, agentic tool calling and knowledge work. 500K context \u2014 notably smaller than the 2M window of Grok 4.3 \u2014 with configurable reasoning and ~80 tok/s serving. Architecture undisclosed." },
   { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "104.2B",
     attn: "KDA + full attn (69:24 layers)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57,
@@ -75,7 +85,7 @@ export const MODELS = [
     ],
     note: "The largest open-weight model yet at 2.8T parameters \u2014 the first 'open 3T-class' model, taking the crown from DeepSeek V4 Pro's 1.6T. Extremely sparse: only 16 of 896 routed experts fire per token, giving 104.2B activated parameters (3.7% of the network), managed by a Stable LatentMoE framework. Built on Kimi Delta Attention (KDA), a hybrid linear attention interleaving 69 KDA layers with 24 full-attention MLA layers across 93 layers total, cutting KV-cache memory up to 75% and decoding up to 6x faster at 1M context. Attention Residuals (AttnRes) replace standard residual connections, letting each layer selectively retrieve representations from arbitrary earlier layers. Moonshot reports ~2.5x the scaling efficiency of K2. Weights shipped 27 July 2026 under the Kimi K3 License; the tech report concedes it still trails Claude Fable 5 and GPT-5.6 Sol overall." },
   { name: "GLM-5.2", provider: "Zhipu", released: "2026/06", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
-    attn: "DSA + MLA (IndexShare)", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "MIT", open: true, intel: 51, training: null,
+    attn: "DSA + MLA (IndexShare)", modality: "Text + image", context: 1000000, maxOut: 128000, license: "MIT", open: true, intel: 51, training: null,
     note: "Third release in Zhipu's fast GLM-5 cadence (GLM-5 Feb, 5.1 Apr, 5.2 Jun 2026). ~753B total with ~40B active (256 routed experts, 8 per token). Uses DeepSeek-style sparse attention with MLA KV-cache compression plus IndexShare, which Zhipu reports cuts per-token FLOPs 2.9x at 1M context. MIT licensed with no regional restrictions. Shipped days after the US export clampdown on Anthropic's Fable/Mythos models." },
   { name: "Inkling", provider: "Thinking Machines", released: "2026/07", type: "Frontier", arch: "Sparse MoE", params: "975B", active: "41B",
     attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: null, license: "Apache 2.0", open: true, intel: 41, training: null,
@@ -88,31 +98,31 @@ export const MODELS = [
     note: "The small end of Poolside's Laguna line: 33B total / 3B active MoE with a 100,352-token vocabulary, published to Hugging Face 2 July 2026. Supports optional thinking, tool calls and preserved reasoning content. Context window not stated in the model card sources checked \u2014 the sibling Laguna M.1 is 262K. Runs on consumer GPUs when quantized." },
   // ---- Frontier / flagship (proprietary) ----
   { name: "Claude Fable 5", provider: "Anthropic", released: "2026/06", type: "Frontier", arch: "Undisclosed", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 60, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 60, training: null,
     note: "Anthropic's Mythos-class flagship. Architecture undisclosed. Like all frontier closed models it is a decoder-only transformer at its core, but parameter counts, expert layout, and attention scheme are unpublished. Shares the long-context (1M) design goal of the Opus line with extra max-output headroom." },
   { name: "Claude Opus 4.8", provider: "Anthropic", released: "2026/05", type: "Frontier", arch: "Undisclosed", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 56, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 56, training: null,
     note: "Dense-vs-MoE split unconfirmed. Anthropic publishes no parameter or architecture details. Differentiates on post-training (reasoning, tool use, safety) rather than disclosed structural innovations. 1M context with no long-context price tiering." },
   { name: "Claude Sonnet 4.6", provider: "Anthropic", released: "2026/02", type: "Frontier", arch: "Undisclosed", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 34, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 34, training: null,
     note: "Mid-flagship tier. Same undisclosed-architecture posture as the rest of the Claude family; added a 1M-token window this generation. Optimized for latency/cost balance against Opus." },
   { name: "Claude Haiku 4.5", provider: "Anthropic", released: "2025/10", type: "Mid", arch: "Undisclosed", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision", context: 200000, maxOut: 64000, license: "Proprietary", open: false, intel: 30, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 200000, maxOut: 64000, license: "Proprietary", open: false, intel: 30, training: null,
     note: "Smallest, fastest Claude tier. 200K window (not 1M) is the main structural difference from its larger siblings. Architecture unpublished." },
   { name: "GPT-5.5", provider: "OpenAI", released: "2026/04", type: "Frontier", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision + audio", context: 922000, maxOut: 128000, license: "Proprietary", open: false, intel: 55, training: null,
+    attn: "Undisclosed", modality: "Text + image + audio", context: 922000, maxOut: 128000, license: "Proprietary", open: false, intel: 55, training: null,
     note: "Widely reported to be a sparse Mixture-of-Experts, but OpenAI publishes no counts or routing. Natively multimodal, hybrid reasoning model with adjustable thinking effort. 128K max output is among the highest of the closed flagships." },
   { name: "GPT-5 mini", provider: "OpenAI", released: "2025/08", type: "Mid", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + vision", context: 400000, maxOut: 64000, license: "Proprietary", open: false, intel: null, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 400000, maxOut: 64000, license: "Proprietary", open: false, intel: null, training: null,
     note: "Distilled/smaller sibling of the GPT-5 line for high-volume, latency-sensitive work. Architecture undisclosed; assumed to share the family's MoE lineage at reduced scale." },
   { name: "Gemini 3.1 Pro", provider: "Google", released: "2026/02", type: "Frontier", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Sparse + long-context", modality: "Text + vision + audio + video", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 46, training: null,
+    attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 46, training: null,
     note: "Sparse MoE per Google's earlier Gemini disclosures; exact counts unpublished. The most fully multimodal flagship (native video). Largest hosted context at 2M, with tiered pricing above 200K. Same lineage as the open Gemma models but at far larger scale." },
   { name: "Gemini 3.5 Flash", provider: "Google", released: "2026/05", type: "Mid", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Sparse + long-context", modality: "Text + vision + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 50, training: null,
+    attn: "Sparse + long-context", modality: "Text + image + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 50, training: null,
     note: "Speed-optimized Gemini tier. 1M context, very high throughput. Shares the family's sparse architecture at smaller effective compute." },
   { name: "Grok 4.3", provider: "xAI", released: "2026/04", type: "Frontier", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Sparse + long-context", modality: "Text + vision", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 38, training: null,
+    attn: "Sparse + long-context", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 38, training: null,
     note: "Reported MoE; xAI publishes little structural detail. Ties Gemini for the largest hosted window (2M). Emphasis on long-context retrieval and tool use." },
 
   // ---- Frontier-class open weights ----
@@ -123,28 +133,28 @@ export const MODELS = [
     attn: "Hybrid: CSA + HCA", modality: "Text + image", context: 1048576, maxOut: 128000, license: "MIT", open: true, intel: 40, training: [{ label: "Pre-training", tokens: "32T+", detail: "DeepSeek reports a single '>32T tokens' figure covering both Pro and Flash; no separate Flash count is published." }, { label: "Context extension", tokens: null, detail: "Long-context extension to 1M; even lower FLOPs/KV than Pro." }, { label: "Specialist SFT + RL", tokens: null, detail: "Per-domain SFT + GRPO, same two-stage paradigm as Pro." }, { label: "On-policy distillation", tokens: null, detail: "Multi-teacher OPD into the unified student." }],
     note: "Shares V4 Pro's attention stack and mHC design at a quarter the scale: 284B total, 13B active. The cheapest frontier-class model to run. Same 1M window, lower max output." },
   { name: "Qwen3.5-Plus", provider: "Alibaba", released: "2026/02", type: "Frontier", arch: "Hybrid: Gated DeltaNet + MoE", params: "397B", active: "17B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + vision + audio + video", context: 262144, maxOut: 64000, license: "Apache 2.0", open: true, intel: 34, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's.", curriculum: "Not disclosed at stage level. The blog reports only that Qwen3.5 trains natively multimodally, claiming \"near-100% multimodal training efficiency compared to text-only training\", and that reinforcement learning was scaled across million-agent environments." }, { label: "Long-context", tokens: null, detail: "Long-context stage (mix of 16-32K and 4-16K sequences)." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment with thinking/non-thinking modes." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 64000, license: "Apache 2.0", open: true, intel: 34, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's.", curriculum: "Not disclosed at stage level. The blog reports only that Qwen3.5 trains natively multimodally, claiming \"near-100% multimodal training efficiency compared to text-only training\", and that reinforcement learning was scaled across million-agent environments." }, { label: "Long-context", tokens: null, detail: "Long-context stage (mix of 16-32K and 4-16K sequences)." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment with thinking/non-thinking modes." }],
     note: "397B-A17B built on the Qwen3-Next lineage: a 3:1 hybrid of Gated DeltaNet (linear attention) and gated full-attention layers (every 4th layer is full attention), over a sparse MoE. ~250K-token vocabulary and 201-language coverage — the broadest of any open model. Native video + audio." },
   { name: "Qwen3.6 Plus", provider: "Alibaba", released: "2026/03", type: "Frontier", arch: "Hybrid: Gated DeltaNet + MoE", params: "—", active: "—",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + vision", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 40, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 generation; token budget unpublished. Adopts the Qwen3-Next hybrid attention line (Gated DeltaNet) into the main Qwen series." }, { label: "Long-context", tokens: null, detail: "Native 1M-token window (up from 262K in the 27B), multi-token prediction." }, { label: "Post-training", tokens: null, detail: "SFT + RL; reduced overthinking on simple tasks, more reliable agent behavior." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 40, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 generation; token budget unpublished. Adopts the Qwen3-Next hybrid attention line (Gated DeltaNet) into the main Qwen series." }, { label: "Long-context", tokens: null, detail: "Native 1M-token window (up from 262K in the 27B), multi-token prediction." }, { label: "Post-training", tokens: null, detail: "SFT + RL; reduced overthinking on simple tasks, more reliable agent behavior." }],
     note: "API-only flagship preview of the Qwen3.6 family. Switches the main line to a Gated DeltaNet hybrid (3x Gated DeltaNet→FFN, 1x gated attention→FFN repeating), tuned for agentic coding and long-document reasoning. 1M native context, 64K max output." },
   { name: "Qwen3.7 Max", provider: "Alibaba", released: "2026/05", type: "Frontier", arch: "Hybrid: Gated DeltaNet + MoE", params: "—", active: "—",
     attn: "Gated DeltaNet + gated attn", modality: "Text", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 46, training: [{ label: "Pre-training", tokens: null, detail: "Architecture and token counts not published as of June 2026; reported to build on the Qwen3.6 Gated DeltaNet hybrid with updated expert routing." }, { label: "Long-context", tokens: null, detail: "1M-token window carried over from Qwen3.6 Plus (991.8K max input / 65.5K max output per the model card)." }, { label: "Post-training", tokens: null, detail: "Agent-tuned RL; native extended-thinking mode, sustained multi-hour / 1000+ tool-call runs." }],
     note: "Alibaba's agent-first proprietary flagship (text-only). AA Intelligence Index 56.6 — the highest-ranked Chinese model on the index — and demonstrated 35-hour autonomous runs. Speaks the Anthropic Messages protocol natively. No open weights. Treat architecture as reported, not confirmed." },
   { name: "Qwen3.7 Plus", provider: "Alibaba", released: "2026/05", type: "Mid", arch: "Hybrid: Gated DeltaNet + MoE", params: "—", active: "—",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + vision", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 39, training: [{ label: "Pre-training", tokens: null, detail: "Undisclosed; same Qwen3.7 generation backbone as Max with multimodal input." }, { label: "Post-training", tokens: null, detail: "RL alignment; vision-capable endpoint of the 3.7 line (Vision Arena #16)." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 39, training: [{ label: "Pre-training", tokens: null, detail: "Undisclosed; same Qwen3.7 generation backbone as Max with multimodal input." }, { label: "Post-training", tokens: null, detail: "RL alignment; vision-capable endpoint of the 3.7 line (Vision Arena #16)." }],
     note: "The multimodal sibling of Qwen3.7 Max — adds vision input. API-only preview as of May 2026; architecture reported to mirror Max. No open weights yet." },
   { name: "MiniMax M3", provider: "MiniMax", released: "2026/06", type: "Frontier", arch: "Sparse MoE", params: "428B", active: "—",
     attn: "MSA sparse attention", modality: "Text + image + video", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 44, training: null,
     note: "Uses MiniMax Sparse Attention (MSA) for its 1M window. Multimodal across text/image/video. Pricing doubles past 512K input tokens." },
   { name: "Llama 4 Scout", provider: "Meta", released: "2025/04", type: "Mid", arch: "Sparse MoE", params: "109B", active: "17B",
-    attn: "iRoPE (interleaved RoPE/NoPE)", modality: "Text + vision", context: 10000000, maxOut: 32000, license: "Llama 4 Community", open: true, intel: 10, training: [{ label: "Pre-training", tokens: "~40T", detail: "Multimodal (text+image+video) via early fusion; 256K pretraining context; cutoff Aug 2024." }, { label: "Mid-training", tokens: null, detail: "Long-context extension with specialized datasets + iRoPE tricks unlocking the 10M window." }, { label: "Post-training", tokens: null, detail: "SFT, then RL; distillation from larger Llama 4 Behemoth teacher reported." }],
+    attn: "iRoPE (interleaved RoPE/NoPE)", modality: "Text + image", context: 10000000, maxOut: 32000, license: "Llama 4 Community", open: true, intel: 10, training: [{ label: "Pre-training", tokens: "~40T", detail: "Multimodal (text+image+video) via early fusion; 256K pretraining context; cutoff Aug 2024." }, { label: "Mid-training", tokens: null, detail: "Long-context extension with specialized datasets + iRoPE tricks unlocking the 10M window." }, { label: "Post-training", tokens: null, detail: "SFT, then RL; distillation from larger Llama 4 Behemoth teacher reported." }],
     note: "16 large experts, 17B active of 109B total. Interleaved RoPE/NoPE attention layers enable the headline 10M-token window, by far the largest of any model. You still pay the VRAM tax for all 109B weights, but it generates at ~17B-dense speed. Fewer, larger experts vs Gemma 4's many-small-experts approach." },
   { name: "Mistral Large 3", provider: "Mistral", released: "2025/12", type: "Frontier", arch: "Sparse MoE", params: "673B", active: "41B",
-    attn: "MLA (Multi-head Latent Attn)", modality: "Text + vision", context: 262144, maxOut: 64000, license: "Apache 2.0", open: true, intel: 16, training: null,
+    attn: "MLA (Multi-head Latent Attn)", modality: "Text + image", context: 262144, maxOut: 64000, license: "Apache 2.0", open: true, intel: 16, training: null,
     note: "MoE flagship now under fully permissive Apache 2.0, a shift from Mistral's earlier restrictive terms. GQA-based attention. 256K context, large but not in the 1M+ club." },
   { name: "GLM-5", provider: "Zhipu", released: "2026/02", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
-    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: 32000, license: "MIT", open: true, intel: null,
+    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + image", context: 202752, maxOut: 32000, license: "MIT", open: true, intel: null,
     training: [
       { label: "Pre-training", tokens: "27T", detail: "Base model training opens on a 27-trillion-token corpus that front-loads code and reasoning data. GLM-5 scales to 256 experts while cutting depth to 80 layers to reduce expert-parallel communication overhead, giving 744B total / 40B active.",
         curriculum: "Web data reuses the GLM-4.5 pipeline with tightened selection: an extra DCLM classifier over sentence embeddings pulls in high-quality documents standard classifiers miss, and a World Knowledge classifier tuned on Wikipedia entries and LLM-labelled data rescues long-tail facts from otherwise medium-to-low-quality pages. The code corpus grows 28% in fuzzily deduplicated unique tokens from refreshed snapshots of major hosting platforms plus more code-bearing web pages, with Software Heritage metadata misalignment fixed, a more accurate language classifier, and dedicated classifiers trained for low-resource languages such as Scala, Swift and Lua. Maths and science are drawn from webpages, books and papers through refined extraction and PDF parsing, with LLMs scoring candidates so only the most educational content survives." },
@@ -173,13 +183,13 @@ export const MODELS = [
 
   // ---- Small language models (SLMs) ----
   { name: "Gemma 4 (31B)", provider: "Google", released: "2026/04", type: "SLM", arch: "Dense", params: "30.7B", active: "30.7B",
-    attn: "Sliding-window + global", modality: "Text + vision", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 29, training: [{ label: "Pre-training", tokens: null, detail: "Gemma 4's own token budget isn't published. For reference, Gemma 3's report used 14T tokens for the 27B model on a knowledge-distillation recipe." }, { label: "Post-training", tokens: null, detail: "Distillation + instruction tuning + RLHF; function calling and JSON output built in." }],
+    attn: "Sliding-window + global", modality: "Text + image + video", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 29, training: [{ label: "Pre-training", tokens: null, detail: "Gemma 4's own token budget isn't published. For reference, Gemma 3's report used 14T tokens for the 27B model on a knowledge-distillation recipe." }, { label: "Post-training", tokens: null, detail: "Distillation + instruction tuning + RLHF; function calling and JSON output built in." }],
     note: "The only fully dense Gemma 4 variant, all 30.7B params active. Hybrid attention alternates local sliding-window with periodic global layers (final layer always global). Native multimodal, Apache 2.0. Runs on a single GPU." },
   { name: "Gemma 4 E4B", provider: "Google", released: "2026/04", type: "SLM", arch: "Dense", params: "8B (4.5B eff.)", active: "8B (4.5B eff.)",
-    attn: "Sliding-window + global", modality: "Text + vision + audio", context: 128000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 12, training: [{ label: "Pre-training", tokens: null, detail: "Distillation-based pretraining at edge scale (token budget not separately published)." }, { label: "Post-training", tokens: null, detail: "Instruction tuning + RLHF; adds audio input." }],
+    attn: "Sliding-window + global", modality: "Text + image + video + audio", context: 128000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 12, training: [{ label: "Pre-training", tokens: null, detail: "Distillation-based pretraining at edge scale (token budget not separately published)." }, { label: "Post-training", tokens: null, detail: "Instruction tuning + RLHF; adds audio input." }],
     note: "Gemma 4's phone-scale edge variant, and a DENSE model \u2014 not MoE. 8B parameters, but per-layer embeddings add small layer-specific token vectors without scaling the compute path, so its effective footprint is ~4.5B. 42-layer stack, 2 KV heads, 5:1 sliding-window/global attention with unified K/V and p-RoPE on global layers. Adds native audio input. (The 25.2B/3.8B MoE figures often attributed to E4B actually belong to the separate Gemma 4 26B-A4B variant.)" },
   { name: "Gemma 3 4B", provider: "Google", released: "2025/03", type: "SLM", arch: "Dense", params: "4B", active: "4B",
-    attn: "Sliding-window + global", modality: "Text + vision", context: 128000, maxOut: 8192, license: "Gemma", open: true, intel: null, training: [{ label: "Pre-training", tokens: "4T", detail: "Knowledge-distillation pretraining (Gemma 3 report: 4T tokens for the 4B model)." }, { label: "Post-training", tokens: null, detail: "Distillation, SFT, and RLHF." }],
+    attn: "Sliding-window + global", modality: "Text + image", context: 128000, maxOut: 8192, license: "Gemma", open: true, intel: null, training: [{ label: "Pre-training", tokens: "4T", detail: "Knowledge-distillation pretraining (Gemma 3 report: 4T tokens for the 4B model)." }, { label: "Post-training", tokens: null, detail: "Distillation, SFT, and RLHF." }],
     note: "Prior-gen dense edge model, ~4.2GB RAM at quantized precision, best fit for memory-constrained devices. Hybrid local/global attention like the rest of the Gemma line." },
   { name: "FunctionGemma 270M", provider: "Google", released: "2026/04", type: "SLM", arch: "Dense", params: "0.27B", active: "0.27B",
     attn: "Sliding-window + global", modality: "Text", context: 32000, maxOut: 4096, license: "Gemma", open: true, intel: null, training: [{ label: "Pre-training", tokens: null, detail: "Small-scale distillation pretraining (budget not published)." }, { label: "Task fine-tuning", tokens: null, detail: "Specialized for function calling." }],
@@ -188,16 +198,16 @@ export const MODELS = [
     attn: "Grouped-query attention", modality: "Text", context: 128000, maxOut: 16000, license: "MIT", open: true, intel: 6, training: [{ label: "Pre-training", tokens: null, detail: "Phi-4-mini's own token count isn't published. Its report centers on the Mixture-of-LoRAs design; the related Phi-4 (14B) model used ~10T tokens. Recipe emphasizes synthetic, reasoning-dense data over raw scale." }, { label: "Distill pre-training", tokens: null, detail: "Distillation stage that sharply lifts reasoning (per the Phi-4-mini report's ablations)." }, { label: "Post-training", tokens: null, detail: "Distill fine-tuning then roll-out DPO for the reasoning-enhanced model." }],
     note: "Dense reasoning-focused SLM trained heavily on synthetic, reasoning-dense data, the Phi line's signature recipe (data quality over scale). Format-sensitive: best with its chat/function-call templates. Runs on CPU." },
   { name: "Qwen3.5 (9B)", provider: "Alibaba", released: "2026/02", type: "SLM", arch: "Hybrid: Gated DeltaNet (dense)", params: "9B", active: "9B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + vision", context: 262144, maxOut: 16000, license: "Apache 2.0", open: true, intel: 21, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's." }, { label: "Long-context", tokens: null, detail: "Long-context training stage." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 16000, license: "Apache 2.0", open: true, intel: 21, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's." }, { label: "Long-context", tokens: null, detail: "Long-context training stage." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment." }],
     note: "Larger edge-tier Qwen on the Qwen3-Next lineage: 3:1 Gated DeltaNet / gated-attention hybrid (every 4th layer full attention) rather than plain GQA. Inherits the family's wide multilingual vocabulary. Strong coding scores for its class." },
   { name: "Qwen3.5 (0.8B)", provider: "Alibaba", released: "2026/02", type: "SLM", arch: "Hybrid: Gated DeltaNet (dense)", params: "0.8B", active: "0.8B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text", context: 262144, maxOut: 8192, license: "Apache 2.0", open: true, intel: 5, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's." }, { label: "Post-training", tokens: null, detail: "SFT + RL; thinking/non-thinking modes." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 8192, license: "Apache 2.0", open: true, intel: 5, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's." }, { label: "Post-training", tokens: null, detail: "SFT + RL; thinking/non-thinking modes." }],
     note: "Smallest Qwen3.5 for sub-4GB devices. Its model card spells out the block structure explicitly: 6 × (3 × Gated DeltaNet→FFN, 1 × gated attention→FFN) — the same hybrid as the rest of the family, not a plain dense GQA model." },
   { name: "Qwen3.6 (27B)", provider: "Alibaba", released: "2026/04", type: "SLM", arch: "Hybrid: Gated DeltaNet (dense)", params: "27B", active: "27B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + vision", context: 262144, maxOut: 65536, license: "Apache 2.0", open: true, intel: 37, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 dense generation; token count unpublished. 64-layer hybrid: 16 repeats of (3x Gated DeltaNet→FFN, 1x gated attention→FFN), trained with multi-token prediction." }, { label: "Long-context", tokens: null, detail: "262K native, extensible to ~1M via YaRN." }, { label: "Post-training", tokens: null, detail: "SFT + RL; adds Thinking Preservation that carries reasoning context across turns." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 65536, license: "Apache 2.0", open: true, intel: 37, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 dense generation; token count unpublished. 64-layer hybrid: 16 repeats of (3x Gated DeltaNet→FFN, 1x gated attention→FFN), trained with multi-token prediction." }, { label: "Long-context", tokens: null, detail: "262K native, extensible to ~1M via YaRN." }, { label: "Post-training", tokens: null, detail: "SFT + RL; adds Thinking Preservation that carries reasoning context across turns." }],
     note: "First dense open model in the Qwen3.6 family. At 27.8B it edges past the 397B-A17B Qwen3.5 MoE on coding benchmarks (SWE-bench Verified ~77.2) while fitting in ~17GB at Q4. Gated DeltaNet hybrid attention; runs on a single GPU." },
   { name: "Qwen3.6 35B-A3B", provider: "Alibaba", released: "2026/04", type: "SLM", arch: "Hybrid: Gated DeltaNet + MoE", params: "35B", active: "3B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text", context: 262144, maxOut: 32000, license: "Apache 2.0", open: true, intel: 32, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 generation MoE; token budget unpublished. Hybrid Gated DeltaNet attention with sparse MoE FFN layers." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment; thinking/non-thinking modes." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 32000, license: "Apache 2.0", open: true, intel: 32, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 generation MoE; token budget unpublished. Hybrid Gated DeltaNet attention with sparse MoE FFN layers." }, { label: "Post-training", tokens: null, detail: "SFT + RL alignment; thinking/non-thinking modes." }],
     note: "First open-weight Qwen3.6 release: 35B total, only 3B active per token, so it runs on a laptop (~21GB quantized) while scoring ~73.4 on SWE-bench Verified. The MoE counterpart to the dense 27B." },
   { name: "Llama 3.2 3B", provider: "Meta", released: "2024/09", type: "SLM", arch: "Dense", params: "3B", active: "3B",
     attn: "Grouped-query attention", modality: "Text", context: 128000, maxOut: 8192, license: "Llama 3.2 Community", open: true, intel: null, training: [{ label: "Pre-training", tokens: "Up to 9T", detail: "Distilled/pruned from larger Llama 3.1 models using their token corpus; logits-based distillation." }, { label: "Post-training", tokens: null, detail: "SFT + DPO alignment." }],
@@ -206,7 +216,7 @@ export const MODELS = [
     attn: "Grouped-query attention", modality: "Text", context: 128000, maxOut: 8192, license: "Llama 3.2 Community", open: true, intel: null, training: [{ label: "Pre-training", tokens: "Up to 9T", detail: "Pruned + distilled from Llama 3.1 8B/larger teachers." }, { label: "Post-training", tokens: null, detail: "SFT + DPO alignment." }],
     note: "Smallest Llama, built for phones. Dense, text-only; 128K context is generous for the size." },
   { name: "Mistral Small 4", provider: "Mistral", released: "2026/03", type: "SLM", arch: "Sparse MoE", params: "119B", active: "6.63B",
-    attn: "MLA (Multi-head Latent Attn)", modality: "Text + vision", context: 256000, maxOut: 16000, license: "Apache 2.0", open: true, intel: 20, training: null,
+    attn: "MLA (Multi-head Latent Attn)", modality: "Text + image", context: 256000, maxOut: 16000, license: "Apache 2.0", open: true, intel: 20, training: null,
     note: "Sits oddly across the SLM/large line: 119B total but only 6.5B active, so its inference compute is SLM-class while weights are large. Apache 2.0. Shows how 'small' increasingly means active-params, not total." },
   { name: "SmolLM3-3B", provider: "Hugging Face", released: "2025/06", type: "SLM", arch: "Dense", params: "3B", active: "3B",
     attn: "GQA + periodic NoPE", modality: "Text", context: 131072, maxOut: 8192, license: "Apache 2.0", open: true, intel: null, training: [{ label: "Pre-training", tokens: "8T", detail: "Stage 1 pretraining; NoPE + intra-document masking chosen up front for long context." }, { label: "Mid-training", tokens: "3.2T", detail: "Stages 2-3 + long-context training (higher-quality and longer-sequence data)." }, { label: "Post-training", tokens: "37.5B", detail: "SFT + alignment on combined post-training datasets; fully open blueprint." }],
@@ -816,6 +826,7 @@ export default function FrontierModelsTable() {
                 return (
                   <React.Fragment key={m.name}>
                     <tr onClick={() => setExpanded(isOpen ? null : m.name)}
+                      data-model={m.name}
                       style={{ ...S.tr, background: isOpen ? "var(--row-open)" : i % 2 ? "var(--row-alt)" : "transparent",
                         cursor: "pointer" }}>
                       <td style={{ ...S.td, ...S.modelCell }}>
@@ -834,7 +845,10 @@ export default function FrontierModelsTable() {
                           style={S.compareBox}
                         />
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
-                        {m.name}
+                        <span style={S.modelName}>
+                          {m.name}
+                          <ProviderMark provider={m.provider} />
+                        </span>
                       </td>
                       <td style={{ ...S.td }}>
                         {m.intel == null ? (
@@ -964,12 +978,20 @@ export default function FrontierModelsTable() {
                               <div style={S.detailTrainCol}>
                                 <span style={{ ...S.detailLabel, color: "var(--clay)" }}>
                                   {(() => {
+                                    // Never present an inherited pipeline's budgets as this model's own disclosure.
+                                    if (m.trainingSource) return "Training pipeline · inherited, not reported";
                                     const tt = totalTokens(m.training);
                                     return tt
                                       ? `Training pipeline · ~${tt.total} disclosed${tt.hasEst ? " (incl. est.)" : ""}`
                                       : "Training pipeline";
                                   })()}
                                 </span>
+                                {m.trainingSource && (
+                                  <div style={S.provenance}>
+                                    <span style={S.provenanceTag}>Not this model's own figures</span>
+                                    <p style={S.provenanceText}>{m.trainingSource}</p>
+                                  </div>
+                                )}
                                 {m.training ? (
                                   <>
                                   <div style={S.pipeline}>
@@ -1159,7 +1181,15 @@ export default function FrontierModelsTable() {
 
             {reader.training && (
               <div style={S.readerSection}>
-                <span style={{ ...S.detailLabel, color: CLAY }}>Training pipeline</span>
+                <span style={{ ...S.detailLabel, color: CLAY }}>
+                  Training pipeline{reader.trainingSource ? " · inherited, not reported" : ""}
+                </span>
+                {reader.trainingSource && (
+                  <div style={S.provenance}>
+                    <span style={S.provenanceTag}>Not this model's own figures</span>
+                    <p style={S.provenanceText}>{reader.trainingSource}</p>
+                  </div>
+                )}
                 <ol style={S.readerStages}>
                   {reader.training.map((st, si) => (
                     <li key={si} style={S.readerStage}>
@@ -1283,6 +1313,7 @@ export const S = {
   th: { padding: "14px 12px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", userSelect: "none",
     borderBottom: `1px solid ${LINE}`, position: "sticky", top: 0, background: CARD, whiteSpace: "nowrap",
     color: INK_SOFT },
+  modelName: { display: "inline-flex", alignItems: "center", gap: 7 },
   compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
     accentColor: CLAY, verticalAlign: "middle" },
   // Fixed tray so the selection survives scrolling a 56-row table.
@@ -1432,6 +1463,14 @@ export const S = {
   stageDetail: { margin: 0, fontSize: 12.5, lineHeight: 1.72, color: INK_SOFT },
   curriculumFlag: { display: "block", marginTop: 8, fontFamily: mono, fontSize: 9.5,
     letterSpacing: "0.04em", color: CLAY },
+  // Shown when a pipeline is borrowed from a predecessor: has to read as a warning,
+  // not as this model's own disclosure.
+  provenance: { margin: "0 0 14px", padding: "12px 15px", borderRadius: 10,
+    background: "var(--tok-est-bg)", border: `1px solid var(--tok-est-line)`,
+    borderLeft: `3px solid var(--tok-est-fg)` },
+  provenanceTag: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
+    textTransform: "uppercase", color: "var(--tok-est-fg)", marginBottom: 6, fontWeight: 700 },
+  provenanceText: { margin: 0, fontSize: 12.5, lineHeight: 1.7, color: INK_SOFT, maxWidth: "68ch" },
   pipeArrow: { display: "flex", alignItems: "center", color: CLAY, fontSize: 16, fontWeight: 700 },
   synthesis: { marginTop: 40 },
   synthHead: { fontFamily: serif, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { ProviderMark } from "./providerIcons.jsx";
 import {
   MODELS, SPECS, REPORTS, HF_LINKS, DIAGRAMS, ARCH_COLORS, TYPE_COLORS,
   ATTENTION_INFO, DIAGRAM_BASE, LOCAL_DIAGRAM_BASE, DIAGRAM_CREDIT,
@@ -145,15 +146,22 @@ const AXES = [
   { group: "Context", label: "Max output", pick: (m) => (m.maxOut == null ? null : fmtTokens(m.maxOut)),
     hint: "Longest single response it will generate" },
   { group: "Context", label: "Modality", pick: (m) => m.modality,
-    hint: "What it can take as input" },
+    hint: "Input types accepted. Image means still pictures, video means frame sequences — a model can take images without taking video. Every model here outputs text only." },
 
-  { group: "Training", label: "Disclosed stages", pick: (m) => (m.training ? String(m.training.length) : null),
-    hint: "How many training phases the lab described. More stages means more disclosure, not necessarily more training." },
-  { group: "Training", label: "Disclosed tokens", pick: (m) => {
+  // A borrowed pipeline must not be counted as this model's own disclosure.
+  { group: "Training", label: "Disclosed stages",
+    pick: (m) => (m.trainingSource ? "Not reported" : m.training ? String(m.training.length) : null),
+    hint: "How many training phases the lab described for this model. More stages means more disclosure, not necessarily more training.",
+    gloss: (m) => (m.trainingSource
+      ? "The stages shown below are a predecessor's, published for that model rather than this one."
+      : null) },
+  { group: "Training", label: "Disclosed tokens",
+    pick: (m) => {
+      if (m.trainingSource) return "Not reported";
       const tt = totalTokens(m.training);
       return tt ? `~${tt.total}${tt.hasEst ? " (incl. est.)" : ""}` : null;
     },
-    hint: "Sum of the per-stage budgets that were published. A blank means none were, not that training was small." },
+    hint: "Sum of the per-stage budgets this lab published. A blank means none were, not that training was small." },
 ];
 
 const GROUPS = [...new Set(AXES.map((a) => a.group))];
@@ -233,7 +241,10 @@ export default function CompareView({ names, onBack }) {
                   const tc = TYPE_COLORS[m.type] || {};
                   return (
                     <th key={m.name} style={SC.th}>
-                      <div style={SC.modelName}>{m.name}</div>
+                      <div style={SC.modelName}>
+                        {m.name}
+                        <ProviderMark provider={m.provider} size={16} style={{ marginLeft: 8 }} />
+                      </div>
                       <div style={SC.modelMeta}>
                         <span style={{ ...S.pill, color: tc.fg }}>
                           <span style={{ ...S.pillDot, background: tc.dot }} />{m.type}
@@ -292,6 +303,12 @@ export default function CompareView({ names, onBack }) {
             {models.map((m) => (
               <div key={m.name} style={SC.pipeCol}>
                 <div style={SC.pipeHead}>{m.name}</div>
+                {m.trainingSource && (
+                  <div style={S.provenance}>
+                    <span style={S.provenanceTag}>Not this model's own figures</span>
+                    <p style={S.provenanceText}>{m.trainingSource}</p>
+                  </div>
+                )}
                 {m.training ? (
                   m.training.map((st, i) => (
                     <div key={i} style={SC.pipeStage}>
