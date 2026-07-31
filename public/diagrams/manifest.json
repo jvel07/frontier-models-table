@@ -1,0 +1,114 @@
+{
+ "DeepSeek V4 Flash": {
+  "slug": "deepseek-v4-flash",
+  "title": "DeepSeek V4-Flash (284B)"
+ },
+ "DeepSeek V4 Pro": {
+  "slug": "deepseek-v4-pro",
+  "title": "DeepSeek V4-Pro (1.6T)"
+ },
+ "GLM-5": {
+  "slug": "glm-5-744b",
+  "title": "GLM-5 (744B)"
+ },
+ "GLM-5.1": {
+  "slug": "glm-5-1",
+  "title": "GLM-5.1 (744B)"
+ },
+ "GLM-5.2": {
+  "slug": "glm-5.2",
+  "title": "GLM-5.2 (744B)"
+ },
+ "Gemma 4 (31B)": {
+  "slug": "gemma-4-31b",
+  "title": "Gemma 4 (31B)"
+ },
+ "Gemma 4 26B-A4B": {
+  "slug": "gemma-4-26b-a4b",
+  "title": "Gemma 4 (26B-A4B)"
+ },
+ "Gemma 4 E4B": {
+  "slug": "gemma-4-e4b",
+  "title": "Gemma 4 (E4B)"
+ },
+ "Inkling": {
+  "slug": "inkling",
+  "title": "Inkling (975B)"
+ },
+ "Kimi K2.6": {
+  "slug": "kimi-k2-6",
+  "title": "Kimi K2.6 (1T)"
+ },
+ "Kimi K3": {
+  "slug": "kimi-k3",
+  "title": "Kimi K3 (2.8T)"
+ },
+ "Laguna S 2.1": {
+  "slug": "laguna-s-2-1",
+  "title": "Laguna S 2.1 (118B)"
+ },
+ "Laguna XS 2.1": {
+  "slug": "laguna-xs-2-1",
+  "title": "Laguna XS 2.1 (33B)"
+ },
+ "Laguna XS.2": {
+  "slug": "laguna-xs2",
+  "title": "Laguna XS.2 (33B)"
+ },
+ "Llama 3.2 1B": {
+  "slug": "llama-3-2-1b",
+  "title": "Llama 3.2 (1B)"
+ },
+ "Llama 3.2 3B": {
+  "slug": "llama-3-2-3b",
+  "title": "Llama 3.2 (3B)"
+ },
+ "MiniMax M3": {
+  "slug": "minimax-m3",
+  "title": "MiniMax M3 (428B)"
+ },
+ "Mistral Large 3": {
+  "slug": "mistral-3-large-673-billion",
+  "title": "Mistral Large 3 (673B)"
+ },
+ "Mistral Small 4": {
+  "slug": "mistral-small-4",
+  "title": "Mistral Small 4 (119B)"
+ },
+ "Nemotron 3 Nano": {
+  "slug": "nemotron-3-nano-30b-a3b",
+  "title": "Nemotron 3 Nano (30B-A3B)"
+ },
+ "Nemotron 3 Super": {
+  "slug": "nemotron-3-super-120b-a12b",
+  "title": "Nemotron 3 Super (120B-A12B)"
+ },
+ "Nemotron 3 Ultra": {
+  "slug": "nemotron-3-ultra-550b-a55b",
+  "title": "Nemotron 3 Ultra (550B-A55B)"
+ },
+ "Qwen3.6 (27B)": {
+  "slug": "qwen3-6-27b",
+  "title": "Qwen3.6 (27B)"
+ },
+ "Qwen3.6 35B-A3B": {
+  "slug": "qwen3-6-35b-a3b",
+  "title": "Qwen3.6 (35B-A3B)"
+ },
+ "Sarvam 105B": {
+  "slug": "sarvam-105b",
+  "title": "Sarvam (105B)"
+ },
+ "Sarvam 30B": {
+  "slug": "sarvam-30b",
+  "title": "Sarvam (30B)"
+ },
+ "SmolLM3-3B": {
+  "slug": "smollm3-3b",
+  "title": "SmolLM3 (3B)"
+ },
+ "Tiny Aya": {
+  "slug": "tiny-aya-3-35b",
+  "title": "Tiny Aya (3.35B)"
+ }
+}

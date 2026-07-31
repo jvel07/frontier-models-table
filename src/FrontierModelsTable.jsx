@@ -31,10 +31,12 @@ const MODELS = [
   { name: "Laguna XS.2", provider: "Poolside", released: "2026/04", type: "SLM", arch: "Sparse MoE", params: "33B", active: "3B",
     attn: "Sliding-window + global", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: null,
     training: [
-      { label: "Pre-training", tokens: ">30T", detail: "Both Laguna models are trained from scratch as MoEs on more than 30T tokens drawn from web, code and synthetic sources. The data mixture was tuned empirically: Poolside trained ~60 proxy models of ~0.5B parameters on ~60B tokens each, sampling from over 50 heterogeneous dataset groups, to fit the mixture before committing to the full run." },
+      { label: "Pre-training", tokens: ">30T", detail: "Both Laguna models are trained from scratch as MoEs on more than 30T tokens drawn from web, code and synthetic sources.",
+        curriculum: "The mixture was fitted empirically rather than hand-tuned: roughly 60 proxy models of ~0.5B parameters were each trained on ~60B tokens sampled from different mixtures across a corpus spanning more than 50 heterogeneous dataset groups — general web, curated educational text, academic papers, raw code, grounded code and synthetic sources — and the resulting surrogate was optimised to pick the final blend. Poolside notes that optimal mixture design at a 30T-token horizon differs materially from short-horizon recipes, since repeat exposure and diversity trade off differently under long training. Web data passes a conservative filter that removes pure noise while preserving recall, narrowing a ~13T-token candidate pool through scoring, ranking and quota-controlled bucketing." },
       { label: "Long-context", tokens: "200B", detail: "Starts from the end-of-decay checkpoint and splits into two equal 100B-token sub-stages: the first extends context to 32K, the second to 128K. YaRN is applied to the global attention layers only, both sub-stages share a 24M-token global batch, and the learning rate follows a cosine decay." },
       { label: "Mid-training", tokens: "~60B", detail: "The largest post-training stage by unique token count — a deliberately broad instruction mix of general chat, explicit reasoning traces and repository-level agentic coding, so the model keeps conversational ability while learning tool use and terminal work." },
-      { label: "SFT", tokens: "3 × ~40B", detail: "Three epochs of roughly 40B tokens each with early stopping on eval scores, weighted heavily toward agentic coding and reusing mid-training's batch size, sequence length, packing, schedule and optimiser. Includes 1.3B tokens of multi-harness agentic trajectories from frameworks like OpenHands and Mini-SWE-Agent, deliberately preserving each harness's native behaviour." },
+      { label: "SFT", tokens: "3 × ~40B", detail: "Three epochs of roughly 40B tokens each with early stopping on eval scores, reusing mid-training's batch size, sequence length, packing, schedule and optimiser.",
+        curriculum: "Four components by token share: agentic coding without reasoning at ~30% (single-turn trajectories from an open-source teacher model); the same sample count and source distribution again but augmented with reasoning traces, which swells to ~45% of tokens; a small agentic mathematics corpus at ~3%, filtered for verifiability so only numeric-answer problems remain and easy items are dropped by solve rate against open-weight LLMs; and ~22% non-agentic samples included specifically to stop the model forgetting general capability. On top of this sits 1.3B tokens of multi-harness agentic trajectories from OpenHands, OpenCode and Mini-SWE-Agent, collected with each harness's native behaviour deliberately preserved — custom subagent spawning, context compaction and planning scaffolds included." },
       { label: "RL", tokens: null, detail: "Online reinforcement learning with CISPO, using verifiable rewards only." },
     ],
     note: "The earlier Laguna small model (April 2026), distinct from the July XS 2.1 refresh. 33B total / 3B active (9.1%) over 30 sliding-window + 10 global layers, using gated GQA with QK-Norm, per-layer query-head counts (\u2018attention budgeting\u2019), a 512-token local window, sigmoid MoE routing and 1 shared plus top-8 routed experts. Apache 2.0 here, unlike the OpenMDW licence on the 2.1 releases." },
@@ -62,9 +64,11 @@ const MODELS = [
   { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "104.2B",
     attn: "KDA + full attn (69:24)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57,
     training: [
-      { label: "Pre-training", tokens: null, detail: "Natively multimodal: text and vision jointly optimised from step one rather than grafting a ViT onto a finished LLM, with visual and textual tokens interleaved under one next-token objective. Corpus spans Web Text, Code, Mathematics and Knowledge plus a large vision corpus; knowledge and maths are rephrased K2-style with fidelity verification. Per-Head Muon optimiser with K2's weight clipping, Quantile Balancing for MoE load balance, cosine LR with 1% warmup, weight decay 0.1. No token budget disclosed." },
+      { label: "Pre-training", tokens: null, detail: "Natively multimodal: text and vision jointly optimised from step one rather than grafting a ViT onto a finished LLM, with visual and textual tokens interleaved under one next-token objective. Per-Head Muon optimiser with K2's weight clipping, Quantile Balancing for MoE load balance, cosine LR with 1% warmup, weight decay 0.1. No token budget disclosed.",
+        curriculum: "Four text domains — Web Text, Code, Mathematics and Knowledge — plus a large vision corpus. Each domain passes rule-based heuristics, classifier-based quality scoring and deduplication, with per-domain sampling rates fixed by ablation studies on smaller proxy models. Knowledge and mathematics are rephrased using K2's recipe: style- and perspective-diverse prompting, chunk-wise autoregressive generation, and fidelity verification against the source document. The vision corpus follows K2.5's taxonomy — captions, interleaved image–text documents, OCR, perception, video and visual coding — with coordinate supervision given in both absolute and normalised [0,1] form for resolution-robust localisation, and heavily scaled programmatic data pairing code with its rendered output across SVG, 3D assets, webpages, games and CAD schematics." },
       { label: "Context 8K \u2192 64K", tokens: null, detail: "First half of a four-stage context curriculum: training starts at an 8K window and is extended to 64K in a later pre-training phase, keeping costly long-sequence compute to a small fraction of the budget." },
-      { label: "Cooldown 256K \u2192 1M", tokens: null, detail: "Second half of the curriculum, run during cooldown. NoPE \u2014 no explicit positional embedding \u2014 so position is carried implicitly by KDA's recurrent gating and decay, letting the model reach 1M tokens with no RoPE rescaling or interpolation. Long documents and video are deduplicated (including perceptual hashing over frames) and upsampled, plus synthetic long-context data built by permuting and concatenating multimodal documents so tasks can only be solved by attending across the full window." },
+      { label: "Cooldown 256K \u2192 1M", tokens: null, detail: "Second half of the curriculum, run during cooldown. NoPE \u2014 no explicit positional embedding \u2014 so position is carried implicitly by KDA's recurrent gating and decay, letting the model reach 1M tokens with no RoPE rescaling or interpolation.",
+        curriculum: "Natural long documents and video carry a lot of junk \u2014 near-duplicates, binary blobs, truncated files, invalid machine-generated logs \u2014 so they run through a dedicated pipeline of exact and fuzzy deduplication, perceptual hashing over video frames, heuristic and classifier-based quality filtering, and structural validation. Because genuinely long, coherent sources are scarce next to short text, they are upsampled so the long-context distribution is not drowned out during cooldown. Length alone does not teach long-range reasoning, so Moonshot also synthesises long-context data by permuting and concatenating multimodal documents and sub-tasks such that the embedded task can only be solved by attending to information scattered across the full 1M window \u2014 training attention at the intended scale instead of letting it collapse into local patterns." },
       { label: "SFT", tokens: null, detail: "Cold-start policy for RL. Trajectories synthesised by domain-specialised models from earlier Kimi releases, then multi-stage verification and human-in-the-loop annotation, serialised with Moonshot's XTML chat template. Quantisation-aware training begins here and runs through the rest of post-training, with MXFP4 weights and MXFP8 activations." },
       { label: "RL", tokens: null, detail: "Scaled across three domains \u2014 general tasks, general agents and coding agents \u2014 crossed with three reasoning-effort levels (low/high/max), yielding nine separate expert models. Uses a partial-rollout scheme that advances once a fraction of trajectories finish, with per-token regularisation absorbing the resulting off-policy staleness. Non-verifiable tasks are scored by an Agentic Generative Reward Model that must write a rubric before scoring, with budget-based verbosity control to curb reward hacking." },
       { label: "MOPD", tokens: null, detail: "Multi-Teacher On-Policy Distillation consolidates the nine domain \u00d7 effort experts back into a single unified model, so one set of weights retains the specialised behaviour at each reasoning effort." },
@@ -142,10 +146,14 @@ const MODELS = [
   { name: "GLM-5", provider: "Zhipu", released: "2026/02", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
     attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: 32000, license: "MIT", open: true, intel: null,
     training: [
-      { label: "Pre-training", tokens: "27T", detail: "Base model training opens on a 27-trillion-token corpus that front-loads code and reasoning data. GLM-5 scales to 256 experts while cutting depth to 80 layers to reduce expert-parallel communication overhead, giving 744B total / 40B active." },
+      { label: "Pre-training", tokens: "27T", detail: "Base model training opens on a 27-trillion-token corpus that front-loads code and reasoning data. GLM-5 scales to 256 experts while cutting depth to 80 layers to reduce expert-parallel communication overhead, giving 744B total / 40B active.",
+        curriculum: "Web data reuses the GLM-4.5 pipeline with tightened selection: an extra DCLM classifier over sentence embeddings pulls in high-quality documents standard classifiers miss, and a World Knowledge classifier tuned on Wikipedia entries and LLM-labelled data rescues long-tail facts from otherwise medium-to-low-quality pages. The code corpus grows 28% in fuzzily deduplicated unique tokens from refreshed snapshots of major hosting platforms plus more code-bearing web pages, with Software Heritage metadata misalignment fixed, a more accurate language classifier, and dedicated classifiers trained for low-resource languages such as Scala, Swift and Lua. Maths and science are drawn from webpages, books and papers through refined extraction and PDF parsing, with LLMs scoring candidates so only the most educational content survives." },
       { label: "DSA adaptation", tokens: "20B", detail: "Continued pre-training that swaps in DeepSeek Sparse Attention, starting from the end-of-mid-training checkpoint. A 1,000-step warmup trains the indexer at 14 sequences of 202,752 tokens per step, then a 20B-token sparse-adaptation stage reuses the mid-training data and hyperparameters. Zhipu notes this is far cheaper than DeepSeek-V3.2's 943.7B-token equivalent yet still matches the original MLA model." },
-      { label: "Mid-training", tokens: "1.55T", detail: "A distinct phase that walks the context window up in three stages — 32K over 1T tokens, 128K over 500B, then 200K over 50B. The added 200K stage (versus GLM-4.5's 128K ceiling) is what lets it handle ultra-long documents and multi-file codebases; long documents and synthetic agent trajectories are upsampled here." },
-      { label: "Post-training", tokens: null, detail: "Separate Reasoning RL, Agentic RL and General RL stages, then On-Policy Cross-Stage Distillation to fold them back together. Runs on a rebuilt asynchronous RL stack layered on the 'slime' framework that decouples generation from training to cut rollout tail latency. Total budget across all stages is 28.5T tokens for the base model." },
+      { label: "Mid-training", tokens: "1.55T", detail: "A distinct phase that walks the context window up in three stages — 32K over 1T tokens, 128K over 500B, then 200K over 50B. The added 200K stage (versus GLM-4.5's 128K ceiling) is what lets it handle ultra-long documents and multi-file codebases.",
+        curriculum: "The three context stages are deliberately front-loaded: 1T tokens at 32K, 500B at 128K and only 50B at 200K, so the bulk of the compute sits at the cheap short-context end while the model still adapts to the long tail. Long documents and synthetic agent trajectories are upsampled at the longer stages, targeting agentic and long-context capacity rather than general language ability, which pre-training already covers." },
+      { label: "SFT", tokens: null, detail: "Corpus covers three categories — General Chat (QA, writing, role-play, translation, multi-turn, long-context), Reasoning (maths, programming, science) and Coding & Agent (frontend/backend engineering, tool calling, coding/search/general agents) — with Agent and Coding data expanded well past GLM-4.5's scale. Context extends to 202,752 tokens during this stage, and an updated chat template adds three thinking modes: interleaved (thinks before every response and tool call), preserved (coding agents keep prior thinking blocks across turns instead of re-deriving them) and turn-level (thinking toggled per turn to trade cost against accuracy).",
+        curriculum: "General Chat responses are tuned for a more logical, concise style than GLM-4.5, with role-play data broadened across languages and character configurations and filtered against dimensions like instruction following, creativity, logical coherence and long-dialogue consistency using both automatic and human review. Reasoning data is deepened with verifiable, synthesised problems for logical reasoning specifically. Coding & Agent data is the category expanded most aggressively relative to the prior generation." },
+      { label: "RL + distillation", tokens: null, detail: "Separate Reasoning RL, Agentic RL and General RL stages, then On-Policy Cross-Stage Distillation to fold them back together. Runs on a rebuilt asynchronous RL stack layered on the 'slime' framework that decouples generation from training to cut rollout tail latency. Total budget across all stages is 28.5T tokens for the base model." },
     ],
     note: "744B-A40B, the largest active-parameter count among single-GPU-deployable open MoEs. MIT licensed. Competitive on hard reasoning and coding benchmarks." },
   { name: "Command A", provider: "Cohere", released: "2025/03", type: "Mid", arch: "Dense", params: "111B", active: "111B",
@@ -238,6 +246,12 @@ const ARCH_COLORS = {
 // guessed at - a near-miss card (e.g. Command A+ vs Command A) is not a match.
 const DIAGRAM_BASE = "https://sebastianraschka.com/llm-architecture-gallery";
 const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gallery/";
+// Local mirror of the same 28 diagrams, downloaded into public/diagrams/ as a fallback
+// for if sebastianraschka.com ever renames or removes a file. The hotlink is tried
+// first — it credits his traffic and always serves his latest version — and the
+// <img> only falls back to this repo's copy on a load error. Credit line is
+// identical either way.
+const LOCAL_DIAGRAM_BASE = `${import.meta.env.BASE_URL}diagrams`;
 const DIAGRAMS = {
   "DeepSeek V4 Flash": { slug: "deepseek-v4-flash", title: "DeepSeek V4-Flash (284B)" },
   "DeepSeek V4 Pro": { slug: "deepseek-v4-pro", title: "DeepSeek V4-Pro (1.6T)" },
@@ -409,6 +423,8 @@ const ARCH_PAPERS = {
 
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
+  { key: "intel", label: "Intelligence", numeric: true, sub: "Artificial Analysis",
+    tip: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations (GDPval-AA v2, τ²-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience, AA-LCR). Leaderboard snapshot 26 July 2026. “—” = not on the AA leaderboard." },
   { key: "released", label: "Released", numeric: true },
   { key: "provider", label: "Provider", numeric: false },
   { key: "type", label: "Class", numeric: false },
@@ -419,7 +435,6 @@ const COLUMNS = [
   { key: "modality", label: "Modality", numeric: false },
   { key: "context", label: "Context", numeric: true },
   { key: "maxOut", label: "Max out", numeric: true },
-  { key: "intel", label: "Intelligence", numeric: true },
   { key: "license", label: "License", numeric: false },
 ];
 
@@ -465,7 +480,7 @@ function totalTokens(training) {
 }
 
 export default function FrontierModelsTable() {
-  const [sortKey, setSortKey] = useState("context");
+  const [sortKey, setSortKey] = useState("intel");
   const [sortDir, setSortDir] = useState("desc");
   const [typeFilter, setTypeFilter] = useState("All");
   const [archFilter, setArchFilter] = useState("All");
@@ -478,6 +493,7 @@ export default function FrontierModelsTable() {
     () => typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark"
   );
   const [lightbox, setLightbox] = useState(null); // { src, alt, href }
+  const [reader, setReader] = useState(null); // full-text reading view for one model
 
   // The detail row's <td> spans the full 1240px+ table, so its contents would
   // scroll sideways with the table. Pinning the panel to the scrollport instead
@@ -505,13 +521,17 @@ export default function FrontierModelsTable() {
     });
   }, []);
 
-  // Esc closes the enlarged diagram.
+  // Esc closes whichever overlay is open.
   useEffect(() => {
-    if (!lightbox) return;
-    const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };
+    if (!lightbox && !reader) return;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (lightbox) setLightbox(null);
+      else setReader(null);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [lightbox]);
+  }, [lightbox, reader]);
 
   const types = ["All", "Frontier", "Mid", "SLM"];
   const archs = ["All", "Dense", "MoE", "Undisclosed"];
@@ -641,12 +661,16 @@ export default function FrontierModelsTable() {
                   return (
                     <th key={c.key} onClick={() => toggleSort(c.key)}
                       style={{ ...S.th, textAlign: c.numeric ? "right" : "left",
-                        color: active ? "var(--ink)" : "var(--ink-faint)" }}>
+                        color: active ? "var(--ink)" : "var(--ink-faint)" }}
+                      onMouseEnter={c.tip ? (e) => setTip({ text: c.tip, x: e.clientX, y: e.clientY }) : undefined}
+                      onMouseMove={c.tip ? (e) => setTip({ text: c.tip, x: e.clientX, y: e.clientY }) : undefined}
+                      onMouseLeave={c.tip ? () => setTip(null) : undefined}>
                       <span style={S.thInner}>{c.label}
                         <span style={{ ...S.arrow, opacity: active ? 1 : 0.25 }}>
                           {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
                         </span>
                       </span>
+                      {c.sub && <span style={S.thSub}>{c.sub}</span>}
                     </th>
                   );
                 })}
@@ -717,11 +741,19 @@ export default function FrontierModelsTable() {
                             <div style={S.detailCols}>
                               <div style={S.detailArchCol}>
                                 <span style={{ ...S.detailLabel, color: ac }}>Architecture notes</span>
-                                <p style={S.detailText}>{m.note}</p>
+                                <p style={{ ...S.detailText, ...(m.note.length > 420 ? S.clampNote : {}) }}>{m.note}</p>
+                                {m.note.length > 420 && (
+                                  <button type="button" style={S.moreBtn}
+                                    onClick={(e) => { e.stopPropagation(); setReader(m); }}>
+                                    Show more <span aria-hidden="true">→</span>
+                                  </button>
+                                )}
                                 {DIAGRAMS[m.name] && (() => {
                                   const d = DIAGRAMS[m.name];
                                   const thumb = `${DIAGRAM_BASE}/images/architectures/thumbnails/${d.slug}.webp`;
                                   const full = `${DIAGRAM_BASE}/images/architectures/${d.slug}.webp`;
+                                  const localThumb = `${LOCAL_DIAGRAM_BASE}/thumbnails/${d.slug}.webp`;
+                                  const localFull = `${LOCAL_DIAGRAM_BASE}/full/${d.slug}.webp`;
                                   const alt = `Architecture diagram of ${d.title}`;
                                   return (
                                     <div style={S.diagramBlock}>
@@ -731,9 +763,10 @@ export default function FrontierModelsTable() {
                                         style={S.diagramBtn}
                                         title="Click to enlarge"
                                         aria-label={`Enlarge ${alt}`}
-                                        onClick={(e) => { e.stopPropagation(); setLightbox({ src: full, alt, title: d.title }); }}
+                                        onClick={(e) => { e.stopPropagation(); setLightbox({ src: full, localSrc: localFull, alt, title: d.title }); }}
                                       >
-                                        <img src={thumb} alt={alt} loading="lazy" decoding="async" style={S.diagramImg} />
+                                        <img src={thumb} alt={alt} loading="lazy" decoding="async" style={S.diagramImg}
+                                          onError={(e) => { if (!e.currentTarget.dataset.fallenBack) { e.currentTarget.dataset.fallenBack = "1"; e.currentTarget.src = localThumb; } }} />
                                         <span style={S.diagramZoom} aria-hidden="true">⤢</span>
                                       </button>
                                       <div style={S.diagramCredit}>
@@ -783,6 +816,7 @@ export default function FrontierModelsTable() {
                                   })()}
                                 </span>
                                 {m.training ? (
+                                  <>
                                   <div style={S.pipeline}>
                                     {m.training.map((st, si) => (
                                       <React.Fragment key={si}>
@@ -796,12 +830,20 @@ export default function FrontierModelsTable() {
                                               {st.tokens} tokens{String(st.tokens).startsWith("~") ? " (est.)" : ""}
                                             </span>
                                           )}
-                                          <p style={S.stageDetail}>{st.detail}</p>
+                                          <p style={{ ...S.stageDetail, ...(st.detail.length > 190 ? S.clampStage : {}) }}>{st.detail}</p>
+                                          {st.curriculum && <span style={S.curriculumFlag}>◆ data curriculum available</span>}
                                         </div>
                                         {si < m.training.length - 1 && <span style={S.pipeArrow}>→</span>}
                                       </React.Fragment>
                                     ))}
                                   </div>
+                                  {(m.training.some((st) => st.detail.length > 190 || st.curriculum) ) && (
+                                    <button type="button" style={S.moreBtn}
+                                      onClick={(e) => { e.stopPropagation(); setReader(m); }}>
+                                      Read full pipeline <span aria-hidden="true">→</span>
+                                    </button>
+                                  )}
+                                  </>
                                 ) : (
                                   <p style={S.detailNA}>
                                     {m.open
@@ -910,6 +952,63 @@ export default function FrontierModelsTable() {
         </div>
       )}
 
+      {reader && (
+        <div style={S.lightbox} role="dialog" aria-modal="true"
+          aria-label={`${reader.name} — full detail`} onClick={() => setReader(null)}>
+          <div style={S.readerInner} onClick={(e) => e.stopPropagation()}>
+            <div style={S.readerBar}>
+              <div>
+                <div style={S.readerEyebrow}>{reader.provider} · {reader.released}</div>
+                <h2 style={S.readerTitle}>{reader.name}</h2>
+              </div>
+              <button type="button" style={S.lightboxClose} onClick={() => setReader(null)} aria-label="Close">✕</button>
+            </div>
+
+            <div style={S.readerSection}>
+              <span style={{ ...S.detailLabel, color: ARCH_COLORS[reader.arch] || "var(--fallback)" }}>Architecture notes</span>
+              <p style={S.readerBody}>{reader.note}</p>
+            </div>
+
+            {reader.training && (
+              <div style={S.readerSection}>
+                <span style={{ ...S.detailLabel, color: CLAY }}>Training pipeline</span>
+                <ol style={S.readerStages}>
+                  {reader.training.map((st, si) => (
+                    <li key={si} style={S.readerStage}>
+                      <div style={S.readerStageHead}>
+                        <span style={S.stageNum}>{si + 1}</span>
+                        <span style={S.readerStageName}>{st.label}</span>
+                        {st.tokens && (
+                          <span style={{ ...S.stageTokens, ...(String(st.tokens).startsWith("~") ? S.stageTokensEst : {}), marginBottom: 0 }}>
+                            {st.tokens} tokens{String(st.tokens).startsWith("~") ? " (est.)" : ""}
+                          </span>
+                        )}
+                      </div>
+                      <p style={S.readerBody}>{st.detail}</p>
+                      {st.curriculum && (
+                        <div style={S.curriculum}>
+                          <span style={S.curriculumLabel}>Data curriculum</span>
+                          <p style={S.curriculumText}>{st.curriculum}</p>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            <div style={S.readerFoot}>
+              {REPORTS[reader.name] && (
+                <a style={S.creditLink} href={REPORTS[reader.name].url} target="_blank" rel="noopener noreferrer">
+                  {REPORTS[reader.name].label} ↗
+                </a>
+              )}
+              <span style={{ color: INK_FAINT }}>Press Esc to close</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {lightbox && (
         <div
           style={S.lightbox}
@@ -925,7 +1024,8 @@ export default function FrontierModelsTable() {
                 ✕
               </button>
             </div>
-            <img src={lightbox.src} alt={lightbox.alt} style={S.lightboxImg} />
+            <img src={lightbox.src} alt={lightbox.alt} style={S.lightboxImg}
+              onError={(e) => { if (lightbox.localSrc && !e.currentTarget.dataset.fallenBack) { e.currentTarget.dataset.fallenBack = "1"; e.currentTarget.src = lightbox.localSrc; } }} />
             <div style={S.lightboxCredit}>
               Diagram © <a style={S.creditLink} href={DIAGRAM_CREDIT} target="_blank" rel="noopener noreferrer">
                 Sebastian Raschka
@@ -986,6 +1086,9 @@ const S = {
     borderBottom: `1px solid ${LINE}`, position: "sticky", top: 0, background: CARD, whiteSpace: "nowrap",
     color: INK_SOFT },
   thInner: { display: "inline-flex", alignItems: "center", gap: 5 },
+  // Attribution for the Intelligence column, sitting under its header label.
+  thSub: { display: "block", fontFamily: mono, fontSize: 9, letterSpacing: "0.06em",
+    textTransform: "none", color: INK_FAINT, fontWeight: 400, marginTop: 2, cursor: "help" },
   arrow: { fontFamily: mono, fontSize: 11 },
   tr: { transition: "background 0.1s" },
   td: { padding: "12px 12px", borderBottom: `1px solid ${LINE_SOFT}`, color: INK, whiteSpace: "nowrap",
@@ -1031,6 +1134,32 @@ const S = {
   creditLink: { color: INK_SOFT, textDecoration: "underline", textUnderlineOffset: 2 },
   lightbox: { position: "fixed", inset: 0, zIndex: 100, background: "rgba(20,19,17,0.72)",
     display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" },
+  // Reading view: generous measure and leading so long stage text is comfortable.
+  readerInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 16,
+    padding: "26px 30px 24px", width: "min(760px, 94vw)", maxHeight: "92vh",
+    overflow: "auto", cursor: "auto", boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
+  readerBar: { display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+    gap: 18, marginBottom: 22, paddingBottom: 18, borderBottom: `1px solid ${LINE}` },
+  readerEyebrow: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em",
+    textTransform: "uppercase", color: INK_FAINT, marginBottom: 6 },
+  readerTitle: { fontFamily: serif, fontSize: 27, fontWeight: 500, margin: 0,
+    color: INK, letterSpacing: "-0.01em", lineHeight: 1.15 },
+  readerSection: { marginBottom: 26 },
+  readerBody: { margin: "0 0 0", fontSize: 14.5, lineHeight: 1.8, color: INK,
+    maxWidth: "68ch", letterSpacing: "0.002em" },
+  readerStages: { listStyle: "none", margin: "4px 0 0", padding: 0,
+    display: "flex", flexDirection: "column", gap: 22 },
+  readerStage: { paddingLeft: 0 },
+  readerStageHead: { display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap", marginBottom: 9 },
+  readerStageName: { fontSize: 15, fontWeight: 650, color: INK },
+  curriculum: { marginTop: 11, padding: "11px 14px", background: "var(--detail-bg)",
+    border: `1px solid ${LINE_SOFT}`, borderRadius: 9, borderLeft: `2px solid ${CLAY}` },
+  curriculumLabel: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
+    textTransform: "uppercase", color: CLAY, marginBottom: 5 },
+  curriculumText: { margin: 0, fontSize: 13, lineHeight: 1.7, color: INK_SOFT, maxWidth: "66ch" },
+  readerFoot: { display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center",
+    justifyContent: "space-between", paddingTop: 16, borderTop: `1px solid ${LINE}`,
+    fontSize: 12, color: INK_SOFT },
   lightboxInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 14,
     maxWidth: "min(1100px, 96vw)", maxHeight: "94vh", overflow: "auto", cursor: "auto",
     boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
@@ -1046,7 +1175,16 @@ const S = {
   detailTrainCol: { flex: "2 1 480px", minWidth: 300 },
   detailLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase",
     fontWeight: 700, display: "block", marginBottom: 10 },
-  detailText: { margin: 0, fontSize: 14, lineHeight: 1.65, color: INK },
+  detailText: { margin: 0, fontSize: 14, lineHeight: 1.78, color: INK, letterSpacing: "0.002em" },
+  // Collapsed previews: keep the panel scannable, full text lives in the reader.
+  clampNote: { display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical",
+    overflow: "hidden" },
+  clampStage: { display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical",
+    overflow: "hidden" },
+  moreBtn: { marginTop: 12, display: "inline-flex", alignItems: "center", gap: 7,
+    background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999,
+    padding: "7px 15px", cursor: "pointer", fontFamily: mono, fontSize: 10.5,
+    letterSpacing: "0.1em", textTransform: "uppercase", color: INK_SOFT },
   attnHover: { borderBottom: `1px dotted ${INK_FAINT}`, cursor: "help" },
   tooltip: { position: "fixed", zIndex: 50, maxWidth: 300, background: INK,
     border: "none", borderRadius: 9, padding: "10px 12px",
@@ -1059,10 +1197,10 @@ const S = {
   link: { color: CLAY, textDecoration: "none", borderBottom: `1px solid ${CLAY_SOFT}` },
   linkNA: { color: INK_FAINT, fontStyle: "italic" },
   detailNA: { margin: 0, fontSize: 13.5, lineHeight: 1.6, color: INK_SOFT, fontStyle: "italic" },
-  pipeline: { display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 8 },
-  stage: { flex: "1 1 150px", minWidth: 140, maxWidth: 230, background: CARD,
-    border: `1px solid ${LINE}`, borderRadius: 10, padding: "11px 13px 13px" },
-  stageHead: { display: "flex", alignItems: "center", gap: 7, marginBottom: 6 },
+  pipeline: { display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 10 },
+  stage: { flex: "1 1 210px", minWidth: 200, maxWidth: 310, background: CARD,
+    border: `1px solid ${LINE}`, borderRadius: 10, padding: "14px 16px 16px" },
+  stageHead: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 },
   stageNum: { fontFamily: mono, fontSize: 11, fontWeight: 700, color: "var(--on-clay)", background: CLAY,
     width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center",
     justifyContent: "center", flexShrink: 0 },
@@ -1071,7 +1209,9 @@ const S = {
     color: "var(--tok-ok-fg)", background: "var(--tok-ok-bg)", border: "1px solid var(--tok-ok-line)", borderRadius: 5,
     padding: "1px 6px", marginBottom: 6 },
   stageTokensEst: { color: "var(--tok-est-fg)", background: "var(--tok-est-bg)", border: "1px solid var(--tok-est-line)" },
-  stageDetail: { margin: 0, fontSize: 11.5, lineHeight: 1.5, color: INK_SOFT },
+  stageDetail: { margin: 0, fontSize: 12.5, lineHeight: 1.72, color: INK_SOFT },
+  curriculumFlag: { display: "block", marginTop: 8, fontFamily: mono, fontSize: 9.5,
+    letterSpacing: "0.04em", color: CLAY },
   pipeArrow: { display: "flex", alignItems: "center", color: CLAY, fontSize: 16, fontWeight: 700 },
   synthesis: { marginTop: 40 },
   synthHead: { fontFamily: serif, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },
