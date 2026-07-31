@@ -3,7 +3,7 @@ import { ProviderMark } from "./providerIcons.jsx";
 import {
   MODELS, SPECS, REPORTS, HF_LINKS, DIAGRAMS, ARCH_COLORS, TYPE_COLORS,
   ATTENTION_INFO, DIAGRAM_BASE, LOCAL_DIAGRAM_BASE, DIAGRAM_CREDIT,
-  S, mono, serif, fmtTokens, totalTokens,
+  S, mono, serif, fmtTokens, totalTokens, positionalPapers,
 } from "./FrontierModelsTable.jsx";
 
 /**
@@ -137,6 +137,10 @@ const AXES = [
   { group: "Positional encoding", label: "Scheme", pick: (m) => spec(m, "posEmb"), wide: true,
     hint: "How the model knows token order. Read from rope_theta, partial_rotary_factor and per-layer rope_parameters in config.json.",
     gloss: (m) => glossPos(spec(m, "posEmb")) },
+  { group: "Positional encoding", label: "Papers",
+    pick: (m) => { const p = positionalPapers(m); return p.length ? p.map((x) => x.label).join("\n") : null; },
+    hint: "The paper introducing each scheme this model uses",
+    links: (m) => positionalPapers(m) },
 
   { group: "Tokenizer", label: "Vocabulary", pick: (m) => spec(m, "vocab"),
     hint: "Rows in the embedding table (vocab_size). A larger vocabulary packs more characters into each token, which matters most for non-English text and code." },
@@ -166,11 +170,21 @@ const AXES = [
 
 const GROUPS = [...new Set(AXES.map((a) => a.group))];
 
-function ValueCell({ value, shared, wide, gloss }) {
-  if (!value) return <td style={SC.cellEmpty}>—</td>;
+function ValueCell({ value, shared, wide, gloss, links }) {
+  if (!value && !(links && links.length)) return <td style={SC.cellEmpty}>—</td>;
   return (
     <td style={{ ...SC.cell, ...(wide ? SC.cellWide : {}), ...(shared ? SC.cellShared : {}) }}>
-      <span style={SC.valueText}>{value}</span>
+      {links && links.length ? (
+        <span style={SC.linkStack}>
+          {links.map((p, i) => (
+            <a key={i} style={S.link} href={p.url} target="_blank" rel="noopener noreferrer">
+              {p.label} ↗
+            </a>
+          ))}
+        </span>
+      ) : (
+        <span style={SC.valueText}>{value}</span>
+      )}
       {gloss && <span style={SC.gloss}>{gloss}</span>}
     </td>
   );
@@ -281,7 +295,8 @@ export default function CompareView({ names, onBack }) {
                         </th>
                         {vals.map((v, i) => (
                           <ValueCell key={i} value={v} shared={v && counts.get(v) > 1}
-                            wide={axis.wide} gloss={axis.gloss ? axis.gloss(models[i]) : null} />
+                            wide={axis.wide} gloss={axis.gloss ? axis.gloss(models[i]) : null}
+                            links={axis.links ? axis.links(models[i]) : null} />
                         ))}
                       </tr>
                     );
@@ -442,6 +457,7 @@ const SC = {
     borderBottom: `1px solid var(--line-soft)`, lineHeight: 1.6 },
   cellWide: { fontSize: 12.5, lineHeight: 1.65, color: "var(--ink-soft)" },
   valueText: { display: "block" },
+  linkStack: { display: "flex", flexDirection: "column", gap: 7, fontSize: 12 },
   // Plain-language explanation of what this particular value implies.
   gloss: { display: "block", marginTop: 7, fontSize: 11.5, lineHeight: 1.6,
     color: "var(--ink-faint)", paddingLeft: 9, borderLeft: `2px solid var(--line)` },

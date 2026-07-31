@@ -528,6 +528,50 @@ export const ATTENTION_INFO = {
   },
 };
 
+/**
+ * Papers behind each positional-encoding scheme, matched against the posEmb string
+ * that SPECS derives from config.json. A model can hit several: DeepSeek V4 is RoPE
+ * + YaRN + the MLA rope/nope head split, so it cites all three.
+ *
+ * Every arXiv id below was resolved against the arXiv API and its title checked —
+ * a citation that points at the wrong paper is worse than no citation.
+ */
+export const POSITIONAL_PAPERS = [
+  { match: /NoPE|no rope_theta|NoPE on \d+ of/i,
+    label: "NoPE — The Impact of Positional Encoding on Length Generalization (arXiv 2305.19466)",
+    url: "https://arxiv.org/abs/2305.19466" },
+  { match: /\bRoPE\b|θ=/,
+    label: "RoPE — RoFormer: Rotary Position Embedding (arXiv 2104.09864)",
+    url: "https://arxiv.org/abs/2104.09864" },
+  { match: /partial RoPE/i,
+    label: "Partial RoPE — Round and Round We Go! What makes RoPE useful? (arXiv 2410.06205)",
+    url: "https://arxiv.org/abs/2410.06205" },
+  { match: /yarn/i,
+    label: "YaRN — Efficient Context Window Extension (arXiv 2309.00071)",
+    url: "https://arxiv.org/abs/2309.00071" },
+  { match: /MRoPE/i,
+    label: "MRoPE — Qwen2-VL, multimodal rotary position embedding (arXiv 2409.12191)",
+    url: "https://arxiv.org/abs/2409.12191" },
+  { match: /ABF/,
+    label: "ABF base-frequency rescaling — Effective Long-Context Scaling (arXiv 2309.16039)",
+    url: "https://arxiv.org/abs/2309.16039" },
+  { match: /\bDCA\b/,
+    label: "Dual Chunk Attention — Training-Free Long-Context Scaling (arXiv 2402.17463)",
+    url: "https://arxiv.org/abs/2402.17463" },
+  { match: /longrope/i,
+    label: "LongRoPE — Extending the Context Window Beyond 2M Tokens (arXiv 2402.13753)",
+    url: "https://arxiv.org/abs/2402.13753" },
+  { match: /MLA head split|RoPE dims per head \(MLA\)/,
+    label: "MLA rope/nope head split — DeepSeek-V2 (arXiv 2405.04434)",
+    url: "https://arxiv.org/abs/2405.04434" },
+];
+
+export function positionalPapers(model) {
+  const scheme = (SPECS[model.name] || {}).posEmb;
+  if (!scheme) return [];
+  return POSITIONAL_PAPERS.filter((p) => p.match.test(scheme));
+}
+
 // Foundational papers per architecture component, keyed by arch string.
 export const ARCH_PAPERS = {
   "Dense": [{ label: "Transformer — Attention Is All You Need (1706.03762)", url: "https://arxiv.org/abs/1706.03762" }],
@@ -560,6 +604,45 @@ const COLUMNS = [
   { key: "maxOut", label: "Max out", numeric: true },
   { key: "license", label: "License", numeric: false },
 ];
+
+/**
+ * Break an architecture note into separate statements for bullet rendering.
+ *
+ * Purely presentational — rejoining the result reproduces the original exactly.
+ * The hard part is not splitting inside the things these notes are full of:
+ * decimals and scales ("1.6T", "3.7%"), version numbers ("K2.5", "GPT-5.6",
+ * "v4.1"), and abbreviations ("e.g.", "vs.").
+ */
+const SENTENCE_ABBREV = new Set([
+  "e.g", "i.e", "vs", "etc", "approx", "cf", "al", "no", "fig", "eq", "ref",
+  "inc", "ltd", "co", "dr", "prof", "st", "vol", "ch", "pp", "ca", "est",
+]);
+
+export function splitNote(note) {
+  if (!note) return [];
+  const out = [];
+  let buf = "";
+  for (let i = 0; i < note.length; i++) {
+    const c = note[i];
+    buf += c;
+    if (c !== "." && c !== "!" && c !== "?") continue;
+    const after = note.slice(i + 1);
+    const m = /^\s+(["“'(]?[A-Z0-9])/.exec(after);
+    if (!m) continue;
+    // inside a decimal or version number
+    if (c === "." && /\d$/.test(note.slice(0, i)) && /^\s*\d/.test(after)) continue;
+    // after a known abbreviation
+    const lastWord = (buf.match(/([A-Za-z.]+)\.$/) || [])[1];
+    if (lastWord && SENTENCE_ABBREV.has(lastWord.replace(/\.$/, "").toLowerCase())) continue;
+    // after a single-letter initial
+    if (/(^|\s)[A-Za-z]\.$/.test(buf)) continue;
+    out.push(buf.trim());
+    buf = "";
+    i += m[0].length - m[1].length;
+  }
+  if (buf.trim()) out.push(buf.trim());
+  return out;
+}
 
 export function fmtTokens(n) {
   if (n == null) return "—";
@@ -901,13 +984,32 @@ export default function FrontierModelsTable() {
                             <div style={S.detailCols}>
                               <div style={S.detailArchCol}>
                                 <span style={{ ...S.detailLabel, color: ac }}>Architecture notes</span>
-                                <p style={{ ...S.detailText, ...(m.note.length > 420 ? S.clampNote : {}) }}>{m.note}</p>
-                                {m.note.length > 420 && (
-                                  <button type="button" style={S.moreBtn}
-                                    onClick={(e) => { e.stopPropagation(); setReader(m); }}>
-                                    Show more <span aria-hidden="true">→</span>
-                                  </button>
-                                )}
+                                {(() => {
+                                  // One statement per bullet: a wall of prose is the
+                                  // last thing anyone wants to read in a reference table.
+                                  const bits = splitNote(m.note);
+                                  const LIMIT = 3;
+                                  const shown = bits.slice(0, LIMIT);
+                                  const rest = bits.length - shown.length;
+                                  return (
+                                    <>
+                                      <ul style={S.noteList}>
+                                        {shown.map((b, bi) => (
+                                          <li key={bi} style={S.noteItem}>
+                                            <span style={S.noteMark} aria-hidden="true" />
+                                            <span>{b}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                      {rest > 0 && (
+                                        <button type="button" style={S.moreBtn}
+                                          onClick={(e) => { e.stopPropagation(); setReader(m); }}>
+                                          {rest} more {rest === 1 ? "note" : "notes"} <span aria-hidden="true">→</span>
+                                        </button>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 {DIAGRAMS[m.name] && (() => {
                                   const d = DIAGRAMS[m.name];
                                   const thumb = `${DIAGRAM_BASE}/images/architectures/thumbnails/${d.slug}.webp`;
@@ -955,6 +1057,24 @@ export default function FrontierModelsTable() {
                                     </a>
                                   </div>
                                 )}
+                                {(() => {
+                                  const posPapers = positionalPapers(m);
+                                  if (posPapers.length === 0) return null;
+                                  return (
+                                    <div style={S.linkRow}>
+                                      <span style={S.linkTag} title="Papers behind this model's positional-encoding scheme">
+                                        Position
+                                      </span>
+                                      <span style={S.linkList}>
+                                        {posPapers.map((p, pi) => (
+                                          <a key={pi} style={S.link} href={p.url} target="_blank" rel="noopener noreferrer">
+                                            {p.label} ↗
+                                          </a>
+                                        ))}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                                 {(() => {
                                   const archPapers = ARCH_PAPERS[m.arch] || [];
                                   const attnPaper = ATTENTION_INFO[m.attn] && ATTENTION_INFO[m.attn].paper;
@@ -1176,7 +1296,14 @@ export default function FrontierModelsTable() {
 
             <div style={S.readerSection}>
               <span style={{ ...S.detailLabel, color: ARCH_COLORS[reader.arch] || "var(--fallback)" }}>Architecture notes</span>
-              <p style={S.readerBody}>{reader.note}</p>
+              <ul style={{ ...S.noteList, marginTop: 4 }}>
+                {splitNote(reader.note).map((b, bi) => (
+                  <li key={bi} style={{ ...S.noteItem, ...S.noteItemReader }}>
+                    <span style={S.noteMark} aria-hidden="true" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {reader.training && (
@@ -1427,6 +1554,14 @@ export const S = {
   detailLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase",
     fontWeight: 700, display: "block", marginBottom: 10 },
   detailText: { margin: 0, fontSize: 14, lineHeight: 1.78, color: INK, letterSpacing: "0.002em" },
+  // Architecture notes as separate statements rather than one block of prose.
+  noteList: { listStyle: "none", margin: 0, padding: 0, display: "flex",
+    flexDirection: "column", gap: 11 },
+  noteItem: { display: "flex", gap: 11, alignItems: "flex-start", fontSize: 13.5,
+    lineHeight: 1.72, color: INK, letterSpacing: "0.002em" },
+  noteItemReader: { fontSize: 14.5, lineHeight: 1.8, maxWidth: "68ch" },
+  noteMark: { width: 5, height: 5, borderRadius: "50%", background: CLAY,
+    flexShrink: 0, marginTop: "0.55em", opacity: 0.75 },
   // Collapsed previews: keep the panel scannable, full text lives in the reader.
   clampNote: { display: "-webkit-box", WebkitLineClamp: 7, WebkitBoxOrient: "vertical",
     overflow: "hidden" },
