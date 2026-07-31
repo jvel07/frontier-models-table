@@ -1,14 +1,26 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+// Gallery changelog, fetched at build time by scripts/fetch-changelog.mjs.
+import CHANGELOG from "./changelog.json";
 
 // Data current as of June 2026. Compiled from public provider docs, model cards,
 // and third-party architecture analyses. "—" = not publicly disclosed / N/A.
 const MODELS = [
   // ---- July 2026 wave (added after original build) ----
   { name: "Sarvam 105B", provider: "Sarvam AI", released: "2026/03", type: "Mid", arch: "Sparse MoE", params: "105B", active: "10.3B",
-    attn: "MLA (Multi-head Latent Attn)", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 12, training: null,
+    attn: "MLA (Multi-head Latent Attn)", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 12,
+    training: [
+      { label: "Pre-training", tokens: "12T", detail: "Trained from scratch on 12T tokens — notably fewer than the smaller 30B sibling's 16T. Corpus spans code, general web, specialised knowledge corpora, mathematics and multilingual content, with a substantial share of the budget allocated to the 10 most-spoken Indian languages. Run in three phases: long-horizon pre-training, mid-training, then a long-context extension phase." },
+      { label: "SFT", tokens: null, detail: "Supervised fine-tuning on a large corpus of prompts curated for difficulty, quality and domain diversity, topped up with synthetic prompts generated from the pre-training domain mixture to fill underrepresented areas. Prompts are pre-filtered with open-source models and early checkpoints to drop anything trivially solvable or consistently unsolved, keeping the curriculum effective." },
+      { label: "RL", tokens: null, detail: "Reinforcement learning as the final stage; Sarvam describes both models as reasoning models trained on in-house curated data at every stage. Specific RL algorithm and token budget not disclosed." },
+    ],
     note: "India's flagship open model, from Sarvam AI. 105B total / 10.3B active (9.8%) across 32 MLA layers \u2014 the larger Sarvam switches from GQA to Multi-head Latent Attention with KV LayerNorm and a NoPE + RoPE mix. Large vocabulary tuned for Indic languages. Apache 2.0. Architecture verified from its config.json via Raschka's gallery." },
   { name: "Sarvam 30B", provider: "Sarvam AI", released: "2026/03", type: "SLM", arch: "Sparse MoE", params: "30B", active: "2.4B",
-    attn: "Grouped-query attention", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 7, training: null,
+    attn: "Grouped-query attention", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 7,
+    training: [
+      { label: "Pre-training", tokens: "16T", detail: "Trained on 16T tokens — more than the larger 105B model's 12T, an unusual inversion. Same corpus recipe: code, general web, specialised knowledge, mathematics and multilingual data with heavy weighting toward the 10 most-spoken Indian languages, across three phases (long-horizon pre-training, mid-training, long-context extension)." },
+      { label: "SFT", tokens: null, detail: "Supervised fine-tuning on prompts curated for difficulty, quality and domain diversity, augmented with synthetic prompts drawn from the pre-training mixture. Trivially solvable and consistently unsolved prompts are filtered out using open-source models and early checkpoints." },
+      { label: "RL", tokens: null, detail: "Final reinforcement-learning stage on in-house curated data. Algorithm and token budget not disclosed." },
+    ],
     note: "The smaller of Sarvam AI's pair of Indian-language models: 30B total but only 2.4B active (8%) over 19 GQA layers with QK-Norm. Reasoning-oriented sparse MoE with a large vocabulary for strong Indic coverage. Among the cheapest models on the Artificial Analysis leaderboard." },
   { name: "Kimi K2.6", provider: "Moonshot", released: "2026/04", type: "Frontier", arch: "Sparse MoE", params: "1T", active: "32B",
     attn: "MLA (Multi-head Latent Attn)", modality: "Text + vision", context: 256000, maxOut: null, license: "Modified MIT", open: true, intel: 44, training: null,
@@ -17,7 +29,14 @@ const MODELS = [
     attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: null, license: "MIT", open: true, intel: 40, training: null,
     note: "The middle release in Zhipu's fast GLM-5 cadence (5 in Feb, 5.1 in Apr, 5.2 in Jun 2026). Architecture is identical to GLM-5 \u2014 744B/40B, 78 MLA layers with DeepSeek Sparse Attention, MTP-capable \u2014 with the entire gain coming from post-training aimed at long-horizon agentic coding." },
   { name: "Laguna XS.2", provider: "Poolside", released: "2026/04", type: "SLM", arch: "Sparse MoE", params: "33B", active: "3B",
-    attn: "Sliding-window + global", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: null, training: null,
+    attn: "Sliding-window + global", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: null,
+    training: [
+      { label: "Pre-training", tokens: ">30T", detail: "Both Laguna models are trained from scratch as MoEs on more than 30T tokens drawn from web, code and synthetic sources. The data mixture was tuned empirically: Poolside trained ~60 proxy models of ~0.5B parameters on ~60B tokens each, sampling from over 50 heterogeneous dataset groups, to fit the mixture before committing to the full run." },
+      { label: "Long-context", tokens: "200B", detail: "Starts from the end-of-decay checkpoint and splits into two equal 100B-token sub-stages: the first extends context to 32K, the second to 128K. YaRN is applied to the global attention layers only, both sub-stages share a 24M-token global batch, and the learning rate follows a cosine decay." },
+      { label: "Mid-training", tokens: "~60B", detail: "The largest post-training stage by unique token count — a deliberately broad instruction mix of general chat, explicit reasoning traces and repository-level agentic coding, so the model keeps conversational ability while learning tool use and terminal work." },
+      { label: "SFT", tokens: "3 × ~40B", detail: "Three epochs of roughly 40B tokens each with early stopping on eval scores, weighted heavily toward agentic coding and reusing mid-training's batch size, sequence length, packing, schedule and optimiser. Includes 1.3B tokens of multi-harness agentic trajectories from frameworks like OpenHands and Mini-SWE-Agent, deliberately preserving each harness's native behaviour." },
+      { label: "RL", tokens: null, detail: "Online reinforcement learning with CISPO, using verifiable rewards only." },
+    ],
     note: "The earlier Laguna small model (April 2026), distinct from the July XS 2.1 refresh. 33B total / 3B active (9.1%) over 30 sliding-window + 10 global layers, using gated GQA with QK-Norm, per-layer query-head counts (\u2018attention budgeting\u2019), a 512-token local window, sigmoid MoE routing and 1 shared plus top-8 routed experts. Apache 2.0 here, unlike the OpenMDW licence on the 2.1 releases." },
   { name: "Gemma 4 26B-A4B", provider: "Google", released: "2026/04", type: "SLM", arch: "Sparse MoE", params: "25.2B", active: "3.8B",
     attn: "Sliding-window + global", modality: "Text + vision", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 26, training: null,
@@ -40,9 +59,17 @@ const MODELS = [
   { name: "Grok 4.5", provider: "xAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
     attn: "Sparse + long-context", modality: "Text + vision", context: 500000, maxOut: null, license: "Proprietary", open: false, intel: 54, training: null,
     note: "xAI's flagship as of 8 July 2026, trained in partnership with Cursor and aimed at coding, agentic tool calling and knowledge work. 500K context \u2014 notably smaller than the 2M window of Grok 4.3 \u2014 with configurable reasoning and ~80 tok/s serving. Architecture undisclosed." },
-  { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "\u2014",
-    attn: "KDA + full attn (3:1)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Modified MIT (pending)", open: true, intel: 57, training: null,
-    note: "The largest open-weight model yet at 2.8T parameters \u2014 the first 'open 3T-class' model, taking the crown from DeepSeek V4 Pro's 1.6T. Extremely sparse: only 16 of 896 experts fire per token (~1.8% of the network), managed by a Stable LatentMoE framework. Built on Kimi Delta Attention (KDA), a hybrid linear attention interleaving linear layers with full attention in a 3:1 ratio, cutting KV-cache memory up to 75% and decoding up to 6x faster at 1M context. Attention Residuals (AttnRes) replace standard residual connections, letting each layer selectively retrieve representations from arbitrary earlier layers. Moonshot reports ~2.5x the scaling efficiency of K2. Weights were promised by 27 July 2026 \u2014 verify whether they have landed." },
+  { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "104.2B",
+    attn: "KDA + full attn (69:24)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57,
+    training: [
+      { label: "Pre-training", tokens: null, detail: "Natively multimodal: text and vision jointly optimised from step one rather than grafting a ViT onto a finished LLM, with visual and textual tokens interleaved under one next-token objective. Corpus spans Web Text, Code, Mathematics and Knowledge plus a large vision corpus; knowledge and maths are rephrased K2-style with fidelity verification. Per-Head Muon optimiser with K2's weight clipping, Quantile Balancing for MoE load balance, cosine LR with 1% warmup, weight decay 0.1. No token budget disclosed." },
+      { label: "Context 8K \u2192 64K", tokens: null, detail: "First half of a four-stage context curriculum: training starts at an 8K window and is extended to 64K in a later pre-training phase, keeping costly long-sequence compute to a small fraction of the budget." },
+      { label: "Cooldown 256K \u2192 1M", tokens: null, detail: "Second half of the curriculum, run during cooldown. NoPE \u2014 no explicit positional embedding \u2014 so position is carried implicitly by KDA's recurrent gating and decay, letting the model reach 1M tokens with no RoPE rescaling or interpolation. Long documents and video are deduplicated (including perceptual hashing over frames) and upsampled, plus synthetic long-context data built by permuting and concatenating multimodal documents so tasks can only be solved by attending across the full window." },
+      { label: "SFT", tokens: null, detail: "Cold-start policy for RL. Trajectories synthesised by domain-specialised models from earlier Kimi releases, then multi-stage verification and human-in-the-loop annotation, serialised with Moonshot's XTML chat template. Quantisation-aware training begins here and runs through the rest of post-training, with MXFP4 weights and MXFP8 activations." },
+      { label: "RL", tokens: null, detail: "Scaled across three domains \u2014 general tasks, general agents and coding agents \u2014 crossed with three reasoning-effort levels (low/high/max), yielding nine separate expert models. Uses a partial-rollout scheme that advances once a fraction of trajectories finish, with per-token regularisation absorbing the resulting off-policy staleness. Non-verifiable tasks are scored by an Agentic Generative Reward Model that must write a rubric before scoring, with budget-based verbosity control to curb reward hacking." },
+      { label: "MOPD", tokens: null, detail: "Multi-Teacher On-Policy Distillation consolidates the nine domain \u00d7 effort experts back into a single unified model, so one set of weights retains the specialised behaviour at each reasoning effort." },
+    ],
+    note: "The largest open-weight model yet at 2.8T parameters \u2014 the first 'open 3T-class' model, taking the crown from DeepSeek V4 Pro's 1.6T. Extremely sparse: only 16 of 896 routed experts fire per token, giving 104.2B activated parameters (3.7% of the network), managed by a Stable LatentMoE framework. Built on Kimi Delta Attention (KDA), a hybrid linear attention interleaving 69 KDA layers with 24 full-attention MLA layers across 93 layers total, cutting KV-cache memory up to 75% and decoding up to 6x faster at 1M context. Attention Residuals (AttnRes) replace standard residual connections, letting each layer selectively retrieve representations from arbitrary earlier layers. Moonshot reports ~2.5x the scaling efficiency of K2. Weights shipped 27 July 2026 under the Kimi K3 License; the tech report concedes it still trails Claude Fable 5 and GPT-5.6 Sol overall." },
   { name: "GLM-5.2", provider: "Zhipu", released: "2026/06", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
     attn: "DSA + MLA (IndexShare)", modality: "Text + vision", context: 1000000, maxOut: 128000, license: "MIT", open: true, intel: 51, training: null,
     note: "Third release in Zhipu's fast GLM-5 cadence (GLM-5 Feb, 5.1 Apr, 5.2 Jun 2026). ~753B total with ~40B active (256 routed experts, 8 per token). Uses DeepSeek-style sparse attention with MLA KV-cache compression plus IndexShare, which Zhipu reports cuts per-token FLOPs 2.9x at 1M context. MIT licensed with no regional restrictions. Shipped days after the US export clampdown on Anthropic's Fable/Mythos models." },
@@ -113,10 +140,21 @@ const MODELS = [
     attn: "MLA (Multi-head Latent Attn)", modality: "Text + vision", context: 262144, maxOut: 64000, license: "Apache 2.0", open: true, intel: 16, training: null,
     note: "MoE flagship now under fully permissive Apache 2.0, a shift from Mistral's earlier restrictive terms. GQA-based attention. 256K context, large but not in the 1M+ club." },
   { name: "GLM-5", provider: "Zhipu", released: "2026/02", type: "Frontier", arch: "Sparse MoE", params: "744B", active: "40B",
-    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: 32000, license: "MIT", open: true, intel: null, training: null,
+    attn: "MLA + DeepSeek Sparse Attn", modality: "Text + vision", context: 202752, maxOut: 32000, license: "MIT", open: true, intel: null,
+    training: [
+      { label: "Pre-training", tokens: "27T", detail: "Base model training opens on a 27-trillion-token corpus that front-loads code and reasoning data. GLM-5 scales to 256 experts while cutting depth to 80 layers to reduce expert-parallel communication overhead, giving 744B total / 40B active." },
+      { label: "DSA adaptation", tokens: "20B", detail: "Continued pre-training that swaps in DeepSeek Sparse Attention, starting from the end-of-mid-training checkpoint. A 1,000-step warmup trains the indexer at 14 sequences of 202,752 tokens per step, then a 20B-token sparse-adaptation stage reuses the mid-training data and hyperparameters. Zhipu notes this is far cheaper than DeepSeek-V3.2's 943.7B-token equivalent yet still matches the original MLA model." },
+      { label: "Mid-training", tokens: "1.55T", detail: "A distinct phase that walks the context window up in three stages — 32K over 1T tokens, 128K over 500B, then 200K over 50B. The added 200K stage (versus GLM-4.5's 128K ceiling) is what lets it handle ultra-long documents and multi-file codebases; long documents and synthetic agent trajectories are upsampled here." },
+      { label: "Post-training", tokens: null, detail: "Separate Reasoning RL, Agentic RL and General RL stages, then On-Policy Cross-Stage Distillation to fold them back together. Runs on a rebuilt asynchronous RL stack layered on the 'slime' framework that decouples generation from training to cut rollout tail latency. Total budget across all stages is 28.5T tokens for the base model." },
+    ],
     note: "744B-A40B, the largest active-parameter count among single-GPU-deployable open MoEs. MIT licensed. Competitive on hard reasoning and coding benchmarks." },
   { name: "Command A", provider: "Cohere", released: "2025/03", type: "Mid", arch: "Dense", params: "111B", active: "111B",
-    attn: "Grouped-query attention", modality: "Text", context: 256000, maxOut: 32000, license: "CC-BY-NC", open: true, intel: 8, training: null,
+    attn: "Grouped-query attention", modality: "Text", context: 256000, maxOut: 32000, license: "CC-BY-NC", open: true, intel: 8,
+    training: [
+      { label: "Pre-training", tokens: null, detail: "Standard pre-training stage; Cohere names it but discloses no corpus size or token budget for Command A." },
+      { label: "SFT", tokens: null, detail: "Supervised fine-tuning applied after pre-training, per the model card. Dataset size not disclosed." },
+      { label: "Preference training", tokens: null, detail: "Final alignment stage using preference training rather than a named RLHF variant, targeting helpfulness and safety. Cohere's tech report (arXiv 2504.00698) covers the method; the model card itself gives no quantitative detail." },
+    ],
     note: "One of the larger dense (non-MoE) models still shipping; all 111B params fire every token. Tuned for RAG and grounded generation with citations. Non-commercial license." },
   { name: "Nemotron 3 Ultra", provider: "NVIDIA", released: "2026/06", type: "Frontier", arch: "Hybrid Mamba-MoE", params: "550B", active: "55B",
     attn: "Mamba-2 SSM + GQA attn", modality: "Text", context: 262144, maxOut: 32000, license: "NVIDIA Nemotron Open Model License", open: true, intel: 38, training: [{ label: "Pre-training P1", tokens: "15T", detail: "Diversity-focused mixture (web, code, math, multilingual); NVFP4 training, LatentMoE, multi-token prediction." }, { label: "Pre-training P2", tokens: "5T", detail: "Quality-focused high-fidelity data after ~75% of pretraining (20T total text tokens)." }, { label: "Context extension", tokens: null, detail: "Extends context to 1M tokens via continued pretraining." }, { label: "SFT + RL + MOPD", tokens: null, detail: "Supervised fine-tuning, multi-environment RLVR, and Multi-teacher On-Policy Distillation." }],
@@ -174,22 +212,61 @@ const MODELS = [
 ];
 
 const TYPE_COLORS = {
-  Frontier: { fg: "#1F6F8B", dot: "#2A8BAA" },
-  Mid: { fg: "#6D5BA8", dot: "#8B79C9" },
-  SLM: { fg: "#3F7A5A", dot: "#4E9A6F" },
+  Frontier: { fg: "var(--type-frontier-fg)", dot: "var(--type-frontier-dot)" },
+  Mid: { fg: "var(--type-mid-fg)", dot: "var(--type-mid-dot)" },
+  SLM: { fg: "var(--type-slm-fg)", dot: "var(--type-slm-dot)" },
 };
 const ARCH_COLORS = {
-  "Dense": "#A8761E",
-  "Sparse MoE": "#C0397F",
-  "MoE": "#C0397F",
-  "MoE + linear attn": "#C0397F",
-  "Hybrid Mamba-MoE": "#2F8F7A",
-  "Hybrid: KDA + MoE": "#7A4FA3",
-  "Hybrid: Gated DeltaNet + MoE": "#2477A8",
-  "Hybrid: Gated DeltaNet (dense)": "#2477A8",
-  "MoE + Gated DeltaNet": "#2477A8",
-  "MoE (reported)": "#9A6A5E",
-  "Undisclosed": "#7A7770",
+  "Dense": "var(--arch-dense)",
+  "Sparse MoE": "var(--arch-moe)",
+  "MoE": "var(--arch-moe)",
+  "MoE + linear attn": "var(--arch-moe)",
+  "Hybrid Mamba-MoE": "var(--arch-mamba)",
+  "Hybrid: KDA + MoE": "var(--arch-kda)",
+  "Hybrid: Gated DeltaNet + MoE": "var(--arch-deltanet)",
+  "Hybrid: Gated DeltaNet (dense)": "var(--arch-deltanet)",
+  "MoE + Gated DeltaNet": "var(--arch-deltanet)",
+  "MoE (reported)": "var(--arch-reported)",
+  "Undisclosed": "var(--arch-undisclosed)",
+};
+
+// Architecture diagrams from Sebastian Raschka's LLM Architecture Gallery.
+// Hot-linked, not copied: the images stay on his server and every use carries a
+// visible credit linking back to the source card. Each pairing below was checked
+// against the model's parameter count, and every URL was verified to resolve.
+// Models with no confidently matching card are deliberately absent rather than
+// guessed at - a near-miss card (e.g. Command A+ vs Command A) is not a match.
+const DIAGRAM_BASE = "https://sebastianraschka.com/llm-architecture-gallery";
+const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gallery/";
+const DIAGRAMS = {
+  "DeepSeek V4 Flash": { slug: "deepseek-v4-flash", title: "DeepSeek V4-Flash (284B)" },
+  "DeepSeek V4 Pro": { slug: "deepseek-v4-pro", title: "DeepSeek V4-Pro (1.6T)" },
+  "Gemma 4 (31B)": { slug: "gemma-4-31b", title: "Gemma 4 (31B)" },
+  "Gemma 4 26B-A4B": { slug: "gemma-4-26b-a4b", title: "Gemma 4 (26B-A4B)" },
+  "Gemma 4 E4B": { slug: "gemma-4-e4b", title: "Gemma 4 (E4B)" },
+  "GLM-5": { slug: "glm-5-744b", title: "GLM-5 (744B)" },
+  "GLM-5.1": { slug: "glm-5-1", title: "GLM-5.1 (744B)" },
+  "GLM-5.2": { slug: "glm-5.2", title: "GLM-5.2 (744B)" },
+  "Inkling": { slug: "inkling", title: "Inkling (975B)" },
+  "Kimi K2.6": { slug: "kimi-k2-6", title: "Kimi K2.6 (1T)" },
+  "Kimi K3": { slug: "kimi-k3", title: "Kimi K3 (2.8T)" },
+  "Laguna S 2.1": { slug: "laguna-s-2-1", title: "Laguna S 2.1 (118B)" },
+  "Laguna XS 2.1": { slug: "laguna-xs-2-1", title: "Laguna XS 2.1 (33B)" },
+  "Laguna XS.2": { slug: "laguna-xs2", title: "Laguna XS.2 (33B)" },
+  "Llama 3.2 1B": { slug: "llama-3-2-1b", title: "Llama 3.2 (1B)" },
+  "Llama 3.2 3B": { slug: "llama-3-2-3b", title: "Llama 3.2 (3B)" },
+  "MiniMax M3": { slug: "minimax-m3", title: "MiniMax M3 (428B)" },
+  "Mistral Large 3": { slug: "mistral-3-large-673-billion", title: "Mistral Large 3 (673B)" },
+  "Mistral Small 4": { slug: "mistral-small-4", title: "Mistral Small 4 (119B)" },
+  "Nemotron 3 Nano": { slug: "nemotron-3-nano-30b-a3b", title: "Nemotron 3 Nano (30B-A3B)" },
+  "Nemotron 3 Super": { slug: "nemotron-3-super-120b-a12b", title: "Nemotron 3 Super (120B-A12B)" },
+  "Nemotron 3 Ultra": { slug: "nemotron-3-ultra-550b-a55b", title: "Nemotron 3 Ultra (550B-A55B)" },
+  "Qwen3.6 (27B)": { slug: "qwen3-6-27b", title: "Qwen3.6 (27B)" },
+  "Qwen3.6 35B-A3B": { slug: "qwen3-6-35b-a3b", title: "Qwen3.6 (35B-A3B)" },
+  "Sarvam 105B": { slug: "sarvam-105b", title: "Sarvam (105B)" },
+  "Sarvam 30B": { slug: "sarvam-30b", title: "Sarvam (30B)" },
+  "SmolLM3-3B": { slug: "smollm3-3b", title: "SmolLM3 (3B)" },
+  "Tiny Aya": { slug: "tiny-aya-3-35b", title: "Tiny Aya (3.35B)" },
 };
 
 // Per-model technical report / model card / official source. null = none published.
@@ -206,7 +283,7 @@ const REPORTS = {
   "GPT-5.6 Terra": { label: "OpenAI", url: "https://openai.com/index/gpt-5/" },
   "GPT-5.6 Luna": { label: "OpenAI", url: "https://openai.com/index/gpt-5/" },
   "Grok 4.5": { label: "xAI news", url: "https://x.ai/news" },
-  "Kimi K3": { label: "Kimi K3 tech blog", url: "https://www.kimi.com/blog/kimi-k3" },
+  "Kimi K3": { label: "Kimi K3 tech report (arXiv 2607.24653)", url: "https://arxiv.org/abs/2607.24653" },
   "GLM-5.2": { label: "Z.ai / Zhipu on Hugging Face", url: "https://huggingface.co/zai-org" },
   "Inkling": { label: "Inkling model card", url: "https://thinkingmachines.ai/model-card/inkling/" },
   "Laguna S 2.1": { label: "Introducing Laguna S 2.1", url: "https://poolside.ai/blog/introducing-laguna-s-2-1" },
@@ -397,6 +474,44 @@ export default function FrontierModelsTable() {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(null);
   const [tip, setTip] = useState(null); // { text, x, y }
+  const [dark, setDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark"
+  );
+  const [lightbox, setLightbox] = useState(null); // { src, alt, href }
+
+  // The detail row's <td> spans the full 1240px+ table, so its contents would
+  // scroll sideways with the table. Pinning the panel to the scrollport instead
+  // needs the wrapper's visible width, remeasured on resize.
+  const wrapRef = useRef(null);
+  const [wrapW, setWrapW] = useState(0);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setWrapW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setDark((d) => {
+      const next = !d;
+      const root = document.documentElement;
+      if (next) root.setAttribute("data-theme", "dark");
+      else root.removeAttribute("data-theme");
+      try { localStorage.setItem("fmt-theme", next ? "dark" : "light"); } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  // Esc closes the enlarged diagram.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
   const types = ["All", "Frontier", "Mid", "SLM"];
   const archs = ["All", "Dense", "MoE", "Undisclosed"];
@@ -454,7 +569,20 @@ export default function FrontierModelsTable() {
     <div style={S.page}>
       <div style={S.shell}>
         <header style={S.header}>
-          <div style={S.eyebrow}>Model landscape · July 2026</div>
+          <div style={S.eyebrowRow}>
+            <div style={{ ...S.eyebrow, marginBottom: 0 }}>Model landscape · July 2026</div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              style={S.themeBtn}
+              aria-pressed={dark}
+              aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+              title={dark ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              <span aria-hidden="true">{dark ? "☀" : "☾"}</span>
+              {dark ? "Light" : "Dark"}
+            </button>
+          </div>
           <h1 style={S.title}>Same idea, different machines</h1>
           <p style={S.sub}>
             Every model here is a decoder-only transformer at heart. What separates them is structure:
@@ -504,7 +632,7 @@ export default function FrontierModelsTable() {
 
         <div style={S.count}>{rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand</div>
 
-        <div style={S.tableWrap}>
+        <div style={S.tableWrap} ref={wrapRef}>
           <table style={S.table}>
             <thead>
               <tr>
@@ -513,7 +641,7 @@ export default function FrontierModelsTable() {
                   return (
                     <th key={c.key} onClick={() => toggleSort(c.key)}
                       style={{ ...S.th, textAlign: c.numeric ? "right" : "left",
-                        color: active ? "#2B2A27" : "#94918A" }}>
+                        color: active ? "var(--ink)" : "var(--ink-faint)" }}>
                       <span style={S.thInner}>{c.label}
                         <span style={{ ...S.arrow, opacity: active ? 1 : 0.25 }}>
                           {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
@@ -527,12 +655,12 @@ export default function FrontierModelsTable() {
             <tbody>
               {rows.map((m, i) => {
                 const tc = TYPE_COLORS[m.type];
-                const ac = ARCH_COLORS[m.arch] || "#64748b";
+                const ac = ARCH_COLORS[m.arch] || "var(--fallback)";
                 const isOpen = expanded === m.name;
                 return (
                   <React.Fragment key={m.name}>
                     <tr onClick={() => setExpanded(isOpen ? null : m.name)}
-                      style={{ ...S.tr, background: isOpen ? "#F3E9E2" : i % 2 ? "#F0EDE4" : "transparent",
+                      style={{ ...S.tr, background: isOpen ? "var(--row-open)" : i % 2 ? "var(--row-alt)" : "transparent",
                         cursor: "pointer" }}>
                       <td style={{ ...S.td, ...S.modelCell }}>
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
@@ -549,7 +677,7 @@ export default function FrontierModelsTable() {
                         <span style={{ ...S.archTag, color: ac, borderColor: ac + "55" }}>{m.arch}</span>
                       </td>
                       <td style={S.td}>{m.params}</td>
-                      <td style={{ ...S.td, color: m.active !== "—" && m.active !== m.params ? "#C0397F" : "#2B2A27" }}>{m.active}</td>
+                      <td style={{ ...S.td, color: m.active !== "—" && m.active !== m.params ? "var(--arch-moe)" : "var(--ink)" }}>{m.active}</td>
                       <td style={S.td}>
                         {(() => {
                           const info = ATTENTION_INFO[m.attn];
@@ -573,23 +701,50 @@ export default function FrontierModelsTable() {
                           <span style={S.intelWrap}>
                             <span style={S.intelTrack}>
                               <span style={{ ...S.intelFill, width: `${m.intel}%`,
-                                background: m.intel >= 55 ? "#C9633F" : m.intel >= 40 ? "#2A8BAA" : "#A8A39A" }} />
+                                background: m.intel >= 55 ? "var(--intel-hi)" : m.intel >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
                             </span>
                             <span style={S.intelVal}>{m.intel}</span>
                           </span>
                         )}
                       </td>
-                      <td style={{ ...S.td, color: m.open ? "#3F7A5A" : "#94918A" }}>{m.license}</td>
+                      <td style={{ ...S.td, color: m.open ? "var(--open-fg)" : "var(--ink-faint)" }}>{m.license}</td>
                     </tr>
                     {isOpen && (
-                      <tr style={{ background: "#EFEADF" }}>
+                      <tr style={{ background: "var(--detail-bg)" }}>
                         <td colSpan={COLUMNS.length} style={S.detailCell}>
+                          <div style={{ ...S.detailSticky, width: wrapW || "100%" }}>
                           <div style={S.detailInner}>
                             <div style={S.detailCols}>
                               <div style={S.detailArchCol}>
                                 <span style={{ ...S.detailLabel, color: ac }}>Architecture notes</span>
                                 <p style={S.detailText}>{m.note}</p>
-                                <span style={{ ...S.detailLabel, color: "#94918A", marginTop: 16 }}>Sources</span>
+                                {DIAGRAMS[m.name] && (() => {
+                                  const d = DIAGRAMS[m.name];
+                                  const thumb = `${DIAGRAM_BASE}/images/architectures/thumbnails/${d.slug}.webp`;
+                                  const full = `${DIAGRAM_BASE}/images/architectures/${d.slug}.webp`;
+                                  const alt = `Architecture diagram of ${d.title}`;
+                                  return (
+                                    <div style={S.diagramBlock}>
+                                      <span style={{ ...S.detailLabel, color: "var(--ink-faint)" }}>Architecture diagram</span>
+                                      <button
+                                        type="button"
+                                        style={S.diagramBtn}
+                                        title="Click to enlarge"
+                                        aria-label={`Enlarge ${alt}`}
+                                        onClick={(e) => { e.stopPropagation(); setLightbox({ src: full, alt, title: d.title }); }}
+                                      >
+                                        <img src={thumb} alt={alt} loading="lazy" decoding="async" style={S.diagramImg} />
+                                        <span style={S.diagramZoom} aria-hidden="true">⤢</span>
+                                      </button>
+                                      <div style={S.diagramCredit}>
+                                        Diagram © <a style={S.creditLink} href={DIAGRAM_CREDIT} target="_blank"
+                                          rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Sebastian Raschka</a>
+                                        {" "}· LLM Architecture Gallery
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                <span style={{ ...S.detailLabel, color: "var(--ink-faint)", marginTop: 16 }}>Sources</span>
                                 <div style={S.linkRow}>
                                   <span style={S.linkTag}>Report</span>
                                   {REPORTS[m.name] ? (
@@ -619,7 +774,7 @@ export default function FrontierModelsTable() {
                                 })()}
                               </div>
                               <div style={S.detailTrainCol}>
-                                <span style={{ ...S.detailLabel, color: "#C9633F" }}>
+                                <span style={{ ...S.detailLabel, color: "var(--clay)" }}>
                                   {(() => {
                                     const tt = totalTokens(m.training);
                                     return tt
@@ -657,6 +812,7 @@ export default function FrontierModelsTable() {
                               </div>
                             </div>
                           </div>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -681,7 +837,7 @@ export default function FrontierModelsTable() {
               </p>
             </div>
             <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "#C0397F" }}>02</div>
+              <div style={{ ...S.synthNum, color: "var(--arch-moe)" }}>02</div>
               <h3 style={S.synthTitle}>Dense vs MoE</h3>
               <p style={S.synthBody}>
                 The sharpest structural split. Dense models (Gemma 4 31B, the Phi and Llama-3.2 SLMs, Command A)
@@ -692,7 +848,7 @@ export default function FrontierModelsTable() {
               </p>
             </div>
             <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "#2A8BAA" }}>03</div>
+              <div style={{ ...S.synthNum, color: "var(--type-frontier-dot)" }}>03</div>
               <h3 style={S.synthTitle}>The attention arms race</h3>
               <p style={S.synthBody}>
                 Long context is won at the attention layer. DeepSeek interleaves compressed-sparse and chunked
@@ -703,7 +859,7 @@ export default function FrontierModelsTable() {
               </p>
             </div>
             <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "#3F7A5A" }}>04</div>
+              <div style={{ ...S.synthNum, color: "var(--open-fg)" }}>04</div>
               <h3 style={S.synthTitle}>"Small" is now about active params</h3>
               <p style={S.synthBody}>
                 The SLM line has blurred. Mistral Small 4 carries 119B total weights but activates only 6.5B, giving
@@ -714,6 +870,29 @@ export default function FrontierModelsTable() {
             </div>
           </div>
         </section>
+
+        {CHANGELOG.items.length > 0 && (
+          <section style={S.changelog}>
+            <div style={S.changelogHead}>
+              <span style={S.changelogTitle}>Gallery changelog</span>
+              <a style={S.changelogAll} href="https://sebastianraschka.com/llm-architecture-gallery/changelog/"
+                target="_blank" rel="noopener noreferrer">All updates ↗</a>
+            </div>
+            <p style={S.changelogNote}>
+              Latest entries from Sebastian Raschka's LLM Architecture Gallery, the source of the diagrams above.
+              Pulled from its RSS feed when this page was built{CHANGELOG.fetched ? ` (${CHANGELOG.fetched})` : ""} and
+              refreshed daily — the feed sends no CORS header, so it is read at build time rather than in your browser.
+            </p>
+            <ul style={S.changelogList}>
+              {CHANGELOG.items.slice(0, 6).map((c, ci) => (
+                <li key={ci} style={S.changelogItem}>
+                  <span style={S.changelogDate}>{c.date || "—"}</span>
+                  <a style={S.changelogLink} href={c.link} target="_blank" rel="noopener noreferrer">{c.title}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <footer style={S.footer}>
           <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
@@ -730,6 +909,31 @@ export default function FrontierModelsTable() {
           {tip.text}
         </div>
       )}
+
+      {lightbox && (
+        <div
+          style={S.lightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label={lightbox.alt}
+          onClick={() => setLightbox(null)}
+        >
+          <div style={S.lightboxInner} onClick={(e) => e.stopPropagation()}>
+            <div style={S.lightboxBar}>
+              <span style={S.lightboxTitle}>{lightbox.title}</span>
+              <button type="button" style={S.lightboxClose} onClick={() => setLightbox(null)} aria-label="Close diagram">
+                ✕
+              </button>
+            </div>
+            <img src={lightbox.src} alt={lightbox.alt} style={S.lightboxImg} />
+            <div style={S.lightboxCredit}>
+              Diagram © <a style={S.creditLink} href={DIAGRAM_CREDIT} target="_blank" rel="noopener noreferrer">
+                Sebastian Raschka
+              </a>{" "}· LLM Architecture Gallery · press Esc to close
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -738,15 +942,15 @@ export default function FrontierModelsTable() {
 const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
 const serif = "'Tiempos Text', 'Georgia', 'Times New Roman', serif";
 const sans = "'Styrene B', 'Inter', system-ui, -apple-system, sans-serif";
-const CLAY = "#C9633F";      // Claude clay/terracotta accent
-const CLAY_SOFT = "#E8D5CC"; // soft clay tint
-const PAPER = "#F4F2EC";     // warm paper bg
-const CARD = "#FBFAF6";      // raised surface
-const INK = "#2B2A27";       // primary text
-const INK_SOFT = "#6B6862";  // secondary text
-const INK_FAINT = "#94918A"; // tertiary
-const LINE = "#E4E0D6";      // hairline border
-const LINE_SOFT = "#EDEAE1";
+const CLAY = "var(--clay)";      // Claude clay/terracotta accent
+const CLAY_SOFT = "var(--clay-soft)"; // soft clay tint
+const PAPER = "var(--paper)";     // warm paper bg
+const CARD = "var(--card)";      // raised surface
+const INK = "var(--ink)";       // primary text
+const INK_SOFT = "var(--ink-soft)";  // secondary text
+const INK_FAINT = "var(--ink-faint)"; // tertiary
+const LINE = "var(--line)";      // hairline border
+const LINE_SOFT = "var(--line-soft)";
 const S = {
   page: { background: PAPER, minHeight: "100vh", padding: "40px 22px", color: INK,
     fontFamily: sans },
@@ -754,6 +958,12 @@ const S = {
   header: { marginBottom: 26 },
   eyebrow: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase",
     color: CLAY, marginBottom: 14 },
+  eyebrowRow: { display: "flex", alignItems: "center", justifyContent: "space-between",
+    gap: 16, marginBottom: 14 },
+  themeBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CARD,
+    border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer",
+    fontFamily: mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase",
+    color: INK_SOFT, flexShrink: 0, boxShadow: "var(--shadow)" },
   title: { fontFamily: serif, fontSize: "clamp(30px, 5vw, 50px)", fontWeight: 500, letterSpacing: "-0.015em",
     margin: "0 0 14px", lineHeight: 1.04, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
@@ -767,7 +977,7 @@ const S = {
     borderRadius: 9, padding: 3, gap: 2 },
   seg: { background: "transparent", border: "none", color: INK_SOFT, padding: "6px 12px",
     fontSize: 13, borderRadius: 6, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", fontFamily: sans },
-  segOn: { background: CLAY, color: "#fff" },
+  segOn: { background: CLAY, color: "var(--on-clay)" },
   count: { fontFamily: mono, fontSize: 12, color: INK_FAINT, marginBottom: 10 },
   tableWrap: { overflowX: "auto", border: `1px solid ${LINE}`, borderRadius: 14, background: CARD,
     boxShadow: "0 1px 3px rgba(43,42,39,0.04)" },
@@ -795,7 +1005,42 @@ const S = {
   archTag: { fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 6,
     border: "1px solid", whiteSpace: "nowrap" },
   detailCell: { padding: 0, borderBottom: `1px solid ${LINE}` },
-  detailInner: { padding: "18px 18px 22px 34px" },
+  // Pinned to the left edge of the scrollport so the panel stays put while the
+  // table scrolls sideways underneath it. Width is set from the wrapper at runtime.
+  detailSticky: { position: "sticky", left: 0 },
+  changelog: { marginTop: 34, padding: "20px 22px", background: CARD,
+    border: `1px solid ${LINE}`, borderRadius: 14 },
+  changelogHead: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 8 },
+  changelogTitle: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em",
+    textTransform: "uppercase", color: CLAY },
+  changelogAll: { fontSize: 12, color: INK_SOFT, textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0 },
+  changelogNote: { margin: "0 0 14px", fontSize: 12.5, lineHeight: 1.6, color: INK_FAINT, maxWidth: 720 },
+  changelogList: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 },
+  changelogItem: { display: "flex", gap: 12, alignItems: "baseline", fontSize: 13, lineHeight: 1.5 },
+  changelogDate: { fontFamily: mono, fontSize: 11.5, color: INK_FAINT, flexShrink: 0, minWidth: 82 },
+  changelogLink: { color: INK, textDecoration: "none", borderBottom: `1px solid ${LINE}` },
+  diagramBlock: { marginTop: 16 },
+  diagramBtn: { display: "block", padding: 0, border: `1px solid ${LINE}`, borderRadius: 10,
+    background: CARD, cursor: "zoom-in", overflow: "hidden", position: "relative",
+    width: "100%", maxWidth: 300, lineHeight: 0 },
+  diagramImg: { width: "100%", height: "auto", display: "block" },
+  diagramZoom: { position: "absolute", right: 7, bottom: 7, width: 24, height: 24,
+    display: "grid", placeItems: "center", borderRadius: 6, fontSize: 12,
+    background: "var(--card)", border: `1px solid ${LINE}`, color: INK_SOFT, lineHeight: 1 },
+  diagramCredit: { fontSize: 11, color: INK_FAINT, marginTop: 7, lineHeight: 1.5 },
+  creditLink: { color: INK_SOFT, textDecoration: "underline", textUnderlineOffset: 2 },
+  lightbox: { position: "fixed", inset: 0, zIndex: 100, background: "rgba(20,19,17,0.72)",
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" },
+  lightboxInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 14,
+    maxWidth: "min(1100px, 96vw)", maxHeight: "94vh", overflow: "auto", cursor: "auto",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
+  lightboxBar: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 10 },
+  lightboxTitle: { fontFamily: mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: INK_SOFT },
+  lightboxClose: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 7,
+    width: 28, height: 28, cursor: "pointer", color: INK_SOFT, fontSize: 13, lineHeight: 1, flexShrink: 0 },
+  lightboxImg: { display: "block", maxWidth: "100%", height: "auto", borderRadius: 8 },
+  lightboxCredit: { fontSize: 11, color: INK_FAINT, marginTop: 10, lineHeight: 1.5 },
+  detailInner: { padding: "18px 18px 22px 34px", boxSizing: "border-box" },
   detailCols: { display: "flex", flexWrap: "wrap", gap: 30, alignItems: "flex-start" },
   detailArchCol: { flex: "1 1 280px", minWidth: 260, maxWidth: 460 },
   detailTrainCol: { flex: "2 1 480px", minWidth: 300 },
@@ -805,7 +1050,7 @@ const S = {
   attnHover: { borderBottom: `1px dotted ${INK_FAINT}`, cursor: "help" },
   tooltip: { position: "fixed", zIndex: 50, maxWidth: 300, background: INK,
     border: "none", borderRadius: 9, padding: "10px 12px",
-    fontSize: 12.5, lineHeight: 1.5, color: "#F4F2EC", pointerEvents: "none",
+    fontSize: 12.5, lineHeight: 1.5, color: "var(--paper)", pointerEvents: "none",
     boxShadow: "0 10px 32px rgba(43,42,39,0.22)" },
   linkRow: { display: "flex", gap: 9, alignItems: "baseline", marginTop: 8, fontSize: 12.5, lineHeight: 1.5 },
   linkTag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
@@ -818,14 +1063,14 @@ const S = {
   stage: { flex: "1 1 150px", minWidth: 140, maxWidth: 230, background: CARD,
     border: `1px solid ${LINE}`, borderRadius: 10, padding: "11px 13px 13px" },
   stageHead: { display: "flex", alignItems: "center", gap: 7, marginBottom: 6 },
-  stageNum: { fontFamily: mono, fontSize: 11, fontWeight: 700, color: "#fff", background: CLAY,
+  stageNum: { fontFamily: mono, fontSize: 11, fontWeight: 700, color: "var(--on-clay)", background: CLAY,
     width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center",
     justifyContent: "center", flexShrink: 0 },
   stageName: { fontSize: 13, fontWeight: 650, color: INK, lineHeight: 1.2 },
   stageTokens: { display: "inline-block", fontFamily: mono, fontSize: 11.5, fontWeight: 700,
-    color: "#3F7A6A", background: "#E6F0EB", border: "1px solid #CFE3DA", borderRadius: 5,
+    color: "var(--tok-ok-fg)", background: "var(--tok-ok-bg)", border: "1px solid var(--tok-ok-line)", borderRadius: 5,
     padding: "1px 6px", marginBottom: 6 },
-  stageTokensEst: { color: "#9A6A2E", background: "#F4EBD9", border: "1px solid #E5D4B0" },
+  stageTokensEst: { color: "var(--tok-est-fg)", background: "var(--tok-est-bg)", border: "1px solid var(--tok-est-line)" },
   stageDetail: { margin: 0, fontSize: 11.5, lineHeight: 1.5, color: INK_SOFT },
   pipeArrow: { display: "flex", alignItems: "center", color: CLAY, fontSize: 16, fontWeight: 700 },
   synthesis: { marginTop: 40 },

@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Rebuild daily so the gallery changelog stays current without a manual push.
+  # The feed is fetched at build time because it sends no CORS header, so the
+  # browser cannot read it directly from the Pages domain.
+  schedule:
+    - cron: "17 6 * * *"
 
 permissions:
   contents: read

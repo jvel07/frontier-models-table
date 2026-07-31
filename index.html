@@ -8,11 +8,114 @@
       name="description"
       content="An interactive comparison of 54 frontier and small language models: architecture, attention mechanism, parameter counts, context windows, licensing and training stages. Filter, sort and expand any row for detail."
     />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <style>
+      /* Theme tokens. The component's style objects reference these via var(),
+         so switching data-theme on <html> restyles the whole table at once. */
+      :root {
+        --paper: #F4F2EC;
+        --card: #FBFAF6;
+        --ink: #2B2A27;
+        --ink-soft: #6B6862;
+        --ink-faint: #94918A;
+        --line: #E4E0D6;
+        --line-soft: #EDEAE1;
+        --clay: #C9633F;
+        --clay-soft: #E8D5CC;
+
+        --row-alt: #F0EDE4;
+        --row-open: #F3E9E2;
+        --detail-bg: #EFEADF;
+        --dim: #A8A39A;
+        --on-clay: #fff;
+        --open-fg: #3F7A5A;
+        --fallback: #64748b;
+
+        --tok-ok-fg: #3F7A6A;
+        --tok-ok-bg: #E6F0EB;
+        --tok-ok-line: #CFE3DA;
+        --tok-est-fg: #9A6A2E;
+        --tok-est-bg: #F4EBD9;
+        --tok-est-line: #E5D4B0;
+
+        --type-frontier-fg: #1F6F8B;  --type-frontier-dot: #2A8BAA;
+        --type-mid-fg: #6D5BA8;       --type-mid-dot: #8B79C9;
+        --type-slm-fg: #3F7A5A;       --type-slm-dot: #4E9A6F;
+
+        --arch-dense: #A8761E;
+        --arch-moe: #C0397F;
+        --arch-mamba: #2F8F7A;
+        --arch-kda: #7A4FA3;
+        --arch-deltanet: #2477A8;
+        --arch-reported: #9A6A5E;
+        --arch-undisclosed: #7A7770;
+
+        --intel-hi: #C9633F;
+        --intel-mid: #2A8BAA;
+        --intel-lo: #A8A39A;
+
+        --shadow: 0 1px 2px rgba(43, 42, 39, 0.04);
+      }
+
+      :root[data-theme="dark"] {
+        --paper: #161513;
+        --card: #1F1D1A;
+        --ink: #ECE8E0;
+        --ink-soft: #A5A199;
+        --ink-faint: #7B776F;
+        --line: #34302A;
+        --line-soft: #262320;
+        --clay: #E5895F;
+        --clay-soft: #4A382E;
+
+        --row-alt: #1B1917;
+        --row-open: #2B221C;
+        --detail-bg: #191714;
+        --dim: #5C5952;
+        --on-clay: #1B1512;
+        --open-fg: #6BAF87;
+        --fallback: #94A3B8;
+
+        --tok-ok-fg: #7FC4AC;
+        --tok-ok-bg: #1B2E29;
+        --tok-ok-line: #2C463F;
+        --tok-est-fg: #D4A45C;
+        --tok-est-bg: #2E2718;
+        --tok-est-line: #473C25;
+
+        --type-frontier-fg: #5FB4D4;  --type-frontier-dot: #45A8CC;
+        --type-mid-fg: #A797E0;       --type-mid-dot: #9A8AD4;
+        --type-slm-fg: #6BAF87;       --type-slm-dot: #62B88A;
+
+        --arch-dense: #D2A343;
+        --arch-moe: #E86BAB;
+        --arch-mamba: #4FC0A6;
+        --arch-kda: #A87FD4;
+        --arch-deltanet: #55A9D8;
+        --arch-reported: #C2938A;
+        --arch-undisclosed: #A3A099;
+
+        --intel-hi: #E5895F;
+        --intel-mid: #45A8CC;
+        --intel-lo: #5C5952;
+
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      }
+
       html { -webkit-text-size-adjust: 100%; }
-      body { margin: 0; background: #F4F2EC; }
+      body { margin: 0; background: var(--paper); }
     </style>
+    <script>
+      // Set the theme before first paint so there is no light-to-dark flash.
+      (function () {
+        try {
+          var saved = localStorage.getItem("fmt-theme");
+          var dark = saved ? saved === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

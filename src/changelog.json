@@ -1,0 +1,77 @@
+{
+  "fetched": "2026-07-31",
+  "items": [
+    {
+      "title": "Added Kimi K3",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#july-27-kimi-k3",
+      "date": "2026-07-27",
+      "summary": "Added the Moonshot AI Kimi K3 architecture card and refreshed the gallery summary tables. - Added the Kimi K3 architecture card."
+    },
+    {
+      "title": "Mega update: Added Antares 1B, BTL-3, Laguna 2.1 models, Motif 3 Beta, Nanbeige 4.2, Solar Open 2, and new explainers",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#july-25-gallery-updates",
+      "date": "2026-07-25",
+      "summary": "Added architecture cards for Antares 1B, BTL-3, Laguna S 2.1, Laguna XS 2.1, Motif 3 Beta, Nanbeige 4.2, and Solar Open 2, plus explainers for ShortConv, looped depth sharing, IndexShare, and PolyNorm. - Added the [Antares-1B](/llm-architec"
+    },
+    {
+      "title": "Added Soofi S",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#july-16-soofi-s",
+      "date": "2026-07-16",
+      "summary": "Added the Soofi S 30B-A3B architecture card. - Added the Soofi S 30B-A3B architecture card."
+    },
+    {
+      "title": "Added Inkling",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#july-15-inkling",
+      "date": "2026-07-15",
+      "summary": "Added the Thinking Machines Lab Inkling 975B architecture card. - Added the Thinking Machines Lab Inkling 975B architecture card."
+    },
+    {
+      "title": "Added GLM-5.2 and refreshed AA data",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-18-glm-5-2",
+      "date": "2026-06-18",
+      "summary": "Added the Z.ai GLM-5.2 architecture card and refreshed Artificial Analysis Intelligence Index data. - Added the Z.ai GLM-5.2 architecture card. - Added new Artificial Analysis links for recent matching cards and refreshed AA Intelligence In"
+    },
+    {
+      "title": "Added VibeThinker-3B",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-16-vibethinker-3b",
+      "date": "2026-06-16",
+      "summary": "Added the WeiboAI VibeThinker-3B architecture card to the gallery. - Added the WeiboAI VibeThinker-3B architecture card."
+    },
+    {
+      "title": "Added Kimi K2.7 Code and MiniMax M3",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-13-gallery-additions",
+      "date": "2026-06-13",
+      "summary": "Added the Moonshot AI Kimi K2.7 Code and MiniMax M3 428B architecture cards. - Added the Moonshot AI Kimi K2.7 Code architecture card. - Added the MiniMax M3 428B architecture card."
+    },
+    {
+      "title": "Added North Mini Code",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-09-north-mini-code",
+      "date": "2026-06-09",
+      "summary": "Added the Cohere North Mini Code 30B-A3B architecture card and refreshed the gallery summary tables. - Added the Cohere North Mini Code 30B-A3B architecture card."
+    },
+    {
+      "title": "Added Nemotron 3 Ultra",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-04-nemotron-3-ultra",
+      "date": "2026-06-04",
+      "summary": "Added the NVIDIA Nemotron 3 Ultra 550B-A55B architecture card and refreshed the gallery summary tables. - Added the NVIDIA Nemotron 3 Ultra 550B-A55B architecture card."
+    },
+    {
+      "title": "Added Gemma 4, Mellum2, and LFM2.5 models",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#june-03-gallery-additions",
+      "date": "2026-06-03",
+      "summary": "Added the Gemma 4 12B, JetBrains Mellum2 Thinking 12B-A2.5B, and Liquid AI LFM2.5 architecture cards and refreshed the gallery summary tables. - Added the Gemma 4 12B Unified architecture card. - Added the JetBrains Mellum2 Thinking 12B-A2."
+    },
+    {
+      "title": "Linked the MiniMax M2 series and Laguna reports",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#may-27-minimax-m2-series-report",
+      "date": "2026-05-27",
+      "summary": "Added technical report links to the MiniMax M2, M2.5, M2.7, and Laguna XS.2 gallery cards. - Added the MiniMax-M2 Series technical report link to the MiniMax M2, M2.5, and M2.7 cards. - Added the Laguna XS.2 technical report link to the Lag"
+    },
+    {
+      "title": "Corrected the OLMo 2 architecture diagram",
+      "link": "https://sebastianraschka.com/llm-architecture-gallery/changelog/#may-21-olmo-2-diagram-correction",
+      "date": "2026-05-21",
+      "summary": "Updated the OLMo 2 7B gallery figure to show the post-attention and post-feed-forward RMSNorm placement more accurately. - Replaced the OLMo 2 7B architecture figure and regenerated its gallery thumbnail."
+    }
+  ]
+}

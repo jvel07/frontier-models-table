@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "changelog": "node scripts/fetch-changelog.mjs",
+    "prebuild": "node scripts/fetch-changelog.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
