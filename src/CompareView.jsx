@@ -30,57 +30,136 @@ const sparsity = (m) => {
 
 const spec = (m, f) => (SPECS[m.name] || {})[f] || null;
 
+/**
+ * Per-value glosses. `hint` explains what an axis measures; `gloss` explains what
+ * a *particular* value implies, because the interesting rows mean different things
+ * depending on what they say — "96 Q / 96 KV (MHA)" and "64 Q / 4 KV (GQA 16:1)"
+ * have opposite consequences for KV-cache cost and need opposite explanations.
+ */
+function glossHeads(v) {
+  if (!v) return null;
+  const mha = /\(MHA\)/.test(v);
+  const gqa = v.match(/GQA (\d+):1/);
+  if (mha) return "Multi-Head Attention: every query head keeps its own key/value pair. Nothing is shared, so the KV cache is as large as it gets — costly at long context.";
+  if (gqa) return `Grouped-Query Attention: ${gqa[1]} query heads share one key/value head, so the KV cache is about ${gqa[1]}× smaller than MHA for the same head count.`;
+  if (/GQA/.test(v)) return "Grouped-Query Attention: several query heads share each key/value head, shrinking the KV cache.";
+  return null;
+}
+
+function glossPos(v) {
+  if (!v) return null;
+  const bits = [];
+  if (/^NoPE|no rope_theta/i.test(v))
+    bits.push("No positional embedding at all — order has to be carried by the layer dynamics themselves rather than injected into the token representations.");
+  if (/partial RoPE \((\d+)% of head dims\)/.test(v)) {
+    const pct = v.match(/partial RoPE \((\d+)% of head dims\)/)[1];
+    bits.push(`Only ${pct}% of each head's dimensions get rotated; the remainder carry no positional signal, which helps the model generalise past its trained length.`);
+  }
+  if (/MLA head split/.test(v))
+    bits.push("Multi-head Latent Attention splits each head in two: a small rotated slice carries position, the larger un-rotated slice is what gets compressed into the latent KV cache.");
+  if (/θ=/.test(v) && !/^NoPE/i.test(v))
+    bits.push("θ is RoPE's base frequency — a larger value rotates more slowly with distance, which is how a model is stretched to longer context.");
+  if (/yarn/i.test(v))
+    bits.push("YaRN rescales those frequencies at inference to reach beyond the trained window.");
+  if (/NoPE on \d+ of \d+ layers/.test(v))
+    bits.push("Some layers deliberately skip RoPE entirely, a mix that tends to extrapolate better than rotating every layer.");
+  return bits.length ? bits.join(" ") : null;
+}
+
+function glossLayerMix(v) {
+  if (!v) return null;
+  const kinds = [];
+  if (/full attention/.test(v)) kinds.push("full attention layers let every token see all previous tokens (quadratic cost)");
+  if (/sliding-window/.test(v)) kinds.push("sliding-window layers only look back a fixed span, so cost stays linear");
+  if (/linear attention/.test(v)) kinds.push("linear-attention layers keep a fixed-size recurrent state instead of a growing cache");
+  if (/Mamba/.test(v)) kinds.push("Mamba layers are state-space blocks with no attention at all");
+  if (!kinds.length) return null;
+  return kinds.join("; ") + ". Interleaving them buys long-context throughput while keeping some layers fully global.";
+}
+
+function glossExperts(v) {
+  if (!v) return null;
+  const routed = v.match(/(\d+) routed/);
+  const active = v.match(/(\d+) active/);
+  const shared = /shared/.test(v);
+  if (!routed) return null;
+  let s = `Mixture-of-Experts: ${routed[1]} expert FFNs exist`;
+  s += active
+    ? `, but a router fires only ${active[1]} per token — so total parameters scale with ${routed[1]} while compute scales with ${active[1]}.`
+    : `; a router selects a subset per token, so capacity grows without compute growing with it.`;
+  if (shared) s += " Shared experts run for every token regardless of routing, holding the knowledge all tokens need.";
+  return s;
+}
+
 // One row of the comparison. `group` buckets rows into sections.
 const AXES = [
   { group: "Identity", label: "Provider", pick: (m) => m.provider },
   { group: "Identity", label: "Released", pick: (m) => m.released },
-  { group: "Identity", label: "Class", pick: (m) => m.type },
+  { group: "Identity", label: "Class", pick: (m) => m.type,
+    hint: "Our own tiering: Frontier, Mid, or SLM (small language model)" },
   { group: "Identity", label: "Licence", pick: (m) => m.license },
-  { group: "Identity", label: "Weights", pick: (m) => (m.open ? "Open" : "Proprietary") },
+  { group: "Identity", label: "Weights", pick: (m) => (m.open ? "Open" : "Proprietary"),
+    hint: "Whether you can download and run the model yourself" },
   { group: "Identity", label: "Intelligence (AA)", pick: (m) => (m.intel == null ? null : String(m.intel)),
-    hint: "Artificial Analysis Intelligence Index v4.1" },
+    hint: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations. Higher is better; the scale is not a percentage." },
 
-  { group: "Scale", label: "Total params", pick: (m) => (m.params === "—" ? null : m.params) },
-  { group: "Scale", label: "Active params", pick: (m) => (m.active === "—" ? null : m.active) },
-  { group: "Scale", label: "Sparsity", pick: sparsity, hint: "Share of weights that fire per token" },
-  { group: "Scale", label: "Layers", pick: (m) => (spec(m, "layers") ? String(spec(m, "layers")) : null) },
-  { group: "Scale", label: "Hidden size", pick: (m) => spec(m, "hidden") },
+  { group: "Scale", label: "Total params", pick: (m) => (m.params === "—" ? null : m.params),
+    hint: "Every weight in the model. Sets how much memory it takes to hold." },
+  { group: "Scale", label: "Active params", pick: (m) => (m.active === "—" ? null : m.active),
+    hint: "Weights that actually run for a given token. Sets speed and cost. On a dense model this equals the total." },
+  { group: "Scale", label: "Sparsity", pick: sparsity,
+    hint: "Active ÷ total. Lower means a bigger model runs at a smaller model's cost." },
+  { group: "Scale", label: "Layers", pick: (m) => (spec(m, "layers") ? String(spec(m, "layers")) : null),
+    hint: "Depth: how many transformer blocks a token passes through" },
+  { group: "Scale", label: "Hidden size", pick: (m) => spec(m, "hidden"),
+    hint: "Width of the residual stream — the vector carried between layers" },
 
   { group: "Architecture", label: "Family", pick: (m) => m.arch },
   { group: "Architecture", label: "Layer composition", pick: (m) => spec(m, "layerMix"),
-    hint: "Counted from layer_types in config.json" },
+    hint: "Which layer types the stack interleaves, counted from layer_types in config.json",
+    gloss: (m) => glossLayerMix(spec(m, "layerMix")) },
   { group: "Architecture", label: "Experts", pick: (m) => spec(m, "experts"),
-    hint: "Routed · active per token · shared" },
+    hint: "Routed · active per token · always-on shared",
+    gloss: (m) => glossExperts(spec(m, "experts")) },
 
   { group: "Attention", label: "Mechanism", pick: (m) => m.attn },
   { group: "Attention", label: "Heads", pick: (m) => spec(m, "heads"),
-    hint: "Query / key-value heads; the ratio is the GQA grouping" },
-  { group: "Attention", label: "Sliding window", pick: (m) => spec(m, "window") },
+    hint: "Query heads / key-value heads. Fewer KV heads means a smaller cache to carry at long context.",
+    gloss: (m) => glossHeads(spec(m, "heads")) },
+  { group: "Attention", label: "Sliding window", pick: (m) => spec(m, "window"),
+    hint: "On windowed layers, how many previous tokens a token may attend to. Blank means those layers are fully global." },
 
   { group: "Positional encoding", label: "Scheme", pick: (m) => spec(m, "posEmb"), wide: true,
-    hint: "Read from rope_theta, partial_rotary_factor and per-layer rope_parameters in config.json" },
+    hint: "How the model knows token order. Read from rope_theta, partial_rotary_factor and per-layer rope_parameters in config.json.",
+    gloss: (m) => glossPos(spec(m, "posEmb")) },
 
   { group: "Tokenizer", label: "Vocabulary", pick: (m) => spec(m, "vocab"),
-    hint: "vocab_size from config.json" },
+    hint: "Rows in the embedding table (vocab_size). A larger vocabulary packs more characters into each token, which matters most for non-English text and code." },
 
-  { group: "Context", label: "Context window", pick: (m) => fmtTokens(m.context) },
-  { group: "Context", label: "Max output", pick: (m) => (m.maxOut == null ? null : fmtTokens(m.maxOut)) },
-  { group: "Context", label: "Modality", pick: (m) => m.modality },
+  { group: "Context", label: "Context window", pick: (m) => fmtTokens(m.context),
+    hint: "Longest input the model accepts" },
+  { group: "Context", label: "Max output", pick: (m) => (m.maxOut == null ? null : fmtTokens(m.maxOut)),
+    hint: "Longest single response it will generate" },
+  { group: "Context", label: "Modality", pick: (m) => m.modality,
+    hint: "What it can take as input" },
 
-  { group: "Training", label: "Disclosed stages", pick: (m) => (m.training ? String(m.training.length) : null) },
+  { group: "Training", label: "Disclosed stages", pick: (m) => (m.training ? String(m.training.length) : null),
+    hint: "How many training phases the lab described. More stages means more disclosure, not necessarily more training." },
   { group: "Training", label: "Disclosed tokens", pick: (m) => {
       const tt = totalTokens(m.training);
       return tt ? `~${tt.total}${tt.hasEst ? " (incl. est.)" : ""}` : null;
-    } },
+    },
+    hint: "Sum of the per-stage budgets that were published. A blank means none were, not that training was small." },
 ];
 
 const GROUPS = [...new Set(AXES.map((a) => a.group))];
 
-function ValueCell({ value, shared, wide }) {
+function ValueCell({ value, shared, wide, gloss }) {
   if (!value) return <td style={SC.cellEmpty}>—</td>;
   return (
     <td style={{ ...SC.cell, ...(wide ? SC.cellWide : {}), ...(shared ? SC.cellShared : {}) }}>
-      {value}
+      <span style={SC.valueText}>{value}</span>
+      {gloss && <span style={SC.gloss}>{gloss}</span>}
     </td>
   );
 }
@@ -186,7 +265,8 @@ export default function CompareView({ names, onBack }) {
                           {axis.hint && <span style={SC.axisHint}>{axis.hint}</span>}
                         </th>
                         {vals.map((v, i) => (
-                          <ValueCell key={i} value={v} shared={v && counts.get(v) > 1} wide={axis.wide} />
+                          <ValueCell key={i} value={v} shared={v && counts.get(v) > 1}
+                            wide={axis.wide} gloss={axis.gloss ? axis.gloss(models[i]) : null} />
                         ))}
                       </tr>
                     );
@@ -340,6 +420,10 @@ const SC = {
   cell: { padding: "12px 16px", verticalAlign: "top", color: "var(--ink)",
     borderBottom: `1px solid var(--line-soft)`, lineHeight: 1.6 },
   cellWide: { fontSize: 12.5, lineHeight: 1.65, color: "var(--ink-soft)" },
+  valueText: { display: "block" },
+  // Plain-language explanation of what this particular value implies.
+  gloss: { display: "block", marginTop: 7, fontSize: 11.5, lineHeight: 1.6,
+    color: "var(--ink-faint)", paddingLeft: 9, borderLeft: `2px solid var(--line)` },
   cellShared: { background: "var(--tok-ok-bg)", boxShadow: "inset 2px 0 0 var(--tok-ok-fg)" },
   cellEmpty: { padding: "12px 16px", verticalAlign: "top", color: "var(--ink-faint)",
     borderBottom: `1px solid var(--line-soft)` },
