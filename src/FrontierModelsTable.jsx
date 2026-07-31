@@ -4,7 +4,7 @@ import CHANGELOG from "./changelog.json";
 
 // Data current as of June 2026. Compiled from public provider docs, model cards,
 // and third-party architecture analyses. "—" = not publicly disclosed / N/A.
-const MODELS = [
+export const MODELS = [
   // ---- July 2026 wave (added after original build) ----
   { name: "Sarvam 105B", provider: "Sarvam AI", released: "2026/03", type: "Mid", arch: "Sparse MoE", params: "105B", active: "10.3B",
     attn: "MLA (Multi-head Latent Attn)", modality: "Text", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 12,
@@ -240,12 +240,12 @@ const MODELS = [
     note: "The vision-language flagship of the Qwen3 generation, sharing the 235B-A22B MoE backbone with the text model. Three modules: a Qwen3-ViT vision encoder continued from SigLIP-2 with dynamic-resolution training, an MLP merger, and the Qwen3 LLM. Three architectural changes carry it: an enhanced interleaved-MRoPE for spatial–temporal modelling across images and video, DeepStack integration that feeds multi-level ViT features into the LLM for tighter alignment, and text-based time alignment. Natively handles 256K-token interleaved text/image/video context, extensible to ~1M. Also ships as dense 2B/4B/8B/32B and a 30B-A3B MoE." },
 ];
 
-const TYPE_COLORS = {
+export const TYPE_COLORS = {
   Frontier: { fg: "var(--type-frontier-fg)", dot: "var(--type-frontier-dot)" },
   Mid: { fg: "var(--type-mid-fg)", dot: "var(--type-mid-dot)" },
   SLM: { fg: "var(--type-slm-fg)", dot: "var(--type-slm-dot)" },
 };
-const ARCH_COLORS = {
+export const ARCH_COLORS = {
   "Dense": "var(--arch-dense)",
   "Sparse MoE": "var(--arch-moe)",
   "MoE": "var(--arch-moe)",
@@ -265,11 +265,50 @@ const ARCH_COLORS = {
 // against the model's parameter count, and every URL was verified to resolve.
 // Models with no confidently matching card are deliberately absent rather than
 // guessed at - a near-miss card (e.g. Command A+ vs Command A) is not a match.
+// Structured architecture specs, kept as discrete comparable fields rather than prose
+// so the comparison view can diff them (and so a later synthesis feature can recombine
+// them). Values come from each model's technical report where I read it directly, and
+// otherwise from Sebastian Raschka's gallery, which derives them from published
+// config.json files. Fields are omitted rather than guessed - a missing posEmb means
+// the source never stated one, not that the model has none.
+export const SPECS = {
+  "DeepSeek V4 Flash": { decoder: "Sparse MoE", layerMix: "43 CSA/HCA", kv: "5.4 KiB", attnDetail: "MLA-style CSA/HCA with mHC", keyDetail: "Uses 256 experts, 6 routed plus 1 shared expert per token, hash-based routing, compressed attention, and the V4 MTP path." },
+  "DeepSeek V4 Pro": { decoder: "Sparse MoE", layerMix: "61 CSA/HCA", kv: "7.7 KiB", attnDetail: "MLA-style CSA/HCA with mHC", keyDetail: "Uses 384 experts, 6 routed plus 1 shared expert per token, hash-based routing, compressed attention caches, and the V4 MTP path." },
+  "Gemma 4 (31B)": { decoder: "Dense", layerMix: "50 sliding-window + 10 global", kv: "840 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Carries Gemma's unusual pre/post-norm stack into a larger 31B dense model with 256K context." },
+  "Gemma 4 26B-A4B": { decoder: "Sparse MoE", layerMix: "25 sliding-window + 5 global", kv: "210 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Uses 128 total experts with only 8 routed plus 1 shared expert active per token." },
+  "Gemma 4 E4B": { decoder: "Dense", layerMix: "35 sliding-window + 7 global", kv: "84 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Steps up to a 42-layer stack with 2 KV heads while keeping the same edge-oriented local/global template." },
+  "GLM-5": { decoder: "Sparse MoE", layerMix: "78 MLA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention", keyDetail: "Bigger than GLM-4.7, with more experts, fewer layers, and DeepSeek-style MTP." },
+  "GLM-5.1": { decoder: "Sparse MoE", layerMix: "78 MLA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention", keyDetail: "Architecture stays aligned with GLM-5, including its MTP-capable backbone; the main shift is post-training." },
+  "GLM-5.2": { decoder: "Sparse MoE", layerMix: "78 MLA/DSA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention and IndexShare", keyDetail: "Reuses each full DSA indexer result across the next three layers, making 1M-token sparse attention cheaper." },
+  "Inkling": { decoder: "Sparse MoE", layerMix: "55 sliding-window + 11 global GQA", kv: "484 KiB", vocab: "200,058 (~200k)", attnDetail: "GQA with QK-Norm and learned relative-position bias in a 5:1 sliding-window/global pattern", keyDetail: "Uses learned relative-position bias instead of RoPE and adds four short convolutions to each decoder layer." },
+  "Kimi K2.6": { decoder: "Sparse MoE", layerMix: "61 MLA", kv: "68.6 KiB", attnDetail: "MLA", keyDetail: "Uses the same text architecture as Kimi K2.5, with the main change coming from the multimodal and agentic training recipe." },
+  "Kimi K3": { decoder: "Sparse hybrid", layerMix: "69 KDA + 24 Gated MLA", kv: "27 KiB", vocab: "160,000", posEmb: "NoPE \u2014 position carried implicitly by KDA's recurrent gating/decay", attnDetail: "3:1 Kimi Delta Attention and Gated MLA with NoPE", keyDetail: "Uses eight Block Attention Residual groups and Stable LatentMoE with 16 of 896 routed experts active per token." },
+  "Laguna S 2.1": { decoder: "Sparse MoE", layerMix: "36 sliding-window + 12 global GQA", kv: "192 KiB", vocab: "100,352 (~100k)", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses 256 routed experts with top-10 routing plus one shared expert, a dense first layer, and per-layer query-head counts." },
+  "Laguna XS 2.1": { decoder: "Sparse MoE", layerMix: "30 sliding-window + 10 global GQA", kv: "160 KiB", vocab: "100,352 (~100k)", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses 256 routed experts with top-8 routing plus one shared expert, a dense first layer, and per-layer query-head counts." },
+  "Laguna XS.2": { decoder: "Sparse MoE", layerMix: "30 sliding-window + 10 global", kv: "160 KiB", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses per-layer query-head counts, a 512-token SWA window, sigmoid MoE routing, and one shared expert alongside the top-8 routed experts." },
+  "Llama 3.2 1B": { decoder: "Dense", layerMix: "16 GQA", kv: "32 KiB", attnDetail: "GQA", keyDetail: "Wider architecture with more heads than Qwen3 0.6B." },
+  "Llama 3.2 3B": { decoder: "Dense", layerMix: "28 GQA", kv: "112 KiB", attnDetail: "GQA", keyDetail: "Reference small-model Llama architecture with tied embeddings." },
+  "MiniMax M3": { decoder: "Sparse MoE", layerMix: "3 full GQA + 57 MiniMax Sparse Attention", kv: "120 KiB", attnDetail: "GQA with QK-Norm and MiniMax Sparse Attention", keyDetail: "Uses three dense prefix layers, then 57 sparse-attention MoE layers with 128 routed experts and 4 routed plus 1 shared expert active per token." },
+  "Mistral Large 3": { decoder: "Sparse MoE", layerMix: "61 MLA", kv: "68.6 KiB", attnDetail: "MLA", keyDetail: "Near-clone of DeepSeek V3 with larger experts, fewer routed experts, and multimodal support." },
+  "Mistral Small 4": { decoder: "Sparse MoE", layerMix: "36 MLA", kv: "22.5 KiB", attnDetail: "MLA", keyDetail: "Uses 128 experts with 4 routed plus 1 shared expert active per token while unifying instruct, reasoning, and vision." },
+  "Nemotron 3 Nano": { decoder: "Hybrid MoE", layerMix: "6 GQA + 23 Mamba-2 + 23 MoE", kv: "6 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Interleaves Mamba-2 and MoE blocks, using attention only sparingly." },
+  "Nemotron 3 Super": { decoder: "Hybrid MoE", layerMix: "8 GQA + 40 Mamba-2 + 40 MoE", kv: "8 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Adds latent-space MoE and shared-weight MTP for fast inference." },
+  "Nemotron 3 Ultra": { decoder: "Hybrid MoE", layerMix: "12 GQA + 48 Mamba-2 + 48 MoE", kv: "12 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Scales the latent-MoE hybrid to 108 layers with 48 Mamba-2, 48 latent MoE, and 12 GQA layers." },
+  "Qwen3 235B-A22B": { decoder: "Sparse MoE", layerMix: "94 GQA", kv: "188 KiB", vocab: "151,669 (BBPE)", posEmb: "RoPE (base 10K \u2192 1M via ABF; YARN + DCA at inference)", attnDetail: "GQA with QK-Norm", keyDetail: "High-capacity MoE design optimized for serving efficiency without a shared expert." },
+  "Qwen3-VL 235B-A22B": { decoder: "Sparse MoE + ViT", layerMix: "Qwen3 MoE backbone + Qwen3-ViT encoder (SigLIP-2 lineage)", vocab: "151,669 (BBPE)", posEmb: "Interleaved MRoPE (spatial\u2013temporal, images + video)", attnDetail: "GQA backbone with interleaved-MRoPE and DeepStack multi-level ViT feature injection", keyDetail: "Three modules: Qwen3-ViT encoder, MLP merger, Qwen3 LLM backbone." },
+  "Qwen3.6 (27B)": { decoder: "Dense hybrid", layerMix: "16 gated attention + 48 DeltaNet", kv: "64 KiB", attnDetail: "3:1 Gated DeltaNet and Gated Attention", keyDetail: "Uses a 64-layer dense hybrid layout with 48 DeltaNet layers and 16 full-attention layers." },
+  "Qwen3.6 35B-A3B": { decoder: "Sparse hybrid", layerMix: "10 gated attention + 30 DeltaNet", kv: "20 KiB", attnDetail: "3:1 Gated DeltaNet and Gated Attention", keyDetail: "Uses 256 experts with 8 routed plus 1 shared expert active inside a 40-layer hybrid stack." },
+  "Sarvam 105B": { decoder: "Sparse MoE", layerMix: "32 MLA", kv: "36 KiB", posEmb: "Mixed NoPE + RoPE", attnDetail: "MLA with KV LayerNorm and NoPE + RoPE", keyDetail: "Large vocabulary and strong Indic language support carried into the larger MLA-based sparse MoE variant." },
+  "Sarvam 30B": { decoder: "Sparse MoE", layerMix: "19 GQA", kv: "19 KiB", attnDetail: "GQA with QK-Norm", keyDetail: "Large vocabulary and strong Indic language support paired with a reasoning-focused sparse MoE design." },
+  "SmolLM3-3B": { decoder: "Dense", layerMix: "36 GQA", kv: "72 KiB", posEmb: "NoPE (no positional embedding)", attnDetail: "GQA with periodic NoPE layers", keyDetail: "Every fourth layer omits RoPE to test a NoPE-style cadence." },
+  "Tiny Aya": { decoder: "Dense", layerMix: "27 sliding-window + 9 global", kv: "72 KiB", attnDetail: "GQA with 3:1 sliding-window attention", keyDetail: "Runs attention and the MLP in parallel while mixing RoPE with NoPE." },
+};
+
 // Hugging Face repo for each open-weight model, for the ones that actually publish
 // weights there. Every URL below was checked live (GET + og:title, since HuggingFace
 // serves a 401 status on some missing repos rather than a clean 404) before being
 // added - none of these are guessed from a naming pattern.
-const HF_LINKS = {
+export const HF_LINKS = {
   "Command A": "CohereLabs/c4ai-command-a-03-2025",
   "DeepSeek V4 Flash": "deepseek-ai/DeepSeek-V4-Flash",
   "DeepSeek V4 Pro": "deepseek-ai/DeepSeek-V4-Pro",
@@ -309,15 +348,15 @@ const HF_LINKS = {
   "Tiny Aya": "CohereLabs/tiny-aya-base",
 };
 
-const DIAGRAM_BASE = "https://sebastianraschka.com/llm-architecture-gallery";
-const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gallery/";
+export const DIAGRAM_BASE = "https://sebastianraschka.com/llm-architecture-gallery";
+export const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gallery/";
 // Local mirror of the same 28 diagrams, downloaded into public/diagrams/ as a fallback
 // for if sebastianraschka.com ever renames or removes a file. The hotlink is tried
 // first — it credits his traffic and always serves his latest version — and the
 // <img> only falls back to this repo's copy on a load error. Credit line is
 // identical either way.
-const LOCAL_DIAGRAM_BASE = `${import.meta.env.BASE_URL}diagrams`;
-const DIAGRAMS = {
+export const LOCAL_DIAGRAM_BASE = `${import.meta.env.BASE_URL}diagrams`;
+export const DIAGRAMS = {
   "DeepSeek V4 Flash": { slug: "deepseek-v4-flash", title: "DeepSeek V4-Flash (284B)" },
   "DeepSeek V4 Pro": { slug: "deepseek-v4-pro", title: "DeepSeek V4-Pro (1.6T)" },
   "Gemma 4 (31B)": { slug: "gemma-4-31b", title: "Gemma 4 (31B)" },
@@ -350,7 +389,7 @@ const DIAGRAMS = {
 };
 
 // Per-model technical report / model card / official source. null = none published.
-const REPORTS = {
+export const REPORTS = {
   "Sarvam 105B": { label: "Sarvam 30B/105B tech report", url: "https://www.sarvam.ai/blogs/sarvam-30b-105b" },
   "Sarvam 30B": { label: "Sarvam 30B/105B tech report", url: "https://www.sarvam.ai/blogs/sarvam-30b-105b" },
   "Kimi K2.6": { label: "Kimi K2.6 tech blog", url: "https://www.kimi.com/blog/kimi-k2-6.html" },
@@ -410,7 +449,7 @@ const REPORTS = {
 };
 
 // Attention-mechanism dictionary: hover tooltip + the foundational paper that introduced it.
-const ATTENTION_INFO = {
+export const ATTENTION_INFO = {
   "KDA + full attn (3:1)": {
     desc: "Kimi Delta Attention: a linear-attention layer using the delta rule with gating, interleaved with full softmax attention in a 3:1 ratio. Moonshot reports it cuts KV-cache memory up to 75% and decodes up to 6x faster at 1M context. Paired with Attention Residuals, which let each layer selectively pull representations from arbitrary earlier layers instead of accumulating them uniformly.",
     paper: { label: "Gated DeltaNet — KDA's lineage (arXiv 2412.06464)", url: "https://arxiv.org/abs/2412.06464" },
@@ -474,7 +513,7 @@ const ATTENTION_INFO = {
 };
 
 // Foundational papers per architecture component, keyed by arch string.
-const ARCH_PAPERS = {
+export const ARCH_PAPERS = {
   "Dense": [{ label: "Transformer — Attention Is All You Need (1706.03762)", url: "https://arxiv.org/abs/1706.03762" }],
   "Sparse MoE": [{ label: "Sparse MoE layer (1701.06538)", url: "https://arxiv.org/abs/1701.06538" }, { label: "Switch Transformer (2101.03961)", url: "https://arxiv.org/abs/2101.03961" }],
   "MoE": [{ label: "Sparse MoE layer (1701.06538)", url: "https://arxiv.org/abs/1701.06538" }],
@@ -506,7 +545,7 @@ const COLUMNS = [
   { key: "license", label: "License", numeric: false },
 ];
 
-function fmtTokens(n) {
+export function fmtTokens(n) {
   if (n == null) return "—";
   if (n >= 1000000) return (n / 1000000) % 1 === 0 ? `${n / 1000000}M` : `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${Math.round(n / 1000)}K`;
@@ -522,7 +561,7 @@ function paramSort(v) {
   return n;
 }
 // Sum disclosed token counts across stages -> { total: "XXT"|null, hasEst: bool }.
-function totalTokens(training) {
+export function totalTokens(training) {
   if (!training) return null;
   let billions = 0, sawNum = false, hasEst = false;
   for (const st of training) {
@@ -562,6 +601,20 @@ export default function FrontierModelsTable() {
   );
   const [lightbox, setLightbox] = useState(null); // { src, alt, href }
   const [reader, setReader] = useState(null); // full-text reading view for one model
+  const [selected, setSelected] = useState([]); // model names queued for comparison
+
+  const MAX_COMPARE = 4;
+  const toggleCompare = useCallback((name) => {
+    setSelected((cur) =>
+      cur.includes(name)
+        ? cur.filter((n) => n !== name)
+        : cur.length >= MAX_COMPARE ? cur : [...cur, name]
+    );
+  }, []);
+  const openCompare = useCallback(() => {
+    if (selected.length < 2) return;
+    window.location.hash = `#/compare/${selected.map(encodeURIComponent).join("|")}`;
+  }, [selected]);
 
   // The detail row's <td> spans the full 1240px+ table, so its contents would
   // scroll sideways with the table. Pinning the panel to the scrollport instead
@@ -718,7 +771,9 @@ export default function FrontierModelsTable() {
           </div>
         </div>
 
-        <div style={S.count}>{rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand</div>
+        <div style={S.count}>
+          {rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand · tick up to {MAX_COMPARE} to compare side by side
+        </div>
 
         <div style={S.tableWrap} ref={wrapRef}>
           <table style={S.table}>
@@ -755,6 +810,20 @@ export default function FrontierModelsTable() {
                       style={{ ...S.tr, background: isOpen ? "var(--row-open)" : i % 2 ? "var(--row-alt)" : "transparent",
                         cursor: "pointer" }}>
                       <td style={{ ...S.td, ...S.modelCell }}>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(m.name)}
+                          disabled={!selected.includes(m.name) && selected.length >= MAX_COMPARE}
+                          onChange={() => toggleCompare(m.name)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${m.name} for comparison`}
+                          title={
+                            selected.includes(m.name) ? "Remove from comparison"
+                              : selected.length >= MAX_COMPARE ? `Limit is ${MAX_COMPARE} models`
+                              : "Add to comparison"
+                          }
+                          style={S.compareBox}
+                        />
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
                         {m.name}
                       </td>
@@ -1013,7 +1082,7 @@ export default function FrontierModelsTable() {
           </section>
         )}
 
-        <footer style={S.footer}>
+        <footer style={{ ...S.footer, paddingBottom: selected.length > 0 ? 96 : undefined }}>
           <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
           <span>Intelligence = Artificial Analysis Intelligence Index v4.1, leaderboard snapshot 26 July 2026 (artificialanalysis.ai). v4.1 combines 9 evaluations: GDPval-AA v2, 𝜏³-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience and AA-LCR. Where AA lists several reasoning-effort variants, the highest-scoring variant is shown; "—" = not on the AA leaderboard.</span>
           <span>Architecture fields (decoder type, attention, parameter and context figures) for open-weight models were cross-checked against Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery), which derives them from model config.json files and technical reports.</span>
@@ -1026,6 +1095,38 @@ export default function FrontierModelsTable() {
           left: Math.min(tip.x + 14, (typeof window !== "undefined" ? window.innerWidth : 1200) - 320),
           top: tip.y + 16 }}>
           {tip.text}
+        </div>
+      )}
+
+      {selected.length > 0 && (
+        <div style={S.compareBar} role="region" aria-label="Model comparison tray">
+          <div style={S.compareBarInner}>
+            <span style={S.compareCount}>
+              {selected.length} of {MAX_COMPARE} selected
+            </span>
+            <div style={S.compareChips}>
+              {selected.map((n) => (
+                <button key={n} type="button" style={S.compareChip}
+                  onClick={() => toggleCompare(n)} title={`Remove ${n}`}>
+                  {n} <span aria-hidden="true" style={{ opacity: 0.6 }}>✕</span>
+                </button>
+              ))}
+            </div>
+            <div style={S.compareActions}>
+              <button type="button" style={S.compareClear} onClick={() => setSelected([])}>
+                Clear
+              </button>
+              <button
+                type="button"
+                style={{ ...S.compareGo, ...(selected.length < 2 ? S.compareGoOff : {}) }}
+                onClick={openCompare}
+                disabled={selected.length < 2}
+                title={selected.length < 2 ? "Select at least two models" : "Compare selected models"}
+              >
+                Compare {selected.length >= 2 ? `${selected.length} models` : ""} →
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1123,8 +1224,8 @@ export default function FrontierModelsTable() {
 }
 
 // ===== Claude-style theme: warm paper background, clay accent, serif display =====
-const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
-const serif = "'Tiempos Text', 'Georgia', 'Times New Roman', serif";
+export const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
+export const serif = "'Tiempos Text', 'Georgia', 'Times New Roman', serif";
 const sans = "'Styrene B', 'Inter', system-ui, -apple-system, sans-serif";
 const CLAY = "var(--clay)";      // Claude clay/terracotta accent
 const CLAY_SOFT = "var(--clay-soft)"; // soft clay tint
@@ -1135,7 +1236,7 @@ const INK_SOFT = "var(--ink-soft)";  // secondary text
 const INK_FAINT = "var(--ink-faint)"; // tertiary
 const LINE = "var(--line)";      // hairline border
 const LINE_SOFT = "var(--line-soft)";
-const S = {
+export const S = {
   page: { background: PAPER, minHeight: "100vh", padding: "40px 22px", color: INK,
     fontFamily: sans },
   shell: { maxWidth: 1240, margin: "0 auto" },
@@ -1169,6 +1270,28 @@ const S = {
   th: { padding: "14px 12px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", userSelect: "none",
     borderBottom: `1px solid ${LINE}`, position: "sticky", top: 0, background: CARD, whiteSpace: "nowrap",
     color: INK_SOFT },
+  compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
+    accentColor: CLAY, verticalAlign: "middle" },
+  // Fixed tray so the selection survives scrolling a 56-row table.
+  compareBar: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60,
+    background: CARD, borderTop: `1px solid ${LINE}`, boxShadow: "0 -6px 24px rgba(0,0,0,0.10)",
+    padding: "12px 22px" },
+  compareBarInner: { maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center",
+    gap: 14, flexWrap: "wrap" },
+  compareCount: { fontFamily: mono, fontSize: 11, letterSpacing: "0.08em",
+    textTransform: "uppercase", color: INK_FAINT, flexShrink: 0 },
+  compareChips: { display: "flex", gap: 7, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 },
+  compareChip: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--detail-bg)",
+    border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 11px", cursor: "pointer",
+    fontSize: 12.5, color: INK, fontFamily: sans },
+  compareActions: { display: "flex", gap: 9, flexShrink: 0, alignItems: "center" },
+  compareClear: { background: "transparent", border: "none", cursor: "pointer",
+    fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
+    color: INK_FAINT, padding: "8px 6px" },
+  compareGo: { background: CLAY, color: "var(--on-clay)", border: "none", borderRadius: 999,
+    padding: "9px 18px", cursor: "pointer", fontFamily: mono, fontSize: 11.5,
+    letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 },
+  compareGoOff: { opacity: 0.42, cursor: "not-allowed" },
   thInner: { display: "inline-flex", alignItems: "center", gap: 5 },
   // Attribution for the Intelligence column, sitting under its header label.
   thSub: { display: "block", fontFamily: mono, fontSize: 9, letterSpacing: "0.06em",
