@@ -265,43 +265,49 @@ export const ARCH_COLORS = {
 // against the model's parameter count, and every URL was verified to resolve.
 // Models with no confidently matching card are deliberately absent rather than
 // guessed at - a near-miss card (e.g. Command A+ vs Command A) is not a match.
-// Structured architecture specs, kept as discrete comparable fields rather than prose
-// so the comparison view can diff them (and so a later synthesis feature can recombine
-// them). Values come from each model's technical report where I read it directly, and
-// otherwise from Sebastian Raschka's gallery, which derives them from published
-// config.json files. Fields are omitted rather than guessed - a missing posEmb means
-// the source never stated one, not that the model has none.
+// Titles are our own model names; only the image itself comes from the gallery.
+// Structured architecture specs, read from each model's own config.json on Hugging
+// Face — the artefact the lab itself publishes. Kept as discrete comparable fields
+// rather than prose so the comparison view can diff them, and so a later synthesis
+// feature can recombine them.
+//
+// An earlier version of this map took its descriptions from a third-party gallery;
+// it was replaced because the wording was that author's, not ours. The only outside
+// inputs left in this project are the architecture images (credited, hot-linked) and
+// the Artificial Analysis intelligence index.
+//
+// A missing field means the config does not declare it. Absence of rope_theta is NOT
+// treated as proof of NoPE — that claim is only made where a technical report says so.
 export const SPECS = {
-  "DeepSeek V4 Flash": { decoder: "Sparse MoE", layerMix: "43 CSA/HCA", kv: "5.4 KiB", attnDetail: "MLA-style CSA/HCA with mHC", keyDetail: "Uses 256 experts, 6 routed plus 1 shared expert per token, hash-based routing, compressed attention, and the V4 MTP path." },
-  "DeepSeek V4 Pro": { decoder: "Sparse MoE", layerMix: "61 CSA/HCA", kv: "7.7 KiB", attnDetail: "MLA-style CSA/HCA with mHC", keyDetail: "Uses 384 experts, 6 routed plus 1 shared expert per token, hash-based routing, compressed attention caches, and the V4 MTP path." },
-  "Gemma 4 (31B)": { decoder: "Dense", layerMix: "50 sliding-window + 10 global", kv: "840 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Carries Gemma's unusual pre/post-norm stack into a larger 31B dense model with 256K context." },
-  "Gemma 4 26B-A4B": { decoder: "Sparse MoE", layerMix: "25 sliding-window + 5 global", kv: "210 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Uses 128 total experts with only 8 routed plus 1 shared expert active per token." },
-  "Gemma 4 E4B": { decoder: "Dense", layerMix: "35 sliding-window + 7 global", kv: "84 KiB", vocab: "262,144 (~262k)", posEmb: "p-RoPE (partial RoPE)", attnDetail: "GQA with QK-Norm, unified K/V on global layers, p-RoPE on global layers, and 5:1 sliding-window/global attention", keyDetail: "Steps up to a 42-layer stack with 2 KV heads while keeping the same edge-oriented local/global template." },
-  "GLM-5": { decoder: "Sparse MoE", layerMix: "78 MLA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention", keyDetail: "Bigger than GLM-4.7, with more experts, fewer layers, and DeepSeek-style MTP." },
-  "GLM-5.1": { decoder: "Sparse MoE", layerMix: "78 MLA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention", keyDetail: "Architecture stays aligned with GLM-5, including its MTP-capable backbone; the main shift is post-training." },
-  "GLM-5.2": { decoder: "Sparse MoE", layerMix: "78 MLA/DSA", kv: "87.8 KiB", attnDetail: "MLA with DeepSeek Sparse Attention and IndexShare", keyDetail: "Reuses each full DSA indexer result across the next three layers, making 1M-token sparse attention cheaper." },
-  "Inkling": { decoder: "Sparse MoE", layerMix: "55 sliding-window + 11 global GQA", kv: "484 KiB", vocab: "200,058 (~200k)", attnDetail: "GQA with QK-Norm and learned relative-position bias in a 5:1 sliding-window/global pattern", keyDetail: "Uses learned relative-position bias instead of RoPE and adds four short convolutions to each decoder layer." },
-  "Kimi K2.6": { decoder: "Sparse MoE", layerMix: "61 MLA", kv: "68.6 KiB", attnDetail: "MLA", keyDetail: "Uses the same text architecture as Kimi K2.5, with the main change coming from the multimodal and agentic training recipe." },
-  "Kimi K3": { decoder: "Sparse hybrid", layerMix: "69 KDA + 24 Gated MLA", kv: "27 KiB", vocab: "160,000", posEmb: "NoPE \u2014 position carried implicitly by KDA's recurrent gating/decay", attnDetail: "3:1 Kimi Delta Attention and Gated MLA with NoPE", keyDetail: "Uses eight Block Attention Residual groups and Stable LatentMoE with 16 of 896 routed experts active per token." },
-  "Laguna S 2.1": { decoder: "Sparse MoE", layerMix: "36 sliding-window + 12 global GQA", kv: "192 KiB", vocab: "100,352 (~100k)", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses 256 routed experts with top-10 routing plus one shared expert, a dense first layer, and per-layer query-head counts." },
-  "Laguna XS 2.1": { decoder: "Sparse MoE", layerMix: "30 sliding-window + 10 global GQA", kv: "160 KiB", vocab: "100,352 (~100k)", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses 256 routed experts with top-8 routing plus one shared expert, a dense first layer, and per-layer query-head counts." },
-  "Laguna XS.2": { decoder: "Sparse MoE", layerMix: "30 sliding-window + 10 global", kv: "160 KiB", attnDetail: "Gated GQA with QK-Norm and 3:1 sliding-window/global attention", keyDetail: "Uses per-layer query-head counts, a 512-token SWA window, sigmoid MoE routing, and one shared expert alongside the top-8 routed experts." },
-  "Llama 3.2 1B": { decoder: "Dense", layerMix: "16 GQA", kv: "32 KiB", attnDetail: "GQA", keyDetail: "Wider architecture with more heads than Qwen3 0.6B." },
-  "Llama 3.2 3B": { decoder: "Dense", layerMix: "28 GQA", kv: "112 KiB", attnDetail: "GQA", keyDetail: "Reference small-model Llama architecture with tied embeddings." },
-  "MiniMax M3": { decoder: "Sparse MoE", layerMix: "3 full GQA + 57 MiniMax Sparse Attention", kv: "120 KiB", attnDetail: "GQA with QK-Norm and MiniMax Sparse Attention", keyDetail: "Uses three dense prefix layers, then 57 sparse-attention MoE layers with 128 routed experts and 4 routed plus 1 shared expert active per token." },
-  "Mistral Large 3": { decoder: "Sparse MoE", layerMix: "61 MLA", kv: "68.6 KiB", attnDetail: "MLA", keyDetail: "Near-clone of DeepSeek V3 with larger experts, fewer routed experts, and multimodal support." },
-  "Mistral Small 4": { decoder: "Sparse MoE", layerMix: "36 MLA", kv: "22.5 KiB", attnDetail: "MLA", keyDetail: "Uses 128 experts with 4 routed plus 1 shared expert active per token while unifying instruct, reasoning, and vision." },
-  "Nemotron 3 Nano": { decoder: "Hybrid MoE", layerMix: "6 GQA + 23 Mamba-2 + 23 MoE", kv: "6 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Interleaves Mamba-2 and MoE blocks, using attention only sparingly." },
-  "Nemotron 3 Super": { decoder: "Hybrid MoE", layerMix: "8 GQA + 40 Mamba-2 + 40 MoE", kv: "8 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Adds latent-space MoE and shared-weight MTP for fast inference." },
-  "Nemotron 3 Ultra": { decoder: "Hybrid MoE", layerMix: "12 GQA + 48 Mamba-2 + 48 MoE", kv: "12 KiB", attnDetail: "Mostly Mamba-2 with a few GQA layers", keyDetail: "Scales the latent-MoE hybrid to 108 layers with 48 Mamba-2, 48 latent MoE, and 12 GQA layers." },
-  "Qwen3 235B-A22B": { decoder: "Sparse MoE", layerMix: "94 GQA", kv: "188 KiB", vocab: "151,669 (BBPE)", posEmb: "RoPE (base 10K \u2192 1M via ABF; YARN + DCA at inference)", attnDetail: "GQA with QK-Norm", keyDetail: "High-capacity MoE design optimized for serving efficiency without a shared expert." },
-  "Qwen3-VL 235B-A22B": { decoder: "Sparse MoE + ViT", layerMix: "Qwen3 MoE backbone + Qwen3-ViT encoder (SigLIP-2 lineage)", vocab: "151,669 (BBPE)", posEmb: "Interleaved MRoPE (spatial\u2013temporal, images + video)", attnDetail: "GQA backbone with interleaved-MRoPE and DeepStack multi-level ViT feature injection", keyDetail: "Three modules: Qwen3-ViT encoder, MLP merger, Qwen3 LLM backbone." },
-  "Qwen3.6 (27B)": { decoder: "Dense hybrid", layerMix: "16 gated attention + 48 DeltaNet", kv: "64 KiB", attnDetail: "3:1 Gated DeltaNet and Gated Attention", keyDetail: "Uses a 64-layer dense hybrid layout with 48 DeltaNet layers and 16 full-attention layers." },
-  "Qwen3.6 35B-A3B": { decoder: "Sparse hybrid", layerMix: "10 gated attention + 30 DeltaNet", kv: "20 KiB", attnDetail: "3:1 Gated DeltaNet and Gated Attention", keyDetail: "Uses 256 experts with 8 routed plus 1 shared expert active inside a 40-layer hybrid stack." },
-  "Sarvam 105B": { decoder: "Sparse MoE", layerMix: "32 MLA", kv: "36 KiB", posEmb: "Mixed NoPE + RoPE", attnDetail: "MLA with KV LayerNorm and NoPE + RoPE", keyDetail: "Large vocabulary and strong Indic language support carried into the larger MLA-based sparse MoE variant." },
-  "Sarvam 30B": { decoder: "Sparse MoE", layerMix: "19 GQA", kv: "19 KiB", attnDetail: "GQA with QK-Norm", keyDetail: "Large vocabulary and strong Indic language support paired with a reasoning-focused sparse MoE design." },
-  "SmolLM3-3B": { decoder: "Dense", layerMix: "36 GQA", kv: "72 KiB", posEmb: "NoPE (no positional embedding)", attnDetail: "GQA with periodic NoPE layers", keyDetail: "Every fourth layer omits RoPE to test a NoPE-style cadence." },
-  "Tiny Aya": { decoder: "Dense", layerMix: "27 sliding-window + 9 global", kv: "72 KiB", attnDetail: "GQA with 3:1 sliding-window attention", keyDetail: "Runs attention and the MLP in parallel while mixing RoPE with NoPE." },
+  "DeepSeek V4 Flash": { vocab: "129,280", layers: 43, hidden: "4,096", heads: "64 Q / 1 KV (GQA 64:1)", experts: "256 routed \u00b7 6 active \u00b7 1 shared", window: "128", posEmb: "RoPE \u03b8=10K + yarn \u00d716; 64 RoPE dims per head (MLA)", source: "config.json" },
+  "DeepSeek V4 Pro": { vocab: "129,280", layers: 61, hidden: "7,168", heads: "128 Q / 1 KV (GQA 128:1)", experts: "384 routed \u00b7 6 active \u00b7 1 shared", window: "128", posEmb: "RoPE \u03b8=10K + yarn \u00d716; 64 RoPE dims per head (MLA)", source: "config.json" },
+  "Gemma 4 (31B)": { vocab: "262,144", layers: 60, hidden: "5,376", heads: "32 Q / 16 KV (GQA 2:1)", layerMix: "50 sliding-window + 10 full attention", window: "1,024", posEmb: "full attention: partial RoPE (25% of head dims) \u03b8=1M + proportional \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "Gemma 4 26B-A4B": { vocab: "262,144", layers: 30, hidden: "2,816", heads: "16 Q / 8 KV (GQA 2:1)", experts: "128 routed", layerMix: "25 sliding-window + 5 full attention", window: "1,024", posEmb: "full attention: partial RoPE (25% of head dims) \u03b8=1M + proportional \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "Gemma 4 E4B": { vocab: "262,144", layers: 42, hidden: "2,560", heads: "8 Q / 2 KV (GQA 4:1)", layerMix: "35 sliding-window + 7 full attention", window: "512", posEmb: "full attention: partial RoPE (25% of head dims) \u03b8=1M + proportional \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "GLM-5": { vocab: "154,880", layers: 78, hidden: "6,144", heads: "64 Q / 64 KV (MHA)", experts: "256 routed \u00b7 8 active \u00b7 1 shared", posEmb: "RoPE \u03b8=1M; MLA head split 64 RoPE / 192 NoPE dims", source: "config.json" },
+  "GLM-5.1": { vocab: "154,880", layers: 78, hidden: "6,144", heads: "64 Q / 64 KV (MHA)", experts: "256 routed \u00b7 8 active \u00b7 1 shared", posEmb: "RoPE \u03b8=1M; MLA head split 64 RoPE / 192 NoPE dims", source: "config.json" },
+  "GLM-5.2": { vocab: "154,880", layers: 78, hidden: "6,144", heads: "64 Q / 64 KV (MHA)", experts: "256 routed \u00b7 8 active \u00b7 1 shared", posEmb: "RoPE \u03b8=8M; MLA head split 64 RoPE / 192 NoPE dims", source: "config.json" },
+  "Inkling": { vocab: "201,024", layers: 66, hidden: "6,144", heads: "64 Q / 8 KV (GQA 8:1)", experts: "256 routed \u00b7 6 active \u00b7 2 shared", source: "config.json" },
+  "Kimi K2.6": { vocab: "163,840", layers: 61, hidden: "7,168", heads: "64 Q / 64 KV (MHA)", experts: "384 routed \u00b7 8 active \u00b7 1 shared", posEmb: "RoPE \u03b8=50K + yarn \u00d764; MLA head split 64 RoPE / 128 NoPE dims", source: "config.json" },
+  "Kimi K3": { vocab: "163,840", layers: 93, hidden: "7,168", heads: "96 Q / 96 KV (MHA)", experts: "896 routed", posEmb: "NoPE \u2014 no rope_theta in config; the tech report (\u00a73.4) states position is carried implicitly by KDA's recurrent gating and decay", source: "config.json" },
+  "Laguna S 2.1": { vocab: "100,352", layers: 48, hidden: "3,072", heads: "48 Q / 8 KV (GQA 6:1)", experts: "256 routed \u00b7 10 active", layerMix: "36 sliding-window + 12 full attention", window: "512", posEmb: "full attention: partial RoPE (50% of head dims) \u03b8=500K + yarn \u00d7128 \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "Laguna XS 2.1": { vocab: "100,352", layers: 40, hidden: "2,048", heads: "48 Q / 8 KV (GQA 6:1)", experts: "256 routed \u00b7 8 active", layerMix: "30 sliding-window + 10 full attention", window: "512", posEmb: "full attention: partial RoPE (50% of head dims) \u03b8=500K + yarn \u00d732 \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "Laguna XS.2": { vocab: "100,352", layers: 40, hidden: "2,048", heads: "48 Q / 8 KV (GQA 6:1)", experts: "256 routed \u00b7 8 active", layerMix: "30 sliding-window + 10 full attention", window: "512", posEmb: "full attention: partial RoPE (50% of head dims) \u03b8=500K + yarn \u00d764 \u00b7 sliding-window: RoPE \u03b8=10K", source: "config.json" },
+  "Mistral Small 4": { vocab: "131,072", layers: 36, hidden: "4,096", heads: "32 Q / 32 KV (MHA)", experts: "128 routed \u00b7 4 active \u00b7 1 shared", posEmb: "RoPE \u03b8=10K + yarn \u00d7128; MLA head split 64 RoPE / 64 NoPE dims", source: "config.json" },
+  "Nemotron 3 Nano": { vocab: "131,072", layers: 52, hidden: "2,688", heads: "32 Q / 2 KV (GQA 16:1)", experts: "128 routed \u00b7 6 active \u00b7 1 shared", posEmb: "RoPE \u03b8=10K", source: "config.json" },
+  "Nemotron 3 Super": { vocab: "131,072", layers: 88, hidden: "4,096", heads: "32 Q / 2 KV (GQA 16:1)", experts: "512 routed \u00b7 22 active \u00b7 1 shared", posEmb: "RoPE \u03b8=10K", source: "config.json" },
+  "Nemotron 3 Ultra": { vocab: "131,072", hidden: "8,192", heads: "64 Q / 2 KV (GQA 32:1)", experts: "512 routed \u00b7 22 active \u00b7 1 shared", posEmb: "RoPE \u03b8=10K", source: "config.json" },
+  "Phi-4-mini": { vocab: "200,064", layers: 32, hidden: "3,072", heads: "24 Q / 8 KV (GQA 3:1)", window: "262,144", posEmb: "partial RoPE (75% of head dims) \u03b8=10K + longrope", source: "config.json" },
+  "Qwen3 235B-A22B": { vocab: "151,936", layers: 94, hidden: "4,096", heads: "64 Q / 4 KV (GQA 16:1)", experts: "128 routed \u00b7 8 active", posEmb: "RoPE \u03b8=1M", source: "config.json" },
+  "Qwen3-VL 235B-A22B": { vocab: "151,936", layers: 94, hidden: "4,096", heads: "64 Q / 4 KV (GQA 16:1)", experts: "128 routed \u00b7 8 active", posEmb: "Interleaved MRoPE across text, image and video (tech report)", source: "config.json" },
+  "Qwen3.5 (0.8B)": { vocab: "248,320", layers: 24, hidden: "1,024", heads: "8 Q / 2 KV (GQA 4:1)", layerMix: "18 linear attention + 6 full attention", posEmb: "partial RoPE (25% of head dims) \u03b8=10M", source: "config.json" },
+  "Qwen3.5 (9B)": { vocab: "248,320", layers: 32, hidden: "4,096", heads: "16 Q / 4 KV (GQA 4:1)", layerMix: "24 linear attention + 8 full attention", posEmb: "partial RoPE (25% of head dims) \u03b8=10M", source: "config.json" },
+  "Qwen3.5-Plus": { vocab: "248,320", layers: 60, hidden: "4,096", heads: "32 Q / 2 KV (GQA 16:1)", experts: "512 routed \u00b7 10 active", layerMix: "45 linear attention + 15 full attention", posEmb: "partial RoPE (25% of head dims) \u03b8=10M", source: "config.json" },
+  "Qwen3.6 (27B)": { vocab: "248,320", layers: 64, hidden: "5,120", heads: "24 Q / 4 KV (GQA 6:1)", layerMix: "48 linear attention + 16 full attention", posEmb: "partial RoPE (25% of head dims) \u03b8=10M", source: "config.json" },
+  "Qwen3.6 35B-A3B": { vocab: "248,320", layers: 40, hidden: "2,048", heads: "16 Q / 2 KV (GQA 8:1)", experts: "256 routed \u00b7 8 active", layerMix: "30 linear attention + 10 full attention", posEmb: "partial RoPE (25% of head dims) \u03b8=10M", source: "config.json" },
+  "Sarvam 105B": { vocab: "262,144", layers: 32, hidden: "4,096", heads: "64 Q", experts: "128 routed \u00b7 8 active", posEmb: "RoPE \u03b8=10K + deepseek yarn \u00d740; MLA head split 64 RoPE / 128 NoPE dims", source: "config.json" },
+  "Sarvam 30B": { vocab: "262,144", layers: 19, hidden: "4,096", heads: "64 Q / 4 KV (GQA 16:1)", experts: "128 routed \u00b7 6 active", posEmb: "RoPE \u03b8=8M", source: "config.json" },
+  "SmolLM3-3B": { vocab: "128,256", layers: 36, hidden: "2,048", heads: "16 Q / 4 KV (GQA 4:1)", layerMix: "36 full attention", posEmb: "RoPE \u03b8=5M; NoPE on 9 of 36 layers (every 4th)", source: "config.json" },
 };
 
 // Hugging Face repo for each open-weight model, for the ones that actually publish
@@ -357,35 +363,35 @@ export const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gal
 // identical either way.
 export const LOCAL_DIAGRAM_BASE = `${import.meta.env.BASE_URL}diagrams`;
 export const DIAGRAMS = {
-  "DeepSeek V4 Flash": { slug: "deepseek-v4-flash", title: "DeepSeek V4-Flash (284B)" },
-  "DeepSeek V4 Pro": { slug: "deepseek-v4-pro", title: "DeepSeek V4-Pro (1.6T)" },
+  "DeepSeek V4 Flash": { slug: "deepseek-v4-flash", title: "DeepSeek V4 Flash" },
+  "DeepSeek V4 Pro": { slug: "deepseek-v4-pro", title: "DeepSeek V4 Pro" },
   "Gemma 4 (31B)": { slug: "gemma-4-31b", title: "Gemma 4 (31B)" },
-  "Gemma 4 26B-A4B": { slug: "gemma-4-26b-a4b", title: "Gemma 4 (26B-A4B)" },
-  "Gemma 4 E4B": { slug: "gemma-4-e4b", title: "Gemma 4 (E4B)" },
-  "GLM-5": { slug: "glm-5-744b", title: "GLM-5 (744B)" },
-  "GLM-5.1": { slug: "glm-5-1", title: "GLM-5.1 (744B)" },
-  "GLM-5.2": { slug: "glm-5.2", title: "GLM-5.2 (744B)" },
-  "Inkling": { slug: "inkling", title: "Inkling (975B)" },
-  "Kimi K2.6": { slug: "kimi-k2-6", title: "Kimi K2.6 (1T)" },
-  "Kimi K3": { slug: "kimi-k3", title: "Kimi K3 (2.8T)" },
-  "Laguna S 2.1": { slug: "laguna-s-2-1", title: "Laguna S 2.1 (118B)" },
-  "Laguna XS 2.1": { slug: "laguna-xs-2-1", title: "Laguna XS 2.1 (33B)" },
-  "Laguna XS.2": { slug: "laguna-xs2", title: "Laguna XS.2 (33B)" },
-  "Llama 3.2 1B": { slug: "llama-3-2-1b", title: "Llama 3.2 (1B)" },
-  "Llama 3.2 3B": { slug: "llama-3-2-3b", title: "Llama 3.2 (3B)" },
-  "MiniMax M3": { slug: "minimax-m3", title: "MiniMax M3 (428B)" },
-  "Mistral Large 3": { slug: "mistral-3-large-673-billion", title: "Mistral Large 3 (673B)" },
-  "Mistral Small 4": { slug: "mistral-small-4", title: "Mistral Small 4 (119B)" },
-  "Nemotron 3 Nano": { slug: "nemotron-3-nano-30b-a3b", title: "Nemotron 3 Nano (30B-A3B)" },
-  "Nemotron 3 Super": { slug: "nemotron-3-super-120b-a12b", title: "Nemotron 3 Super (120B-A12B)" },
-  "Nemotron 3 Ultra": { slug: "nemotron-3-ultra-550b-a55b", title: "Nemotron 3 Ultra (550B-A55B)" },
-  "Qwen3 235B-A22B": { slug: "qwen3-235b-a22b", title: "Qwen3 (235B-A22B)" },
+  "Gemma 4 26B-A4B": { slug: "gemma-4-26b-a4b", title: "Gemma 4 26B-A4B" },
+  "Gemma 4 E4B": { slug: "gemma-4-e4b", title: "Gemma 4 E4B" },
+  "GLM-5": { slug: "glm-5-744b", title: "GLM-5" },
+  "GLM-5.1": { slug: "glm-5-1", title: "GLM-5.1" },
+  "GLM-5.2": { slug: "glm-5.2", title: "GLM-5.2" },
+  "Inkling": { slug: "inkling", title: "Inkling" },
+  "Kimi K2.6": { slug: "kimi-k2-6", title: "Kimi K2.6" },
+  "Kimi K3": { slug: "kimi-k3", title: "Kimi K3" },
+  "Laguna S 2.1": { slug: "laguna-s-2-1", title: "Laguna S 2.1" },
+  "Laguna XS 2.1": { slug: "laguna-xs-2-1", title: "Laguna XS 2.1" },
+  "Laguna XS.2": { slug: "laguna-xs2", title: "Laguna XS.2" },
+  "Llama 3.2 1B": { slug: "llama-3-2-1b", title: "Llama 3.2 1B" },
+  "Llama 3.2 3B": { slug: "llama-3-2-3b", title: "Llama 3.2 3B" },
+  "MiniMax M3": { slug: "minimax-m3", title: "MiniMax M3" },
+  "Mistral Large 3": { slug: "mistral-3-large-673-billion", title: "Mistral Large 3" },
+  "Mistral Small 4": { slug: "mistral-small-4", title: "Mistral Small 4" },
+  "Nemotron 3 Nano": { slug: "nemotron-3-nano-30b-a3b", title: "Nemotron 3 Nano" },
+  "Nemotron 3 Super": { slug: "nemotron-3-super-120b-a12b", title: "Nemotron 3 Super" },
+  "Nemotron 3 Ultra": { slug: "nemotron-3-ultra-550b-a55b", title: "Nemotron 3 Ultra" },
+  "Qwen3 235B-A22B": { slug: "qwen3-235b-a22b", title: "Qwen3 235B-A22B" },
   "Qwen3.6 (27B)": { slug: "qwen3-6-27b", title: "Qwen3.6 (27B)" },
-  "Qwen3.6 35B-A3B": { slug: "qwen3-6-35b-a3b", title: "Qwen3.6 (35B-A3B)" },
-  "Sarvam 105B": { slug: "sarvam-105b", title: "Sarvam (105B)" },
-  "Sarvam 30B": { slug: "sarvam-30b", title: "Sarvam (30B)" },
-  "SmolLM3-3B": { slug: "smollm3-3b", title: "SmolLM3 (3B)" },
-  "Tiny Aya": { slug: "tiny-aya-3-35b", title: "Tiny Aya (3.35B)" },
+  "Qwen3.6 35B-A3B": { slug: "qwen3-6-35b-a3b", title: "Qwen3.6 35B-A3B" },
+  "Sarvam 105B": { slug: "sarvam-105b", title: "Sarvam 105B" },
+  "Sarvam 30B": { slug: "sarvam-30b", title: "Sarvam 30B" },
+  "SmolLM3-3B": { slug: "smollm3-3b", title: "SmolLM3-3B" },
+  "Tiny Aya": { slug: "tiny-aya-3-35b", title: "Tiny Aya" },
 };
 
 // Per-model technical report / model card / official source. null = none published.
@@ -724,7 +730,10 @@ export default function FrontierModelsTable() {
               {dark ? "Light" : "Dark"}
             </button>
           </div>
-          <h1 style={S.title}>The Model Atlas</h1>
+          <div style={S.titleRow}>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" style={S.logo} />
+            <h1 style={{ ...S.title, margin: 0 }}>The Model Atlas</h1>
+          </div>
           <p style={S.sub}>
             A living map of how frontier and small language models are actually built — architecture,
             attention, training pipelines and data curricula, sourced from primary technical reports.
@@ -1085,7 +1094,8 @@ export default function FrontierModelsTable() {
         <footer style={{ ...S.footer, paddingBottom: selected.length > 0 ? 96 : undefined }}>
           <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
           <span>Intelligence = Artificial Analysis Intelligence Index v4.1, leaderboard snapshot 26 July 2026 (artificialanalysis.ai). v4.1 combines 9 evaluations: GDPval-AA v2, 𝜏³-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience and AA-LCR. Where AA lists several reasoning-effort variants, the highest-scoring variant is shown; "—" = not on the AA leaderboard.</span>
-          <span>Architecture fields (decoder type, attention, parameter and context figures) for open-weight models were cross-checked against Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery), which derives them from model config.json files and technical reports.</span>
+          <span>Detailed architecture specs for open-weight models — layer counts, attention head grouping, expert counts, vocabulary size, sliding-window size and positional-encoding scheme — are read directly from each model's own config.json on Hugging Face. Positional schemes come from rope_theta, partial_rotary_factor and per-layer rope_parameters; a model is only described as using NoPE where its technical report says so, never merely because its config omits rope_theta.</span>
+          <span>Architecture diagrams are hot-linked from Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery) with credit, and the intelligence column is Artificial Analysis's index. Everything else here — the model notes, training pipelines and spec fields — is compiled by us from primary technical reports, model cards and config files.</span>
           <span>Closed-flagship architecture fields say "Undisclosed" or "reported" — vendors publish few internals; do not treat reported MoE labels as confirmed counts.</span>
           <span>Context = max input window. Compiled from public provider docs, model cards and third-party analyses, July 2026; figures shift frequently.</span>
         </footer>
@@ -1243,6 +1253,9 @@ export const S = {
   header: { marginBottom: 26 },
   eyebrow: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase",
     color: CLAY, marginBottom: 14 },
+  titleRow: { display: "flex", alignItems: "center", gap: 16, margin: "0 0 14px", flexWrap: "wrap" },
+  // Decorative: the adjacent <h1> already carries the name, so the img is aria-hidden.
+  logo: { width: "clamp(44px, 6vw, 66px)", height: "auto", flexShrink: 0, display: "block" },
   eyebrowRow: { display: "flex", alignItems: "center", justifyContent: "space-between",
     gap: 16, marginBottom: 14 },
   themeBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CARD,

@@ -43,21 +43,25 @@ const AXES = [
   { group: "Scale", label: "Total params", pick: (m) => (m.params === "—" ? null : m.params) },
   { group: "Scale", label: "Active params", pick: (m) => (m.active === "—" ? null : m.active) },
   { group: "Scale", label: "Sparsity", pick: sparsity, hint: "Share of weights that fire per token" },
-  { group: "Scale", label: "Layer composition", pick: (m) => spec(m, "layerMix") },
+  { group: "Scale", label: "Layers", pick: (m) => (spec(m, "layers") ? String(spec(m, "layers")) : null) },
+  { group: "Scale", label: "Hidden size", pick: (m) => spec(m, "hidden") },
 
   { group: "Architecture", label: "Family", pick: (m) => m.arch },
-  { group: "Architecture", label: "Decoder topology", pick: (m) => spec(m, "decoder") },
-  { group: "Architecture", label: "Defining detail", pick: (m) => spec(m, "keyDetail"), wide: true },
+  { group: "Architecture", label: "Layer composition", pick: (m) => spec(m, "layerMix"),
+    hint: "Counted from layer_types in config.json" },
+  { group: "Architecture", label: "Experts", pick: (m) => spec(m, "experts"),
+    hint: "Routed · active per token · shared" },
 
   { group: "Attention", label: "Mechanism", pick: (m) => m.attn },
-  { group: "Attention", label: "Full description", pick: (m) => spec(m, "attnDetail"), wide: true },
-  { group: "Attention", label: "KV cache / token", pick: (m) => spec(m, "kv"),
-    hint: "Lower means cheaper long-context decoding" },
+  { group: "Attention", label: "Heads", pick: (m) => spec(m, "heads"),
+    hint: "Query / key-value heads; the ratio is the GQA grouping" },
+  { group: "Attention", label: "Sliding window", pick: (m) => spec(m, "window") },
 
   { group: "Positional encoding", label: "Scheme", pick: (m) => spec(m, "posEmb"), wide: true,
-    hint: "How position enters the model — RoPE variants, or none at all" },
+    hint: "Read from rope_theta, partial_rotary_factor and per-layer rope_parameters in config.json" },
 
-  { group: "Tokenizer", label: "Vocabulary", pick: (m) => spec(m, "vocab") },
+  { group: "Tokenizer", label: "Vocabulary", pick: (m) => spec(m, "vocab"),
+    hint: "vocab_size from config.json" },
 
   { group: "Context", label: "Context window", pick: (m) => fmtTokens(m.context) },
   { group: "Context", label: "Max output", pick: (m) => (m.maxOut == null ? null : fmtTokens(m.maxOut)) },
@@ -109,7 +113,10 @@ export default function CompareView({ names, onBack }) {
     <div style={S.page}>
       <div style={S.shell}>
         <div style={SC.topBar}>
-          <button type="button" style={SC.back} onClick={onBack}>← Back to the atlas</button>
+          <button type="button" style={SC.back} onClick={onBack}>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" style={SC.backLogo} />
+            ← Back to the atlas
+          </button>
           <span style={SC.count}>{models.length} of {MAX} models</span>
         </div>
 
@@ -301,9 +308,11 @@ export default function CompareView({ names, onBack }) {
 const SC = {
   topBar: { display: "flex", alignItems: "center", justifyContent: "space-between",
     gap: 16, marginBottom: 22 },
-  back: { background: "transparent", border: `1px solid var(--line)`, borderRadius: 999,
-    padding: "8px 16px", cursor: "pointer", fontFamily: mono, fontSize: 11,
+  back: { display: "inline-flex", alignItems: "center", gap: 9,
+    background: "transparent", border: `1px solid var(--line)`, borderRadius: 999,
+    padding: "7px 16px 7px 9px", cursor: "pointer", fontFamily: mono, fontSize: 11,
     letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)" },
+  backLogo: { width: 22, height: "auto", display: "block", flexShrink: 0 },
   count: { fontFamily: mono, fontSize: 11.5, color: "var(--ink-faint)" },
   legendSwatch: { display: "inline-block", width: 11, height: 11, borderRadius: 3,
     background: "var(--tok-ok-bg)", border: "1px solid var(--tok-ok-fg)",
