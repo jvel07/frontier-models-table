@@ -244,6 +244,48 @@ const ARCH_COLORS = {
 // against the model's parameter count, and every URL was verified to resolve.
 // Models with no confidently matching card are deliberately absent rather than
 // guessed at - a near-miss card (e.g. Command A+ vs Command A) is not a match.
+// Hugging Face repo for each open-weight model, for the ones that actually publish
+// weights there. Every URL below was checked live (GET + og:title, since HuggingFace
+// serves a 401 status on some missing repos rather than a clean 404) before being
+// added - none of these are guessed from a naming pattern.
+const HF_LINKS = {
+  "Command A": "CohereLabs/c4ai-command-a-03-2025",
+  "DeepSeek V4 Flash": "deepseek-ai/DeepSeek-V4-Flash",
+  "DeepSeek V4 Pro": "deepseek-ai/DeepSeek-V4-Pro",
+  "FunctionGemma 270M": "google/functiongemma-270m-it",
+  "GLM-5": "zai-org/GLM-5",
+  "GLM-5.1": "zai-org/GLM-5.1",
+  "GLM-5.2": "zai-org/GLM-5.2",
+  "Gemma 3 4B": "google/gemma-3-4b-it",
+  "Gemma 4 (31B)": "google/gemma-4-31b",
+  "Gemma 4 26B-A4B": "google/gemma-4-26b-a4b",
+  "Gemma 4 E4B": "google/gemma-4-e4b",
+  "Inkling": "thinkingmachines/inkling",
+  "Kimi K2.6": "moonshotai/Kimi-K2.6",
+  "Kimi K3": "moonshotai/Kimi-K3",
+  "Laguna S 2.1": "poolside/Laguna-S-2.1",
+  "Laguna XS 2.1": "poolside/Laguna-XS-2.1",
+  "Laguna XS.2": "poolside/Laguna-XS.2",
+  "Llama 3.2 1B": "meta-llama/Llama-3.2-1B",
+  "Llama 3.2 3B": "meta-llama/Llama-3.2-3B-Instruct",
+  "Llama 4 Scout": "meta-llama/Llama-4-Scout-17B-16E",
+  "Mistral Large 3": "mistralai/Mistral-Large-3",
+  "Mistral Small 4": "mistralai/Mistral-Small-4-119B-2603",
+  "Nemotron 3 Nano": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+  "Nemotron 3 Super": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+  "Nemotron 3 Ultra": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+  "Phi-4-mini": "microsoft/Phi-4-mini-instruct",
+  "Qwen3.5 (0.8B)": "Qwen/Qwen3.5-0.8B",
+  "Qwen3.5 (9B)": "Qwen/Qwen3.5-9B",
+  "Qwen3.5-Plus": "Qwen/Qwen3.5-397B-A17B",
+  "Qwen3.6 (27B)": "Qwen/Qwen3.6-27B",
+  "Qwen3.6 35B-A3B": "Qwen/Qwen3.6-35B-A3B",
+  "Sarvam 105B": "sarvamai/sarvam-105b",
+  "Sarvam 30B": "sarvamai/sarvam-30b",
+  "SmolLM3-3B": "HuggingFaceTB/SmolLM3-3B",
+  "Tiny Aya": "CohereLabs/tiny-aya-base",
+};
+
 const DIAGRAM_BASE = "https://sebastianraschka.com/llm-architecture-gallery";
 const DIAGRAM_CREDIT = "https://sebastianraschka.com/llm-architecture-gallery/";
 // Local mirror of the same 28 diagrams, downloaded into public/diagrams/ as a fallback
@@ -603,12 +645,12 @@ export default function FrontierModelsTable() {
               {dark ? "Light" : "Dark"}
             </button>
           </div>
-          <h1 style={S.title}>Same idea, different machines</h1>
+          <h1 style={S.title}>The Model Atlas</h1>
           <p style={S.sub}>
-            Every model here is a decoder-only transformer at heart. What separates them is structure:
-            dense vs Mixture-of-Experts, how attention scales to long context, and how each one was trained.
-            Sort or filter any column; tap a row to see its architecture and a stage-by-stage training pipeline
-            with disclosed token counts.
+            A living map of how frontier and small language models are actually built — architecture,
+            attention, training pipelines and data curricula, sourced from primary technical reports.
+            Built for engineers and researchers training their own. Sort or filter any column; tap a row
+            to see its architecture and a stage-by-stage training pipeline with disclosed token counts.
           </p>
         </header>
 
@@ -690,6 +732,19 @@ export default function FrontierModelsTable() {
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
                         {m.name}
                       </td>
+                      <td style={{ ...S.td }}>
+                        {m.intel == null ? (
+                          <span style={S.intelNA}>—</span>
+                        ) : (
+                          <span style={S.intelWrap}>
+                            <span style={S.intelTrack}>
+                              <span style={{ ...S.intelFill, width: `${m.intel}%`,
+                                background: m.intel >= 55 ? "var(--intel-hi)" : m.intel >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
+                            </span>
+                            <span style={S.intelVal}>{m.intel}</span>
+                          </span>
+                        )}
+                      </td>
                       <td style={{ ...S.td, ...S.num, ...S.releasedCell }}>{m.released}</td>
                       <td style={S.td}>{m.provider}</td>
                       <td style={S.td}>
@@ -718,19 +773,6 @@ export default function FrontierModelsTable() {
                       <td style={S.td}>{m.modality}</td>
                       <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.context)}</td>
                       <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.maxOut)}</td>
-                      <td style={{ ...S.td }}>
-                        {m.intel == null ? (
-                          <span style={S.intelNA}>—</span>
-                        ) : (
-                          <span style={S.intelWrap}>
-                            <span style={S.intelTrack}>
-                              <span style={{ ...S.intelFill, width: `${m.intel}%`,
-                                background: m.intel >= 55 ? "var(--intel-hi)" : m.intel >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
-                            </span>
-                            <span style={S.intelVal}>{m.intel}</span>
-                          </span>
-                        )}
-                      </td>
                       <td style={{ ...S.td, color: m.open ? "var(--open-fg)" : "var(--ink-faint)" }}>{m.license}</td>
                     </tr>
                     {isOpen && (
@@ -786,6 +828,15 @@ export default function FrontierModelsTable() {
                                     </a>
                                   ) : <span style={S.linkNA}>none published</span>}
                                 </div>
+                                {m.open && HF_LINKS[m.name] && (
+                                  <div style={S.linkRow}>
+                                    <span style={S.linkTag}>Weights</span>
+                                    <a style={S.link} href={`https://huggingface.co/${HF_LINKS[m.name]}`}
+                                      target="_blank" rel="noopener noreferrer">
+                                      {HF_LINKS[m.name]} ↗
+                                    </a>
+                                  </div>
+                                )}
                                 {(() => {
                                   const archPapers = ARCH_PAPERS[m.arch] || [];
                                   const attnPaper = ATTENTION_INFO[m.attn] && ATTENTION_INFO[m.attn].paper;
@@ -998,11 +1049,18 @@ export default function FrontierModelsTable() {
             )}
 
             <div style={S.readerFoot}>
-              {REPORTS[reader.name] && (
-                <a style={S.creditLink} href={REPORTS[reader.name].url} target="_blank" rel="noopener noreferrer">
-                  {REPORTS[reader.name].label} ↗
-                </a>
-              )}
+              <span style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                {REPORTS[reader.name] && (
+                  <a style={S.creditLink} href={REPORTS[reader.name].url} target="_blank" rel="noopener noreferrer">
+                    {REPORTS[reader.name].label} ↗
+                  </a>
+                )}
+                {reader.open && HF_LINKS[reader.name] && (
+                  <a style={S.creditLink} href={`https://huggingface.co/${HF_LINKS[reader.name]}`} target="_blank" rel="noopener noreferrer">
+                    {HF_LINKS[reader.name]} ↗
+                  </a>
+                )}
+              </span>
               <span style={{ color: INK_FAINT }}>Press Esc to close</span>
             </div>
           </div>
