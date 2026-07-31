@@ -11,7 +11,10 @@
     "changelog": "node scripts/fetch-changelog.mjs",
     "prebuild": "node scripts/fetch-changelog.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "extract": "node scripts/extract-models.mjs",
+    "verify": "node scripts/verify/run.mjs",
+    "verify:live": "node scripts/verify/run.mjs --live"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.0",
+    "playwright": "^1.62.0",
     "vite": "^8.2.0"
   }
 }

@@ -730,6 +730,23 @@ export default function FrontierModelsTable() {
     return () => ro.disconnect();
   }, []);
 
+  // A row expanded near the bottom of the scrollport would open off-screen, so
+  // park its top just under the sticky header whenever the panel doesn't fit.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!expanded || !wrap) return;
+    const row = Array.from(wrap.querySelectorAll("tr[data-model]"))
+      .find((el) => el.dataset.model === expanded);
+    const panel = row && row.nextElementSibling;
+    if (!panel) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const headerH = wrap.querySelector("th") ? wrap.querySelector("th").offsetHeight : 0;
+    const delta = row.getBoundingClientRect().top - (wrapRect.top + headerH);
+    if (delta < 0 || panel.getBoundingClientRect().bottom > wrapRect.bottom) {
+      wrap.scrollBy({ top: delta, behavior: "smooth" });
+    }
+  }, [expanded]);
+
   const toggleTheme = useCallback(() => {
     setDark((d) => {
       const next = !d;
@@ -1434,12 +1451,17 @@ export const S = {
     fontSize: 13, borderRadius: 6, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", fontFamily: sans },
   segOn: { background: CLAY, color: "var(--on-clay)" },
   count: { fontFamily: mono, fontSize: 12, color: INK_FAINT, marginBottom: 10 },
-  tableWrap: { overflowX: "auto", border: `1px solid ${LINE}`, borderRadius: 14, background: CARD,
+  // The table is its own scrollport in both directions: 56 rows would otherwise
+  // push the changelog a couple of screens down the page.
+  tableWrap: { overflow: "auto", maxHeight: "clamp(380px, 72vh, 900px)",
+    border: `1px solid ${LINE}`, borderRadius: 14, background: CARD,
     boxShadow: "0 1px 3px rgba(43,42,39,0.04)" },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1240 },
+  // borderCollapse paints a cell's border on the table, not the cell, so a
+  // sticky header's bottom border scrolls away with the rows — inset shadow instead.
   th: { padding: "14px 12px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", userSelect: "none",
-    borderBottom: `1px solid ${LINE}`, position: "sticky", top: 0, background: CARD, whiteSpace: "nowrap",
-    color: INK_SOFT },
+    boxShadow: `inset 0 -1px 0 ${LINE}`, position: "sticky", top: 0, zIndex: 2, background: CARD,
+    whiteSpace: "nowrap", color: INK_SOFT },
   modelName: { display: "inline-flex", alignItems: "center", gap: 7 },
   compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
     accentColor: CLAY, verticalAlign: "middle" },
@@ -1488,7 +1510,9 @@ export const S = {
   detailCell: { padding: 0, borderBottom: `1px solid ${LINE}` },
   // Pinned to the left edge of the scrollport so the panel stays put while the
   // table scrolls sideways underneath it. Width is set from the wrapper at runtime.
-  detailSticky: { position: "sticky", left: 0 },
+  // zIndex below the header's: this row sits after <thead> in the DOM, so
+  // without it the panel would paint over the sticky header on vertical scroll.
+  detailSticky: { position: "sticky", left: 0, zIndex: 1 },
   changelog: { marginTop: 34, padding: "20px 22px", background: CARD,
     border: `1px solid ${LINE}`, borderRadius: 14 },
   changelogHead: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 8 },
