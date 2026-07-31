@@ -62,7 +62,7 @@ export const MODELS = [
     attn: "Sparse + long-context", modality: "Text + vision", context: 500000, maxOut: null, license: "Proprietary", open: false, intel: 54, training: null,
     note: "xAI's flagship as of 8 July 2026, trained in partnership with Cursor and aimed at coding, agentic tool calling and knowledge work. 500K context \u2014 notably smaller than the 2M window of Grok 4.3 \u2014 with configurable reasoning and ~80 tok/s serving. Architecture undisclosed." },
   { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "104.2B",
-    attn: "KDA + full attn (69:24)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57,
+    attn: "KDA + full attn (69:24 layers)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57,
     training: [
       { label: "Pre-training", tokens: null, detail: "Natively multimodal: text and vision jointly optimised from step one rather than grafting a ViT onto a finished LLM, with visual and textual tokens interleaved under one next-token objective. Per-Head Muon optimiser with K2's weight clipping, Quantile Balancing for MoE load balance, cosine LR with 1% warmup, weight decay 0.1. No token budget disclosed.",
         curriculum: "Four text domains — Web Text, Code, Mathematics and Knowledge — plus a large vision corpus. Each domain passes rule-based heuristics, classifier-based quality scoring and deduplication, with per-domain sampling rates fixed by ablation studies on smaller proxy models. Knowledge and mathematics are rephrased using K2's recipe: style- and perspective-diverse prompting, chunk-wise autoregressive generation, and fidelity verification against the source document. The vision corpus follows K2.5's taxonomy — captions, interleaved image–text documents, OCR, perception, video and visual coding — with coordinate supervision given in both absolute and normalised [0,1] form for resolution-robust localisation, and heavily scaled programmatic data pairing code with its rendered output across SVG, 3D assets, webpages, games and CAD schematics." },
@@ -456,8 +456,8 @@ export const REPORTS = {
 
 // Attention-mechanism dictionary: hover tooltip + the foundational paper that introduced it.
 export const ATTENTION_INFO = {
-  "KDA + full attn (3:1)": {
-    desc: "Kimi Delta Attention: a linear-attention layer using the delta rule with gating, interleaved with full softmax attention in a 3:1 ratio. Moonshot reports it cuts KV-cache memory up to 75% and decodes up to 6x faster at 1M context. Paired with Attention Residuals, which let each layer selectively pull representations from arbitrary earlier layers instead of accumulating them uniformly.",
+  "KDA + full attn (69:24 layers)": {
+    desc: "Kimi Delta Attention: a linear-attention layer using the delta rule with gating, interleaved with full softmax attention. The 69:24 is a count of layers, not heads — of Kimi K3's 93 layers, 69 are KDA and 24 are full-attention Gated MLA, roughly a 3:1 alternation. Linear layers carry a fixed-size recurrent state instead of a KV cache that grows with sequence length, which is where the saving comes from; the periodic full-attention layers restore exact long-range recall. Moonshot reports it cuts KV-cache memory up to 75% and decodes up to 6x faster at 1M context. Paired with Attention Residuals, which let each layer selectively pull representations from arbitrary earlier layers instead of accumulating them uniformly.",
     paper: { label: "Gated DeltaNet — KDA's lineage (arXiv 2412.06464)", url: "https://arxiv.org/abs/2412.06464" },
   },
   "DSA + MLA (IndexShare)": {

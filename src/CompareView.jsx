@@ -122,7 +122,11 @@ const AXES = [
     hint: "Routed · active per token · always-on shared",
     gloss: (m) => glossExperts(spec(m, "experts")) },
 
-  { group: "Attention", label: "Mechanism", pick: (m) => m.attn },
+  { group: "Attention", label: "Mechanism", pick: (m) => m.attn,
+    hint: "How each token decides what to look at. Ratios in brackets count layers, not heads.",
+    // The main table only exposes this on hover, which is no use on a phone and
+    // no use at all when you are reading two mechanisms side by side.
+    gloss: (m) => (ATTENTION_INFO[m.attn] || {}).desc || null },
   { group: "Attention", label: "Heads", pick: (m) => spec(m, "heads"),
     hint: "Query heads / key-value heads. Fewer KV heads means a smaller cache to carry at long context.",
     gloss: (m) => glossHeads(spec(m, "heads")) },
