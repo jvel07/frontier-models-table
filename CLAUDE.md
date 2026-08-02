@@ -45,7 +45,8 @@ helper; retry with `git -c credential.helper='!gh auth git-credential' push`.
 | `npm run extract` | dump MODELS to `.verify/models.json` for the suites |
 
 The suites live in `scripts/verify/`: `maps` (structural, no browser), `columns`
-(every cell against source data), `detail`, `compare`, `provenance`, `scroll`.
+(every cell against source data), `detail`, `compare`, `provenance`, `scroll`,
+`attention` (every mechanism in use has a card, a figure and the right models).
 
 ## Data rules
 
@@ -82,8 +83,16 @@ on push to main, plus a daily cron that refreshes the changelog.
 - `src/CompareView.jsx` — side-by-side comparison of up to 4 models. Rows are
   discrete named axes so they can be diffed, and so a future feature can recombine
   them into a synthesised architecture.
-- `src/main.jsx` — hash routing (`#/compare/A|B`). Hash, not paths: GitHub Pages has
-  no SPA rewrite, so a real path would 404 on reload or when someone pastes a link.
+- `src/AttentionView.jsx` — the attention menu (`#/attention`), explaining every
+  mechanism in `MODELS` from the problem it solves. `EXPLAIN` is keyed by the exact
+  `attn` string, like `ATTENTION_INFO`, so `attention.mjs` can prove no mechanism
+  lost its explanation. Figures are inline SVG drawn here, not paper figures:
+  those are their authors' work under their own licence and arXiv publishes no
+  stable per-figure URL, so they cannot satisfy the verify-every-link rule.
+  Citations are reused from `ATTENTION_INFO` rather than written fresh.
+- `src/main.jsx` — hash routing (`#/compare/A|B`, `#/attention`). Hash, not paths:
+  GitHub Pages has no SPA rewrite, so a real path would 404 on reload or when
+  someone pastes a link.
 - `src/providerIcons.jsx` — provider marks, inlined at build time.
 - `vite.config.js` — `base` must match the repo name or Pages serves a blank page.
   Override with `BASE=/ npm run build` for a root-served host.

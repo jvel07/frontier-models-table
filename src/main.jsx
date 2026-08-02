@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import FrontierModelsTable from "./FrontierModelsTable.jsx";
 import CompareView from "./CompareView.jsx";
+import AttentionView from "./AttentionView.jsx";
 
 /**
  * Hash-based routing on purpose.
@@ -16,6 +17,7 @@ import CompareView from "./CompareView.jsx";
 const SEP = "|";
 
 export function parseHash(hash = window.location.hash) {
+  if (/^#\/attention\/?$/.test(hash || "")) return { page: "attention", models: [] };
   const m = /^#\/compare\/?(.*)$/.exec(hash || "");
   if (!m) return { page: "table", models: [] };
   const raw = m[1] || "";
@@ -47,9 +49,9 @@ function Root() {
     else window.location.hash = "";
   }, []);
 
-  return route.page === "compare"
-    ? <CompareView names={route.models} onBack={goBack} />
-    : <FrontierModelsTable />;
+  if (route.page === "compare") return <CompareView names={route.models} onBack={goBack} />;
+  if (route.page === "attention") return <AttentionView onBack={goBack} />;
+  return <FrontierModelsTable />;
 }
 
 createRoot(document.getElementById("root")).render(

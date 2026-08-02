@@ -860,6 +860,9 @@ export default function FrontierModelsTable() {
             Built for engineers and researchers training their own. Sort or filter any column; tap a row
             to see its architecture and a stage-by-stage training pipeline with disclosed token counts.
           </p>
+          <a href="#/attention" style={S.attnMenuLink}>
+            New: the attention menu — every mechanism in this table, explained from the problem it solves →
+          </a>
         </header>
 
         <div style={S.legend}>
@@ -1463,6 +1466,9 @@ export const S = {
   title: { fontFamily: serif, fontSize: "clamp(30px, 5vw, 50px)", fontWeight: 500, letterSpacing: "-0.015em",
     margin: "0 0 14px", lineHeight: 1.04, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
+  attnMenuLink: { display: "inline-block", marginTop: 16, fontFamily: mono, fontSize: 12.5,
+    color: CLAY, textDecoration: "none", borderBottom: "1px solid var(--clay-soft)",
+    paddingBottom: 2 },
   legend: { display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 20, fontSize: 12.5, color: INK_SOFT },
   legendItem: { display: "inline-flex", alignItems: "center", gap: 7 },
   swatch: { width: 10, height: 10, borderRadius: 3, display: "inline-block" },
