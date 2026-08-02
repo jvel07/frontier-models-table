@@ -35,7 +35,7 @@ function fmtTokens(n) {
   return String(n);
 }
 
-if (rows.length !== 56) { console.log(`FAIL row count: ${rows.length} (expected 56)`); fail++; }
+if (rows.length !== 58) { console.log(`FAIL row count: ${rows.length} (expected 58)`); fail++; }
 
 for (const row of rows) {
   const cells = await row.locator("td").allTextContents();
