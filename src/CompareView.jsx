@@ -221,7 +221,7 @@ export default function CompareView({ names, onBack }) {
       <div style={S.shell}>
         <div style={SC.topBar}>
           <button type="button" style={SC.back} onClick={onBack}>
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" style={SC.backLogo} />
+            <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={SC.backLogo} />
             ← Back to the atlas
           </button>
           <span style={SC.count}>{models.length} of {MAX} models</span>

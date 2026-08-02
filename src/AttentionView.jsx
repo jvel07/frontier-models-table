@@ -330,7 +330,7 @@ export default function AttentionView({ onBack }) {
     <div style={S.page}>
       <div style={S.shell}>
         <button type="button" style={A.back} onClick={onBack}>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" style={A.backLogo} />
+          <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={A.backLogo} />
           ← Back to the atlas
         </button>
 
@@ -407,13 +407,6 @@ export default function AttentionView({ onBack }) {
           </p>
         </section>
 
-        <p style={A.note}>
-          The figures on this page are drawn for it rather than reproduced from the papers: paper
-          figures are their authors' work under their own licence, and arXiv publishes no stable
-          per-figure URL to link. Each mechanism cites its foundational paper above. Diagrams are
-          schematic — they show the shape of an idea, not a faithful rendering of any one model's
-          configuration.
-        </p>
       </div>
     </div>
   );
@@ -451,6 +444,4 @@ const A = {
   costLabel: { color: CLAY, fontWeight: 600 },
   paper: { display: "inline-block", marginTop: 14, fontFamily: mono, fontSize: 11.5,
     color: SOFT, textDecoration: "none", borderBottom: `1px solid ${LINE}` },
-  note: { marginTop: 44, paddingTop: 20, borderTop: `1px solid ${LINE}`, color: FAINT,
-    fontSize: 12.5, lineHeight: 1.6, maxWidth: 760 },
 };

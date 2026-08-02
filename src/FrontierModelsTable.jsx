@@ -1,6 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-// Gallery changelog, fetched at build time by scripts/fetch-changelog.mjs.
-import CHANGELOG from "./changelog.json";
 import { ProviderMark } from "./providerIcons.jsx";
 
 // Data current as of June 2026. Compiled from public provider docs, model cards,
@@ -838,20 +836,26 @@ export default function FrontierModelsTable() {
         <header style={S.header}>
           <div style={S.eyebrowRow}>
             <div style={{ ...S.eyebrow, marginBottom: 0 }}>Model landscape · July 2026</div>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              style={S.themeBtn}
-              aria-pressed={dark}
-              aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-              title={dark ? "Switch to light theme" : "Switch to dark theme"}
-            >
-              <span aria-hidden="true">{dark ? "☀" : "☾"}</span>
-              {dark ? "Light" : "Dark"}
-            </button>
+            <nav style={S.navRow}>
+              <a href="#/attention" style={S.navBtn}>
+                <span aria-hidden="true">◈</span>
+                Attention menu
+              </a>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                style={S.themeBtn}
+                aria-pressed={dark}
+                aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+                title={dark ? "Switch to light theme" : "Switch to dark theme"}
+              >
+                <span aria-hidden="true">{dark ? "☀" : "☾"}</span>
+                {dark ? "Light" : "Dark"}
+              </button>
+            </nav>
           </div>
           <div style={S.titleRow}>
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" style={S.logo} />
+            <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={S.logo} />
             <h1 style={{ ...S.title, margin: 0 }}>The Model Atlas</h1>
           </div>
           <p style={S.sub}>
@@ -860,9 +864,6 @@ export default function FrontierModelsTable() {
             Built for engineers and researchers training their own. Sort or filter any column; tap a row
             to see its architecture and a stage-by-stage training pipeline with disclosed token counts.
           </p>
-          <a href="#/attention" style={S.attnMenuLink}>
-            New: the attention menu — every mechanism in this table, explained from the problem it solves →
-          </a>
         </header>
 
         <div style={S.legend}>
@@ -1253,29 +1254,6 @@ export default function FrontierModelsTable() {
           </div>
         </section>
 
-        {CHANGELOG.items.length > 0 && (
-          <section style={S.changelog}>
-            <div style={S.changelogHead}>
-              <span style={S.changelogTitle}>Gallery changelog</span>
-              <a style={S.changelogAll} href="https://sebastianraschka.com/llm-architecture-gallery/changelog/"
-                target="_blank" rel="noopener noreferrer">All updates ↗</a>
-            </div>
-            <p style={S.changelogNote}>
-              Latest entries from Sebastian Raschka's LLM Architecture Gallery, the source of the diagrams above.
-              Pulled from its RSS feed when this page was built{CHANGELOG.fetched ? ` (${CHANGELOG.fetched})` : ""} and
-              refreshed daily — the feed sends no CORS header, so it is read at build time rather than in your browser.
-            </p>
-            <ul style={S.changelogList}>
-              {CHANGELOG.items.slice(0, 6).map((c, ci) => (
-                <li key={ci} style={S.changelogItem}>
-                  <span style={S.changelogDate}>{c.date || "—"}</span>
-                  <a style={S.changelogLink} href={c.link} target="_blank" rel="noopener noreferrer">{c.title}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         <footer style={{ ...S.footer, paddingBottom: selected.length > 0 ? 96 : undefined }}>
           <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
           <span>Intelligence = Artificial Analysis Intelligence Index v4.1, leaderboard snapshot 26 July 2026 (artificialanalysis.ai). v4.1 combines 9 evaluations: GDPval-AA v2, 𝜏³-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience and AA-LCR. Where AA lists several reasoning-effort variants, the highest-scoring variant is shown; "—" = not on the AA leaderboard.</span>
@@ -1456,19 +1434,24 @@ export const S = {
     color: CLAY, marginBottom: 14 },
   titleRow: { display: "flex", alignItems: "center", gap: 16, margin: "0 0 14px", flexWrap: "wrap" },
   // Decorative: the adjacent <h1> already carries the name, so the img is aria-hidden.
-  logo: { width: "clamp(44px, 6vw, 66px)", height: "auto", flexShrink: 0, display: "block" },
+  // The mark is wider than tall, so it is sized to sit against the cap height of
+  // the title rather than to a square box.
+  logo: { width: "clamp(62px, 9vw, 104px)", height: "auto", flexShrink: 0, display: "block",
+    borderRadius: 10 },
+  navRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  navBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CLAY,
+    color: "var(--on-clay)", border: `1px solid ${CLAY}`, borderRadius: 6,
+    padding: "7px 13px", fontSize: 13, fontWeight: 500, fontFamily: sans,
+    textDecoration: "none", whiteSpace: "nowrap" },
   eyebrowRow: { display: "flex", alignItems: "center", justifyContent: "space-between",
     gap: 16, marginBottom: 14 },
   themeBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CARD,
     border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer",
     fontFamily: mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase",
     color: INK_SOFT, flexShrink: 0, boxShadow: "var(--shadow)" },
-  title: { fontFamily: serif, fontSize: "clamp(30px, 5vw, 50px)", fontWeight: 500, letterSpacing: "-0.015em",
-    margin: "0 0 14px", lineHeight: 1.04, color: INK },
+  title: { fontFamily: serif, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.02em",
+    margin: "0 0 14px", lineHeight: 1.02, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
-  attnMenuLink: { display: "inline-block", marginTop: 16, fontFamily: mono, fontSize: 12.5,
-    color: CLAY, textDecoration: "none", borderBottom: "1px solid var(--clay-soft)",
-    paddingBottom: 2 },
   legend: { display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 20, fontSize: 12.5, color: INK_SOFT },
   legendItem: { display: "inline-flex", alignItems: "center", gap: 7 },
   swatch: { width: 10, height: 10, borderRadius: 3, display: "inline-block" },
@@ -1481,8 +1464,8 @@ export const S = {
     fontSize: 13, borderRadius: 6, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", fontFamily: sans },
   segOn: { background: CLAY, color: "var(--on-clay)" },
   count: { fontFamily: mono, fontSize: 12, color: INK_FAINT, marginBottom: 10 },
-  // The table is its own scrollport in both directions: 56 rows would otherwise
-  // push the changelog a couple of screens down the page.
+  // The table is its own scrollport in both directions: 58 rows would otherwise
+  // push the footer a couple of screens down the page.
   tableWrap: { overflow: "auto", maxHeight: "clamp(380px, 72vh, 900px)",
     border: `1px solid ${LINE}`, borderRadius: 14, background: CARD,
     boxShadow: "0 1px 3px rgba(43,42,39,0.04)" },
@@ -1543,17 +1526,6 @@ export const S = {
   // zIndex below the header's: this row sits after <thead> in the DOM, so
   // without it the panel would paint over the sticky header on vertical scroll.
   detailSticky: { position: "sticky", left: 0, zIndex: 1 },
-  changelog: { marginTop: 34, padding: "20px 22px", background: CARD,
-    border: `1px solid ${LINE}`, borderRadius: 14 },
-  changelogHead: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 8 },
-  changelogTitle: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em",
-    textTransform: "uppercase", color: CLAY },
-  changelogAll: { fontSize: 12, color: INK_SOFT, textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0 },
-  changelogNote: { margin: "0 0 14px", fontSize: 12.5, lineHeight: 1.6, color: INK_FAINT, maxWidth: 720 },
-  changelogList: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 },
-  changelogItem: { display: "flex", gap: 12, alignItems: "baseline", fontSize: 13, lineHeight: 1.5 },
-  changelogDate: { fontFamily: mono, fontSize: 11.5, color: INK_FAINT, flexShrink: 0, minWidth: 82 },
-  changelogLink: { color: INK, textDecoration: "none", borderBottom: `1px solid ${LINE}` },
   diagramBlock: { marginTop: 16 },
   diagramBtn: { display: "block", padding: 0, border: `1px solid ${LINE}`, borderRadius: 10,
     background: CARD, cursor: "zoom-in", overflow: "hidden", position: "relative",
