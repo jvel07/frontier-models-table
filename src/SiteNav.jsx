@@ -21,6 +21,9 @@ export const PAGES = [
   { key: "table", href: "#/", label: "Atlas" },
   { key: "attention", href: "#/attention", label: "Attention" },
   { key: "papers", href: "#/papers", label: "Papers" },
+  { key: "trends", href: "#/trends", label: "Trends" },
+  { key: "openness", href: "#/openness", label: "Openness" },
+  { key: "tools", href: "#/tools", label: "Tools" },
 ];
 
 export default function SiteNav({ current }) {

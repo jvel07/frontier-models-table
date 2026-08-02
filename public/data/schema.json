@@ -1,0 +1,28 @@
+{
+ "version": "2026-08-02",
+ "note": "Fields under `derived` are computed by this project, not published by the lab. Everything else is recorded from a primary source; a null means no source stated it, never zero.",
+ "fields": {
+  "name": "Model name as the atlas records it. Primary key.",
+  "provider": "Lab that trained it.",
+  "released": "YYYY/MM of public release.",
+  "type": "Atlas tiering: Frontier, Mid or SLM.",
+  "arch": "Architecture family. 'Undisclosed' or '(reported)' where unconfirmed.",
+  "params": "Total parameters as published, e.g. '1T'. '—' = not disclosed.",
+  "active": "Parameters active per token. Equals total on dense models.",
+  "attn": "Attention mechanism. Key into the attention menu.",
+  "modality": "Input modalities.",
+  "context": "Max input window in tokens.",
+  "maxOut": "Max output tokens, null where unpublished.",
+  "license": "Licence string as published.",
+  "open": "Whether weights are downloadable.",
+  "intel": "Artificial Analysis Intelligence Index. Third-party.",
+  "coding": "Artificial Analysis Coding Index. Third-party.",
+  "training": "Array of stages: {label, tokens, detail, curriculum}. null = none published.",
+  "trainingSource": "Set when the pipeline shown belongs to another model; those tokens are never counted as disclosed.",
+  "note": "Prose written by this project.",
+  "spec": "Read from the model's own config.json on Hugging Face.",
+  "report": "URL of the technical report or model card.",
+  "huggingface": "Weights repo, where one exists.",
+  "derived": "Computed metrics; each carries the formula used."
+ }
+}

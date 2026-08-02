@@ -9,12 +9,13 @@
   "scripts": {
     "dev": "vite",
     "changelog": "node scripts/fetch-changelog.mjs",
-    "prebuild": "node scripts/fetch-changelog.mjs",
+    "prebuild": "node scripts/export-data.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "extract": "node scripts/extract-models.mjs",
     "verify": "node scripts/verify/run.mjs",
-    "verify:live": "node scripts/verify/run.mjs --live"
+    "verify:live": "node scripts/verify/run.mjs --live",
+    "export:data": "node scripts/export-data.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

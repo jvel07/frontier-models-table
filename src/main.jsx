@@ -4,6 +4,9 @@ import FrontierModelsTable from "./FrontierModelsTable.jsx";
 import CompareView from "./CompareView.jsx";
 import AttentionView from "./AttentionView.jsx";
 import PapersView from "./PapersView.jsx";
+import TrendsView from "./TrendsView.jsx";
+import OpennessView from "./OpennessView.jsx";
+import ToolsView from "./ToolsView.jsx";
 
 /**
  * Hash-based routing on purpose.
@@ -20,6 +23,12 @@ const SEP = "|";
 export function parseHash(hash = window.location.hash) {
   if (/^#\/attention\/?$/.test(hash || "")) return { page: "attention", models: [] };
   if (/^#\/papers\/?$/.test(hash || "")) return { page: "papers", models: [] };
+  if (/^#\/trends\/?$/.test(hash || "")) return { page: "trends", models: [] };
+  if (/^#\/openness\/?$/.test(hash || "")) return { page: "openness", models: [] };
+  if (/^#\/tools\/?$/.test(hash || "")) return { page: "tools", models: [] };
+  // A single model, so a row can be linked to and cited: #/model/Kimi%20K3
+  const one = /^#\/model\/(.+)$/.exec(hash || "");
+  if (one) return { page: "table", models: [], focus: decodeURIComponent(one[1]) };
   const m = /^#\/compare\/?(.*)$/.exec(hash || "");
   if (!m) return { page: "table", models: [] };
   const raw = m[1] || "";
@@ -54,7 +63,10 @@ function Root() {
   if (route.page === "compare") return <CompareView names={route.models} onBack={goBack} />;
   if (route.page === "attention") return <AttentionView />;
   if (route.page === "papers") return <PapersView />;
-  return <FrontierModelsTable />;
+  if (route.page === "trends") return <TrendsView />;
+  if (route.page === "openness") return <OpennessView />;
+  if (route.page === "tools") return <ToolsView />;
+  return <FrontierModelsTable focus={route.focus} />;
 }
 
 createRoot(document.getElementById("root")).render(

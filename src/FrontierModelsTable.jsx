@@ -595,6 +595,19 @@ export const ARCH_PAPERS = {
 };
 
 
+/**
+ * Column presets. The table carries fourteen columns because the data warrants it,
+ * but almost nobody needs all of them at once: someone sizing a deployment wants
+ * different columns from someone choosing a training recipe. "All" stays the default
+ * so the full table is still what you land on.
+ */
+export const PRESETS = {
+  All: null,
+  Serving: ["name", "intel", "coding", "params", "active", "context", "maxOut", "license"],
+  Training: ["name", "arch", "params", "active", "attn", "released", "provider"],
+  Architecture: ["name", "arch", "attn", "params", "active", "modality", "context"],
+};
+
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
   { key: "intel", label: "Intelligence", numeric: true, sub: "Artificial Analysis",
@@ -694,7 +707,7 @@ export function totalTokens(training) {
   return { total, hasEst };
 }
 
-export default function FrontierModelsTable() {
+export default function FrontierModelsTable({ focus } = {}) {
   const [sortKey, setSortKey] = useState("intel");
   const [sortDir, setSortDir] = useState("desc");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -702,7 +715,14 @@ export default function FrontierModelsTable() {
   const [weightFilter, setWeightFilter] = useState("All");
   const [yearFilter, setYearFilter] = useState("All");
   const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState(null);
+  // #/model/<name> lands here: open that row so the link is worth sharing.
+  const [expanded, setExpanded] = useState(() =>
+    (focus && MODELS.some((m) => m.name === focus)) ? focus : null);
+  const [preset, setPreset] = useState("All");
+  const hiddenCols = useMemo(() => {
+    const keep = PRESETS[preset];
+    return keep ? COLUMNS.map((c, i) => (keep.includes(c.key) ? -1 : i)).filter((i) => i >= 0) : [];
+  }, [preset]);
   const [tip, setTip] = useState(null); // { text, x, y }
   const [lightbox, setLightbox] = useState(null); // { src, alt, href }
   const [reader, setReader] = useState(null); // full-text reading view for one model
@@ -872,14 +892,32 @@ export default function FrontierModelsTable() {
                 style={{ ...S.seg, ...(yearFilter === y ? S.segOn : {}) }}>{y}</button>
             ))}
           </div>
+          <div style={S.segGroup} data-presets>
+            {Object.keys(PRESETS).map((p) => (
+              <button key={p} onClick={() => setPreset(p)} title={`Show the ${p.toLowerCase()} columns`}
+                style={{ ...S.seg, ...(preset === p ? S.segOn : {}) }}>
+                {p === "All" ? "All cols" : p}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div style={S.count}>
           {rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand · tick up to {MAX_COMPARE} to compare side by side
         </div>
 
+        {/* Presets hide columns with generated CSS rather than by dropping cells from the
+            markup. Every row keeps all fourteen cells in the same positions, so the header
+            and body cannot drift out of alignment — the one bug this table has actually
+            shipped. Detail rows are spared via :not([colspan]). */}
+        {hiddenCols.length > 0 && (
+          <style>{hiddenCols.map((i) =>
+            `#atlas-table > thead > tr > th:nth-child(${i + 1}),` +
+            `#atlas-table > tbody > tr > td:not([colspan]):nth-child(${i + 1})` +
+            `{display:none}`).join("")}</style>
+        )}
         <div style={S.tableWrap} ref={wrapRef}>
-          <table style={S.table}>
+          <table style={S.table} id="atlas-table">
             <thead>
               <tr>
                 {COLUMNS.map((c) => {
@@ -1417,8 +1455,10 @@ export const S = {
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
   search: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 13px",
     color: INK, fontSize: 14, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: sans },
-  segGroup: { display: "inline-flex", background: CARD, border: `1px solid ${LINE}`,
-    borderRadius: 9, padding: 3, gap: 2 },
+  // Wraps because the widest group (the column presets) is itself wider than a
+  // 380px screen; without this the whole page picks up a horizontal scrollbar.
+  segGroup: { display: "inline-flex", flexWrap: "wrap", background: CARD,
+    border: `1px solid ${LINE}`, borderRadius: 9, padding: 3, gap: 2 },
   seg: { background: "transparent", border: "none", color: INK_SOFT, padding: "6px 12px",
     fontSize: 13, borderRadius: 6, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", fontFamily: sans },
   segOn: { background: CLAY, color: "var(--on-clay)" },

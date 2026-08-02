@@ -48,7 +48,9 @@ The suites live in `scripts/verify/`: `maps` (structural, no browser), `columns`
 (every cell against source data), `detail`, `compare`, `provenance`, `scroll`,
 `attention` (every mechanism in use has a card, a figure and the right models),
 `papers` (re-derives the paper/model pairing from the source maps and checks the
-rendered rows against it, rather than trusting the page's own arithmetic).
+rendered rows against it, rather than trusting the page's own arithmetic),
+`derived` (recomputes every metric independently, checks the export matches, and
+proves the calculator refuses what it cannot derive).
 
 ## Data rules
 
@@ -71,6 +73,9 @@ least once and caused a real error.
   skipping this.
 - **Verify every citation.** Resolve arXiv ids against the arXiv API and check the
   title before adding. A citation pointing at the wrong paper is worse than none.
+- **Derived is not sourced.** Anything computed lives in `metrics.js`, is namespaced
+  under `derived` in the export, and is labelled on the page with its formula. Never
+  let a computed number sit in a column that otherwise holds published facts.
 - **Verify every link.** Hugging Face returns HTTP 401 with a 404 page body for some
   missing repos, so status codes alone lie — fetch and check `og:title`.
 
@@ -97,7 +102,25 @@ on push to main, plus a daily cron that refreshes the changelog.
   `ARCH_PAPERS` and `positionalPapers()`, never hand-written, so a paper cannot drift
   out of sync with the models citing it. Grouped by URL, not label — the same work is
   cited under different labels in different maps.
-- `src/SiteNav.jsx` — the one nav bar (Atlas · Attention · Papers) plus the theme
+- `src/metrics.js` — every *derived* number (training FLOPs, tokens/param, KV bytes,
+  disclosure and openness scores). Nothing here is sourced; it is arithmetic over
+  recorded fields, and every consumer must label it as derived and show the formula.
+  It returns null rather than guessing, and never derives across a disclosure
+  boundary — an inherited pipeline yields no token total, as everywhere else.
+- `src/TrendsView.jsx` — the same data plotted against time (`#/trends`).
+- `src/OpennessView.jsx` — two axes that are usually collapsed into one (`#/openness`):
+  weight availability, scored against the NVIDIA-led "Open Weights and American AI
+  Leadership" letter (24 July 2026) and its four verbs — download, inspect, modify,
+  run — and documentation disclosure, twelve fields the atlas already had to source
+  or leave blank. Keeping them apart is the entire point of the page.
+- `src/ToolsView.jsx` — memory calculator, architecture synthesis and the data
+  download (`#/tools`). The calculator refuses MLA and hybrid models rather than
+  applying a formula that does not describe their cache.
+- `scripts/export-data.mjs` — `prebuild` step emitting `public/data/{models,schema}.json`
+  and `models.csv`. Derived fields sit under `derived` with their formulas, so nothing
+  computed can be mistaken for something a lab published.
+- `src/SiteNav.jsx` — the one nav bar (Atlas · Attention · Papers · Trends · Openness ·
+  Tools) plus the theme
   toggle, on every page. It imports nothing from the pages that render it: the table
   renders it, so reaching back for `S` would be a module cycle, and the style objects
   are built at module scope where a cycle bites.
