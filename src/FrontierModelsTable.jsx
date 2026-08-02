@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ProviderMark } from "./providerIcons.jsx";
+import SiteNav from "./SiteNav.jsx";
 
 // Data current as of June 2026. Compiled from public provider docs, model cards,
 // and third-party architecture analyses. "—" = not publicly disclosed / N/A.
@@ -703,9 +704,6 @@ export default function FrontierModelsTable() {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(null);
   const [tip, setTip] = useState(null); // { text, x, y }
-  const [dark, setDark] = useState(
-    () => typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark"
-  );
   const [lightbox, setLightbox] = useState(null); // { src, alt, href }
   const [reader, setReader] = useState(null); // full-text reading view for one model
   const [selected, setSelected] = useState([]); // model names queued for comparison
@@ -754,17 +752,6 @@ export default function FrontierModelsTable() {
       wrap.scrollBy({ top: delta, behavior: "smooth" });
     }
   }, [expanded]);
-
-  const toggleTheme = useCallback(() => {
-    setDark((d) => {
-      const next = !d;
-      const root = document.documentElement;
-      if (next) root.setAttribute("data-theme", "dark");
-      else root.removeAttribute("data-theme");
-      try { localStorage.setItem("fmt-theme", next ? "dark" : "light"); } catch (e) {}
-      return next;
-    });
-  }, []);
 
   // Esc closes whichever overlay is open.
   useEffect(() => {
@@ -833,27 +820,10 @@ export default function FrontierModelsTable() {
   return (
     <div style={S.page}>
       <div style={S.shell}>
+        <SiteNav current="table" />
+
         <header style={S.header}>
-          <div style={S.eyebrowRow}>
-            <div style={{ ...S.eyebrow, marginBottom: 0 }}>Model landscape · July 2026</div>
-            <nav style={S.navRow}>
-              <a href="#/attention" style={S.navBtn}>
-                <span aria-hidden="true">◈</span>
-                Attention menu
-              </a>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                style={S.themeBtn}
-                aria-pressed={dark}
-                aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-                title={dark ? "Switch to light theme" : "Switch to dark theme"}
-              >
-                <span aria-hidden="true">{dark ? "☀" : "☾"}</span>
-                {dark ? "Light" : "Dark"}
-              </button>
-            </nav>
-          </div>
+          <div style={{ ...S.eyebrow, marginBottom: 14 }}>Model landscape · July 2026</div>
           <div style={S.titleRow}>
             <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={S.logo} />
             <h1 style={{ ...S.title, margin: 0 }}>The Model Atlas</h1>
@@ -1438,17 +1408,6 @@ export const S = {
   // the title rather than to a square box.
   logo: { width: "clamp(62px, 9vw, 104px)", height: "auto", flexShrink: 0, display: "block",
     borderRadius: 10 },
-  navRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  navBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CLAY,
-    color: "var(--on-clay)", border: `1px solid ${CLAY}`, borderRadius: 6,
-    padding: "7px 13px", fontSize: 13, fontWeight: 500, fontFamily: sans,
-    textDecoration: "none", whiteSpace: "nowrap" },
-  eyebrowRow: { display: "flex", alignItems: "center", justifyContent: "space-between",
-    gap: 16, marginBottom: 14 },
-  themeBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: CARD,
-    border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer",
-    fontFamily: mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase",
-    color: INK_SOFT, flexShrink: 0, boxShadow: "var(--shadow)" },
   title: { fontFamily: serif, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.02em",
     margin: "0 0 14px", lineHeight: 1.02, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },

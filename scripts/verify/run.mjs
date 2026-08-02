@@ -61,7 +61,7 @@ try {
     }
   }
 
-  const suites = ["columns", "detail", "compare", "provenance", "scroll", "attention"];
+  const suites = ["columns", "detail", "compare", "provenance", "scroll", "attention", "papers"];
   let failed = [];
   for (const s of suites) {
     console.log(`\n──────── ${s} ────────`);

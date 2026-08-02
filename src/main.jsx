@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import FrontierModelsTable from "./FrontierModelsTable.jsx";
 import CompareView from "./CompareView.jsx";
 import AttentionView from "./AttentionView.jsx";
+import PapersView from "./PapersView.jsx";
 
 /**
  * Hash-based routing on purpose.
@@ -18,6 +19,7 @@ const SEP = "|";
 
 export function parseHash(hash = window.location.hash) {
   if (/^#\/attention\/?$/.test(hash || "")) return { page: "attention", models: [] };
+  if (/^#\/papers\/?$/.test(hash || "")) return { page: "papers", models: [] };
   const m = /^#\/compare\/?(.*)$/.exec(hash || "");
   if (!m) return { page: "table", models: [] };
   const raw = m[1] || "";
@@ -50,7 +52,8 @@ function Root() {
   }, []);
 
   if (route.page === "compare") return <CompareView names={route.models} onBack={goBack} />;
-  if (route.page === "attention") return <AttentionView onBack={goBack} />;
+  if (route.page === "attention") return <AttentionView />;
+  if (route.page === "papers") return <PapersView />;
   return <FrontierModelsTable />;
 }
 

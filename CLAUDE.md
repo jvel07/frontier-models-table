@@ -46,7 +46,9 @@ helper; retry with `git -c credential.helper='!gh auth git-credential' push`.
 
 The suites live in `scripts/verify/`: `maps` (structural, no browser), `columns`
 (every cell against source data), `detail`, `compare`, `provenance`, `scroll`,
-`attention` (every mechanism in use has a card, a figure and the right models).
+`attention` (every mechanism in use has a card, a figure and the right models),
+`papers` (re-derives the paper/model pairing from the source maps and checks the
+rendered rows against it, rather than trusting the page's own arithmetic).
 
 ## Data rules
 
@@ -90,7 +92,16 @@ on push to main, plus a daily cron that refreshes the changelog.
   those are their authors' work under their own licence and arXiv publishes no
   stable per-figure URL, so they cannot satisfy the verify-every-link rule.
   Citations are reused from `ATTENTION_INFO` rather than written fresh.
-- `src/main.jsx` — hash routing (`#/compare/A|B`, `#/attention`). Hash, not paths:
+- `src/PapersView.jsx` — the bibliography (`#/papers`), one row per paper against the
+  models that use its work. The pairing is *derived* from `REPORTS`, `ATTENTION_INFO`,
+  `ARCH_PAPERS` and `positionalPapers()`, never hand-written, so a paper cannot drift
+  out of sync with the models citing it. Grouped by URL, not label — the same work is
+  cited under different labels in different maps.
+- `src/SiteNav.jsx` — the one nav bar (Atlas · Attention · Papers) plus the theme
+  toggle, on every page. It imports nothing from the pages that render it: the table
+  renders it, so reaching back for `S` would be a module cycle, and the style objects
+  are built at module scope where a cycle bites.
+- `src/main.jsx` — hash routing (`#/compare/A|B`, `#/attention`, `#/papers`). Hash, not paths:
   GitHub Pages has no SPA rewrite, so a real path would 404 on reload or when
   someone pastes a link.
 - `src/providerIcons.jsx` — provider marks, inlined at build time.

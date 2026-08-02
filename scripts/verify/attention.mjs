@@ -74,19 +74,16 @@ t("every citation points at arxiv or a lab domain", links.every((h) => /^https:\
 t("at least one paper is cited", links.length > 0, `${links.length} citations`);
 
 console.log("\n=== REACHABLE FROM THE TABLE, AND BACK AGAIN ===");
-// Walk the real route rather than deep-linking: land on the table, click through,
-// come back. Deep-linking straight here leaves history.back() with nowhere to go,
-// which is a property of the harness, not of the page.
 await page.goto(BASE.replace(/#.*$/, ""), { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
-const entry = page.locator('a[href="#/attention"]');
-t("the table links to the menu", (await entry.count()) > 0);
+const entry = page.locator('nav a[href="#/attention"]');
+t("the table's nav links to the menu", (await entry.count()) > 0);
 await entry.first().click();
 await page.waitForTimeout(500);
 t("that link opens the menu", (await page.locator("[data-attn]").count()) > 0);
-await page.getByRole("button", { name: /Back to the atlas/i }).click();
+await page.locator('nav a[href="#/"]').first().click();
 await page.waitForTimeout(500);
-t("back returns to the table", (await page.locator("table tbody tr").count()) > 0);
+t("nav returns to the table", (await page.locator("table tbody tr").count()) > 0);
 
 console.log("\n=== MOBILE ===");
 await page.goto(URL, { waitUntil: "networkidle" });

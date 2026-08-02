@@ -1,4 +1,5 @@
 import React from "react";
+import SiteNav from "./SiteNav.jsx";
 import { MODELS, ATTENTION_INFO, S, mono, serif } from "./FrontierModelsTable.jsx";
 
 /**
@@ -317,7 +318,7 @@ const FAMILIES = [
 
 /* ------------------------------------------------------------------ page -- */
 
-export default function AttentionView({ onBack }) {
+export default function AttentionView() {
   const users = React.useMemo(() => {
     const by = {};
     for (const m of MODELS) (by[m.attn] = by[m.attn] || []).push(m.name);
@@ -329,10 +330,7 @@ export default function AttentionView({ onBack }) {
   return (
     <div style={S.page}>
       <div style={S.shell}>
-        <button type="button" style={A.back} onClick={onBack}>
-          <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={A.backLogo} />
-          ← Back to the atlas
-        </button>
+        <SiteNav current="attention" />
 
         <header style={{ marginBottom: 30 }}>
           <div style={S.eyebrow}>The attention menu</div>
