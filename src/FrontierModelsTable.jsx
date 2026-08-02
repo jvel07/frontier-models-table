@@ -600,6 +600,8 @@ const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
   { key: "intel", label: "Intelligence", numeric: true, sub: "Artificial Analysis",
     tip: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations (GDPval-AA v2, τ²-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience, AA-LCR). Leaderboard snapshot 26 July 2026. “—” = not on the AA leaderboard." },
+  { key: "coding", label: "Coding", numeric: true, sub: "Artificial Analysis",
+    tip: "Artificial Analysis Coding Index — a composite of two coding evaluations, Terminal-Bench v2.1 (89 curated terminal tasks across software engineering, sysadmin, data processing and security) and SciCode (288 subproblems from 80 lab problems, where the code has to carry real scientific knowledge). Scored 0-100 on the same footing as the Intelligence Index, but measuring coding alone. Not the Coding Agent Index, which scores model-and-harness pairs rather than models. “—” = not on the AA coding leaderboard." },
   { key: "released", label: "Released", numeric: true },
   { key: "provider", label: "Provider", numeric: false },
   { key: "type", label: "Class", numeric: false },
@@ -808,9 +810,9 @@ export default function FrontierModelsTable() {
         const toNum = (s) => { const [y, m] = String(s).split("/").map(Number); return y * 12 + (m - 1); };
         av = toNum(a.released); bv = toNum(b.released);
       }
-      else if (sortKey === "intel") {
-        av = a.intel == null ? -1 : a.intel;
-        bv = b.intel == null ? -1 : b.intel;
+      else if (sortKey === "intel" || sortKey === "coding") {
+        av = a[sortKey] == null ? -1 : a[sortKey];
+        bv = b[sortKey] == null ? -1 : b[sortKey];
       }
       else if (sortKey === "params" || sortKey === "active") { av = paramSort(a[sortKey]); bv = paramSort(b[sortKey]); }
       else { av = String(a[sortKey]).toLowerCase(); bv = String(b[sortKey]).toLowerCase(); }
@@ -968,6 +970,19 @@ export default function FrontierModelsTable() {
                                 background: m.intel >= 55 ? "var(--intel-hi)" : m.intel >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
                             </span>
                             <span style={S.intelVal}>{m.intel}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ ...S.td }}>
+                        {m.coding == null ? (
+                          <span style={S.intelNA}>—</span>
+                        ) : (
+                          <span style={S.intelWrap}>
+                            <span style={S.intelTrack}>
+                              <span style={{ ...S.intelFill, width: `${m.coding}%`,
+                                background: m.coding >= 55 ? "var(--intel-hi)" : m.coding >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
+                            </span>
+                            <span style={S.intelVal}>{m.coding}</span>
                           </span>
                         )}
                       </td>
@@ -1261,6 +1276,7 @@ export default function FrontierModelsTable() {
         <footer style={{ ...S.footer, paddingBottom: selected.length > 0 ? 96 : undefined }}>
           <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
           <span>Intelligence = Artificial Analysis Intelligence Index v4.1, leaderboard snapshot 26 July 2026 (artificialanalysis.ai). v4.1 combines 9 evaluations: GDPval-AA v2, 𝜏³-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience and AA-LCR. Where AA lists several reasoning-effort variants, the highest-scoring variant is shown; "—" = not on the AA leaderboard.</span>
+          <span>Coding = Artificial Analysis Coding Index, which combines Terminal-Bench v2.1 and SciCode into a single 0-100 score. It measures coding alone and is reported separately from the Intelligence Index, so a model can sit well above or below its overall position. This is not AA's Coding Agent Index, which scores a model paired with a specific harness (Cursor CLI, Codex, Claude Code) rather than the model on its own; "—" = not on the AA coding leaderboard.</span>
           <span>Detailed architecture specs for open-weight models — layer counts, attention head grouping, expert counts, vocabulary size, sliding-window size and positional-encoding scheme — are read directly from each model's own config.json on Hugging Face. Positional schemes come from rope_theta, partial_rotary_factor and per-layer rope_parameters; a model is only described as using NoPE where its technical report says so, never merely because its config omits rope_theta.</span>
           <span>Architecture diagrams are hot-linked from Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery) with credit, and the intelligence column is Artificial Analysis's index. Everything else here — the model notes, training pipelines and spec fields — is compiled by us from primary technical reports, model cards and config files.</span>
           <span>Closed-flagship architecture fields say "Undisclosed" or "reported" — vendors publish few internals; do not treat reported MoE labels as confirmed counts.</span>

@@ -21,6 +21,8 @@ console.log("\n=== #3/#4 INTELLIGENCE COLUMN ===");
 const headers = await page.locator("thead th").allTextContents();
 t("Intelligence is the 2nd column", headers[1].includes("Intelligence"), `headers: ${headers.slice(0, 4).join(" | ")}`);
 t("Intelligence header credits Artificial Analysis", headers[1].includes("Artificial Analysis"));
+t("Coding is the 3rd column, credited to AA", headers[2].includes("Coding") && headers[2].includes("Artificial Analysis"),
+  `headers[2]: ${headers[2]}`);
 t("default sort is Intelligence, descending", (await page.locator("thead th").nth(1).locator("span").first().locator("span").textContent()) === "↓");
 const firstFewIntel = await page.locator("table tbody tr td:nth-child(2)").allTextContents();
 const nums = firstFewIntel.slice(0, 8).map((s) => parseInt(s)).filter((n) => !Number.isNaN(n));

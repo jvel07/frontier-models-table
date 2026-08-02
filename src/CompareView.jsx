@@ -103,6 +103,8 @@ const AXES = [
     hint: "Whether you can download and run the model yourself" },
   { group: "Identity", label: "Intelligence (AA)", pick: (m) => (m.intel == null ? null : String(m.intel)),
     hint: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations. Higher is better; the scale is not a percentage." },
+  { group: "Identity", label: "Coding (AA)", pick: (m) => (m.coding == null ? null : String(m.coding)),
+    hint: "Artificial Analysis Coding Index — Terminal-Bench v2.1 and SciCode combined, scored 0-100. Measures coding alone, so it can diverge sharply from the broader Intelligence Index." },
 
   { group: "Scale", label: "Total params", pick: (m) => (m.params === "—" ? null : m.params),
     hint: "Every weight in the model. Sets how much memory it takes to hold." },

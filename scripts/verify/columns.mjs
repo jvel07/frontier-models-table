@@ -44,25 +44,33 @@ for (const row of rows) {
   const m = byName[name];
   if (!m) { console.log(`FAIL unknown model rendered: "${name}"`); fail++; continue; }
 
+  // Indices are positional, so they all shift when a column is inserted. Coding sits
+  // between Intelligence and Released; attention (index 9) has no source field to diff.
   const checks = [
     ["intel", cells[1].trim(), m.intel == null ? "—" : String(m.intel)],
-    ["released", cells[2].trim(), m.released],
-    ["provider", cells[3].trim(), m.provider],
-    ["type", cells[4].trim(), m.type],
-    ["arch", cells[5].trim(), m.arch],
-    ["params", cells[6].trim(), m.params],
-    ["active", cells[7].trim(), m.active],
-    ["modality", cells[9].trim(), m.modality],
-    ["context", cells[10].trim(), fmtTokens(m.context)],
-    ["maxOut", cells[11].trim(), fmtTokens(m.maxOut)],
-    ["license", cells[12].trim(), m.license],
+    ["coding", cells[2].trim(), m.coding == null ? "—" : String(m.coding)],
+    ["released", cells[3].trim(), m.released],
+    ["provider", cells[4].trim(), m.provider],
+    ["type", cells[5].trim(), m.type],
+    ["arch", cells[6].trim(), m.arch],
+    ["params", cells[7].trim(), m.params],
+    ["active", cells[8].trim(), m.active],
+    ["modality", cells[10].trim(), m.modality],
+    ["context", cells[11].trim(), fmtTokens(m.context)],
+    ["maxOut", cells[12].trim(), fmtTokens(m.maxOut)],
+    ["license", cells[13].trim(), m.license],
   ];
-  // released must never look like an intel score, and vice versa — the exact bug reported
-  if (!/^\d{4}\/\d{2}$/.test(cells[2].trim())) {
-    console.log(`FAIL "${name}": Released column ("${cells[2].trim()}") is not a YYYY/MM date`); fail++;
+  // released must never look like a score, and vice versa — the exact bug reported.
+  // With two adjacent score columns this also catches the two being swapped into
+  // each other's slot, which no per-cell diff above would notice on its own.
+  if (!/^\d{4}\/\d{2}$/.test(cells[3].trim())) {
+    console.log(`FAIL "${name}": Released column ("${cells[3].trim()}") is not a YYYY/MM date`); fail++;
   }
-  if (cells[1].trim() !== "—" && !/^\d+$/.test(cells[1].trim())) {
-    console.log(`FAIL "${name}": Intelligence column ("${cells[1].trim()}") is not a bare number`); fail++;
+  for (const [label, idx] of [["Intelligence", 1], ["Coding", 2]]) {
+    const v = cells[idx].trim();
+    if (v !== "—" && !/^\d+$/.test(v)) {
+      console.log(`FAIL "${name}": ${label} column ("${v}") is not a bare number`); fail++;
+    }
   }
   for (const [field, got, want] of checks) {
     if (got !== want) {
