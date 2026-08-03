@@ -43,6 +43,7 @@ helper; retry with `git -c credential.helper='!gh auth git-credential' push`.
 | `npm run build` | production build; `prebuild` refreshes the RSS changelog |
 | `npm run preview` | serve `dist/` at :4173 |
 | `npm run extract` | dump MODELS to `.verify/models.json` for the suites |
+| `npm run watch` | read-only source checks (links, citations, config drift, new releases) |
 
 The suites live in `scripts/verify/`: `maps` (structural, no browser), `columns`
 (every cell against source data), `detail`, `compare`, `provenance`, `scroll`,
@@ -51,6 +52,24 @@ The suites live in `scripts/verify/`: `maps` (structural, no browser), `columns`
 rendered rows against it, rather than trusting the page's own arithmetic),
 `derived` (recomputes every metric independently, checks the export matches, and
 proves the calculator refuses what it cannot derive).
+
+## Keeping it current
+
+`.github/workflows/watch-sources.yml` runs `scripts/watch/run.mjs` daily on a GitHub
+runner and files what it finds in one reused issue. It runs there rather than in a
+session on purpose: agent sandboxes are usually behind an egress policy that blocks
+Hugging Face, arXiv and the labs' own sites, so a session cannot verify a single link
+while a runner can.
+
+The checks **only read**. Nothing automated edits model data, because the atlas is
+worth citing precisely because a person decided each field was sourced. The division
+is: CI has the network and finds what changed, a reviewer has the judgement and
+decides what it means.
+
+One failure mode is designed around explicitly. When requests fail *wholesale* — a
+proxy, a WAF, rate limiting — the run reports "could not check" instead of emitting a
+finding per target. The first version of this reported 122 live links as dead the
+moment it ran behind a proxy, and a watcher that cries wolf gets muted.
 
 ## Data rules
 

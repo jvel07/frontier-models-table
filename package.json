@@ -15,7 +15,8 @@
     "extract": "node scripts/extract-models.mjs",
     "verify": "node scripts/verify/run.mjs",
     "verify:live": "node scripts/verify/run.mjs --live",
-    "export:data": "node scripts/export-data.mjs"
+    "export:data": "node scripts/export-data.mjs",
+    "watch": "node scripts/watch/run.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
