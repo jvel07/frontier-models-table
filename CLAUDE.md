@@ -106,6 +106,16 @@ least once and caused a real error.
   skipping this.
 - **Verify every citation.** Resolve arXiv ids against the arXiv API and check the
   title before adding. A citation pointing at the wrong paper is worse than none.
+- **One axis per field.** `arch` records channel mixing only — `Dense`, `Sparse MoE`,
+  `MoE (reported)`, `Undisclosed`. Attention goes in `attn`, which is where the layer
+  ratio of a hybrid belongs. Both are topologies, but of different graphs: attention
+  connects tokens across the sequence, MoE routes them across the width, and a model
+  picks each independently. Values like `Hybrid: KDA + MoE` read as though the two
+  were alternatives, duplicated what `attn` already said better, and cost real
+  behaviour — the Dense filter matches exactly, so three dense models sat in
+  `Hybrid: Gated DeltaNet (dense)` and never appeared in it. `ARCH_COLORS` and
+  `ARCH_PAPERS` are keyed by this field, so every extra combination needed a key in
+  two maps; three had already gone stale.
 - **Derived is not sourced.** Anything computed lives in `metrics.js`, is namespaced
   under `derived` in the export, and is labelled on the page with its formula. Never
   let a computed number sit in a column that otherwise holds published facts.

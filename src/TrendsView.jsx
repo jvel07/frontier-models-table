@@ -18,12 +18,12 @@ const monthOf = (released) => {
 };
 const labelOf = (t) => `${Math.floor(t / 12)}/${String((t % 12) + 1).padStart(2, "0")}`;
 
+// `arch` records channel mixing only — dense FFN vs routed experts. Attention has
+// its own topology and its own field; colouring by a mechanism name here would be
+// reading a column for something it does not hold.
 const ARCH_COLOR = (arch) =>
   /Undisclosed/i.test(arch) ? "var(--arch-undisclosed)"
     : /reported/i.test(arch) ? "var(--arch-reported)"
-    : /KDA/i.test(arch) ? "var(--arch-kda)"
-    : /DeltaNet/i.test(arch) ? "var(--arch-deltanet)"
-    : /Mamba/i.test(arch) ? "var(--arch-mamba)"
     : /MoE/i.test(arch) ? "var(--arch-moe)"
     : "var(--arch-dense)";
 
