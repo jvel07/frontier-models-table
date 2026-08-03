@@ -76,6 +76,9 @@ export const MODELS = [
   { name: "Muse Spark 1.1", provider: "Meta", released: "2026/07", type: "Frontier", arch: "Undisclosed", params: "\u2014", active: "\u2014",
     attn: "Undisclosed", modality: "Text + image + video + audio", context: 1048576, maxOut: null, license: "Proprietary", open: false, intel: 51, coding: 71, training: null,
     note: "Meta's follow-up three months after Muse Spark (9 July 2026), and the release that put Meta behind a paid developer API for the first time. The context window goes from roughly 262K to 1M, and Artificial Analysis measured the Intelligence Index rising 43 \u2192 51, with the coding sub-score alone up 12 points \u2014 an unusually large move for a point release. Positioned for agentic work: tool use, computer use and orchestration across external apps, taking text, image, video and audio in and returning text only. Architecture and training remain undisclosed, as with 1.0." },
+  { name: "Qwen3.8 Max (preview)", provider: "Alibaba", released: "2026/07", type: "Frontier", arch: "Sparse MoE", params: "2.4T", active: "—",
+    attn: "Undisclosed", modality: "Text + image + video", context: 983616, maxOut: 131072, license: "Proprietary (API)", open: false, intel: null, coding: null, training: null,
+    note: "Previewed 19 July 2026, days after Kimi K3, and still a preview: the model id is qwen3.8-max-preview, and as of early August there is no general-availability release, no model card, no licence and no open-weight drop. The name carries \"(preview)\" here for that reason — Alibaba has committed to open weights but published no date, so whatever eventually ships under the plain name may not match these figures. 2.4T total parameters is Alibaba's own number and the first Qwen above a trillion to take image and video input. Active parameters per token are pointedly absent, which on a sparse MoE is the figure that determines what it costs to serve, so the sparsity of the largest Qwen is unknown. Attention is undisclosed too: the 3.5-3.7 line used a Gated DeltaNet hybrid, but nothing published says 3.8 does, so the atlas does not carry that forward. Not yet rated by Artificial Analysis." },
   { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Hybrid: KDA + MoE", params: "2.8T", active: "104.2B",
     attn: "KDA + full attn (69:24 layers)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 57, coding: 76,
     training: [
@@ -443,6 +446,7 @@ export const REPORTS = {
   "DeepSeek V4 Flash": { label: "DeepSeek-V4 tech report (PDF)", url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf" },
   "Qwen3.5-Plus": { label: "Qwen3.5 blog — Qwen Team, Feb 2026", url: "https://qwen.ai/blog?id=qwen3.5" },
   "Qwen3.6 Plus": { label: "Qwen model card", url: "https://huggingface.co/Qwen" },
+  "Qwen3.8 Max (preview)": { label: "Qwen3.8 blog post", url: "https://qwen.ai/blog?id=qwen3.8" },
   "Qwen3.7 Max": { label: "Qwen blog", url: "https://qwen.ai/blog" },
   "Qwen3.7 Plus": { label: "Qwen blog", url: "https://qwen.ai/blog" },
   "MiniMax M3": { label: "MiniMax model hub", url: "https://huggingface.co/MiniMaxAI" },

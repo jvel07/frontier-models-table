@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-02",
+ "version": "2026-08-03",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-02},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-03},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 58,
+ "count": 59,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -968,6 +968,66 @@
     "disclosureFields": {
      "arch": false,
      "params": false,
+     "active": false,
+     "attn": false,
+     "config": false,
+     "pos": false,
+     "vocab": false,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "closed",
+    "opennessVerbs": {
+     "download": false,
+     "inspect": false,
+     "modify": false,
+     "run": false
+    },
+    "licenseClass": "proprietary"
+   }
+  },
+  {
+   "name": "Qwen3.8 Max (preview)",
+   "provider": "Alibaba",
+   "released": "2026/07",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "2.4T",
+   "active": "—",
+   "attn": "Undisclosed",
+   "modality": "Text + image + video",
+   "context": 983616,
+   "maxOut": 131072,
+   "license": "Proprietary (API)",
+   "open": false,
+   "intel": null,
+   "coding": null,
+   "training": null,
+   "note": "Previewed 19 July 2026, days after Kimi K3, and still a preview: the model id is qwen3.8-max-preview, and as of early August there is no general-availability release, no model card, no licence and no open-weight drop. The name carries \"(preview)\" here for that reason — Alibaba has committed to open weights but published no date, so whatever eventually ships under the plain name may not match these figures. 2.4T total parameters is Alibaba's own number and the first Qwen above a trillion to take image and video input. Active parameters per token are pointedly absent, which on a sparse MoE is the figure that determines what it costs to serve, so the sparsity of the largest Qwen is unknown. Attention is undisclosed too: the 3.5-3.7 line used a Gated DeltaNet hybrid, but nothing published says 3.8 does, so the atlas does not carry that forward. Not yet rated by Artificial Analysis.",
+   "spec": null,
+   "huggingface": null,
+   "report": "https://qwen.ai/blog?id=qwen3.8",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 2400000000000,
+    "activeParams": null,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": null,
+    "weightBytesFp16": 4800000000000,
+    "disclosureScore": 4,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
      "active": false,
      "attn": false,
      "config": false,
