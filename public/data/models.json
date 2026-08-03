@@ -2026,7 +2026,7 @@
     "source": "config.json"
    },
    "huggingface": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
-   "report": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf",
+   "report": "https://arxiv.org/abs/2606.19348",
    "derived": {
     "_note": "Computed from the fields above, not published by the lab.",
     "totalParams": 1600000000000,
@@ -2116,7 +2116,7 @@
     "source": "config.json"
    },
    "huggingface": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
-   "report": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf",
+   "report": "https://arxiv.org/abs/2606.19348",
    "derived": {
     "_note": "Computed from the fields above, not published by the lab.",
     "totalParams": 284000000000,
