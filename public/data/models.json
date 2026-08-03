@@ -2104,7 +2104,7 @@
      "detail": "Multi-teacher OPD into the unified student."
     }
    ],
-   "note": "Shares V4 Pro's attention stack and mHC design at a quarter the scale: 284B total, 13B active. The cheapest frontier-class model to run. Same 1M window, lower max output.",
+   "note": "Shares V4 Pro's attention stack and mHC design at a quarter the scale: 284B total, 13B active. The cheapest frontier-class model to run. Same 1M window, lower max output. DeepSeek published a refreshed checkpoint, DeepSeek-V4-Flash-0731, on 31 July 2026; the scores shown here were measured before it and have not been re-sourced.",
    "spec": {
     "vocab": "129,280",
     "layers": 43,
