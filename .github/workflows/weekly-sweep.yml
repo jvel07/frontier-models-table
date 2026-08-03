@@ -1,0 +1,104 @@
+name: Weekly sweep
+
+# The judgement half of keeping the atlas current.
+#
+# watch-sources.yml finds what changed; this reads those findings, researches them,
+# and opens a pull request. It runs Claude Code headless on the runner rather than
+# as a scheduled session elsewhere for one concrete reason: the runner has ordinary
+# internet access, so the agent can open a lab's technical report and a model's
+# config.json itself. An agent sandbox usually cannot, and an agent that cannot read
+# primary sources is exactly the wrong thing to point at this repository.
+#
+# It opens a pull request and never pushes to main. Every model field in this project
+# is there because a person judged it sourced; that property is the whole reason the
+# site is citable, and no schedule is allowed to erode it.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: "Optional: a specific model or lab to look at this run"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+concurrency:
+  group: weekly-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    # Without a key the job would burn a runner to fail at the last step; skip early.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.ENABLE_WEEKLY_SWEEP == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci
+
+      - name: Install Chromium for the verify suites
+        run: npx playwright install --with-deps chromium
+
+      - name: Collect the current findings
+        id: findings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The source-check issue is the agent's list of leads. Absent is fine —
+          # that just means the last automated run found nothing.
+          gh issue list --label source-check --state open --limit 1 \
+            --json number,title,body > findings.json || echo '[]' > findings.json
+          echo "count=$(jq length findings.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Claude Code
+        run: npm i -g @anthropic-ai/claude-code
+
+      - name: Sweep
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          FOCUS: ${{ inputs.focus }}
+        run: |
+          set -euo pipefail
+          BRANCH="sweep/$(date -u +%Y-%m-%d)"
+          git config user.name  "model-atlas-bot"
+          git config user.email "noreply@anthropic.com"
+          git checkout -b "$BRANCH"
+
+          claude -p "$(cat .github/sweep-prompt.md)
+
+          Findings from the automated source check (may be empty):
+          $(cat findings.json)
+
+          Extra focus for this run, if any: ${FOCUS:-none}" \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch,WebSearch" \
+            --max-turns 80
+
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "Nothing changed — no pull request. An empty week is a fine outcome."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "Weekly sweep: $(date -u +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
+            --body-file .github/sweep-pr-body.md \
+            --label source-check \
+            || gh pr create --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
+                 --body "Automated sweep. See the diff and the commit message." \
+                 --label source-check
