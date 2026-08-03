@@ -71,6 +71,20 @@ proxy, a WAF, rate limiting — the run reports "could not check" instead of emi
 finding per target. The first version of this reported 122 live links as dead the
 moment it ran behind a proxy, and a watcher that cries wolf gets muted.
 
+### Acting on what it finds
+
+The default workflow needs no API billing. When the `source-check` issue shows
+something, open a Claude Code session and point it at `.github/sweep-prompt.md` —
+that file is the instruction set for the research pass, and a Claude subscription
+covers running it interactively.
+
+`.github/workflows/weekly-sweep.yml` automates that same pass on a schedule, but it
+runs Claude Code headless on the runner and therefore needs an `ANTHROPIC_API_KEY`
+secret — console.anthropic.com pay-as-you-go, which a Pro or Max **subscription does
+not include**. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable
+is set to `true`, so it costs nothing to leave in place. The only thing it buys is
+not having to start the session yourself; the detection half already runs free.
+
 ## Data rules
 
 These are the rules that keep the site trustworthy. They have each been violated at
