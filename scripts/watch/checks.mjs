@@ -153,7 +153,7 @@ export async function checkSpecs(maps) {
  * before anyone writes it up.
  */
 const ORGS = [
-  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "google", "nvidia",
+  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "meta-models", "google", "nvidia",
   "mistralai", "microsoft", "CohereLabs", "MiniMaxAI", "sarvamai", "HuggingFaceTB",
   "allenai", "openai", "ibm-granite",
 ];

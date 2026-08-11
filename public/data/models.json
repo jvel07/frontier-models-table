@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-03",
+ "version": "2026-08-11",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-03},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-11},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 59,
+ "count": 61,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -978,6 +978,66 @@
      "tokens": false,
      "curriculum": false,
      "report": true
+    },
+    "opennessTier": "closed",
+    "opennessVerbs": {
+     "download": false,
+     "inspect": false,
+     "modify": false,
+     "run": false
+    },
+    "licenseClass": "proprietary"
+   }
+  },
+  {
+   "name": "Muse Spark 1.2",
+   "provider": "Meta",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Undisclosed",
+   "params": "—",
+   "active": "—",
+   "attn": "Undisclosed",
+   "modality": "Text + image + video + audio",
+   "context": 1048576,
+   "maxOut": null,
+   "license": "Proprietary",
+   "open": false,
+   "intel": null,
+   "coding": null,
+   "training": null,
+   "note": "A coding-focused point release on 5 August 2026, shipped alongside Muse Code, Meta's own terminal agent — the two were trained together, which is unusual enough to be the headline: the model is tuned for the harness it runs in. Meta reports scaling training compute on long-horizon coding work, whole-repository generation and end-to-end projects, but publishes no architecture, no parameter count and no token budget, exactly as with 1.0 and 1.1. Takes text, image, video, audio and PDF against one 1M-token budget, returns text. On 10 August Meta said it would open the weights, reversing the closed policy that covered the first three Muse Spark releases; until a repository exists, this stays closed here. Artificial Analysis has rated it, but no score is recorded here yet.",
+   "spec": null,
+   "huggingface": null,
+   "report": null,
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": null,
+    "activeParams": null,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": null,
+    "weightBytesFp16": null,
+    "disclosureScore": 1,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": false,
+     "params": false,
+     "active": false,
+     "attn": false,
+     "config": false,
+     "pos": false,
+     "vocab": false,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
+     "report": false
     },
     "opennessTier": "closed",
     "opennessVerbs": {
@@ -3004,6 +3064,66 @@
      "run": true
     },
     "licenseClass": "other"
+   }
+  },
+  {
+   "name": "Muse Glimmer",
+   "provider": "Meta",
+   "released": "2026/08",
+   "type": "SLM",
+   "arch": "Dense",
+   "params": "30B",
+   "active": "30B",
+   "attn": "Sliding-window + global",
+   "modality": "Text + image",
+   "context": 131072,
+   "maxOut": null,
+   "license": "Apache 2.0",
+   "open": true,
+   "intel": null,
+   "coding": null,
+   "training": null,
+   "note": "Meta's return to open weights, 10 August 2026, and the first Muse model with a licence that permits anything: Apache 2.0, after three closed Muse Spark releases. Built to run locally rather than to top a leaderboard — a dense 30B including its vision tower, quantised to roughly 4 bits so the language model, the KV cache, the perception encoder and a speculative drafter all fit inside a 24GB card. Attention repeats three sliding-window layers to one global, at a 2,048-token window. Weights ship in several formats from the same repository: BF16 for research, GGUF for llama.cpp, and ExecuTorch builds for on-device use. Not yet rated by Artificial Analysis. The layer and head figures widely reported for it are not recorded here, because no one has read them off the config.json for this atlas yet.",
+   "spec": null,
+   "huggingface": "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+   "report": "https://research.meta.ai/blog/introducing-muse-glimmer-open-agentic-model",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 30000000000,
+    "activeParams": 30000000000,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": null,
+    "weightBytesFp16": 60000000000,
+    "disclosureScore": 6,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": false,
+     "pos": false,
+     "vocab": false,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
    }
   },
   {
