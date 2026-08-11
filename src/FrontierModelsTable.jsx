@@ -705,6 +705,9 @@ export function totalTokens(training) {
   return { total, hasEst };
 }
 
+/** Fold a name to what someone would actually type: no spaces, no punctuation. */
+const searchKey = (s) => s.toLowerCase().replace(/[^a-z0-9.]/g, "");
+
 export default function FrontierModelsTable({ focus } = {}) {
   const [sortKey, setSortKey] = useState("intel");
   const [sortDir, setSortDir] = useState("desc");
@@ -798,8 +801,12 @@ export default function FrontierModelsTable({ focus } = {}) {
       if (weightFilter === "Proprietary" && m.open) return false;
       if (yearFilter !== "All" && m.released.split("/")[0] !== yearFilter) return false;
       if (query) {
-        const q = query.toLowerCase();
-        if (!m.name.toLowerCase().includes(q) && !m.provider.toLowerCase().includes(q)) return false;
+        // Labs punctuate their own names inconsistently — Qwen3.8 against GPT-5.6
+        // against Muse Spark 1.2 — so a raw substring match makes finding a model
+        // depend on guessing where its lab put the spaces. Compare with the
+        // separators removed from both sides; "qwen 3.8" then finds Qwen3.8.
+        const q = searchKey(query);
+        if (!searchKey(m.name).includes(q) && !searchKey(m.provider).includes(q)) return false;
       }
       return true;
     });
