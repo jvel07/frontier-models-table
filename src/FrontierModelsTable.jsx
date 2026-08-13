@@ -1273,6 +1273,7 @@ export default function FrontierModelsTable({ focus } = {}) {
           <span>Architecture diagrams are hot-linked from Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery) with credit, and the intelligence column is Artificial Analysis's index. Everything else here — the model notes, training pipelines and spec fields — is compiled by us from primary technical reports, model cards and config files.</span>
           <span>Closed-flagship architecture fields say "Undisclosed" or "reported" — vendors publish few internals; do not treat reported MoE labels as confirmed counts.</span>
           <span>Context = max input window. Compiled from public provider docs, model cards and third-party analyses, July 2026; figures shift frequently.</span>
+          <span style={S.copyright}>© 2026 José Vicente Egas López</span>
         </footer>
       </div>
       {tip && (
@@ -1642,6 +1643,8 @@ export const S = {
   synthNum: { fontFamily: mono, fontSize: 13, fontWeight: 700, color: CLAY, marginBottom: 10 },
   synthTitle: { fontFamily: serif, fontSize: 17, fontWeight: 500, margin: "0 0 9px", color: INK },
   synthBody: { margin: 0, fontSize: 13, lineHeight: 1.65, color: INK_SOFT },
+  copyright: { marginTop: 6, paddingTop: 12, borderTop: `1px solid ${LINE_SOFT}`,
+    fontFamily: mono, fontSize: 11.5, color: INK_FAINT, letterSpacing: "0.02em" },
   footer: { marginTop: 30, display: "flex", flexDirection: "column", gap: 5,
     fontSize: 11.5, color: INK_FAINT, lineHeight: 1.55 },
 };
