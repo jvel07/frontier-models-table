@@ -159,6 +159,38 @@ function LayerStack({ layers, legend, caption }) {
   );
 }
 
+/**
+ * A windowed matrix with a sink drawn beside it, detached from the sequence.
+ *
+ * The detachment is the whole point: a sink is not a position in the context that
+ * the model learned to dump attention on, it is a per-head parameter competing in
+ * the same softmax. Drawing it as column zero would teach the wrong thing.
+ */
+function SinkGrid({ n = 14, w = 4, caption, size = 13 }) {
+  const g = size, pad = 1, gap = g * 0.85, x0 = g + gap;
+  const cells = [];
+  for (let i = 0; i < n; i++) {
+    cells.push(<rect key={`sink-${i}`} x={0} y={i * g} width={g - pad} height={g - pad} rx={1.5}
+      fill={CLAY} opacity={0.34} />);
+    for (let j = 0; j <= i; j++) {
+      const on = i - j < w;
+      cells.push(<rect key={`${i}-${j}`} x={x0 + j * g} y={i * g} width={g - pad} height={g - pad} rx={1.5}
+        fill={on ? CLAY : "var(--line)"} opacity={on ? 0.92 : 1} />);
+    }
+  }
+  const width = x0 + n * g;
+  return (
+    <figure style={F.fig}>
+      <svg viewBox={`-1 -1 ${width + 2} ${n * g + 14}`} width="100%" style={{ maxWidth: 268 }}
+        role="img" aria-label={caption}>
+        {cells}
+        <text x="0" y={n * g + 10} fontSize="9" fill={FAINT} fontFamily={mono}>sink · window</text>
+      </svg>
+      <figcaption style={F.cap}>{caption}</figcaption>
+    </figure>
+  );
+}
+
 const band = (w) => (i, j) => (i - j < w ? "on" : "dim");
 const everyNth = (n, w) => (i, j) => (i - j < w || j % n === 0 ? "on" : "dim");
 const alt = (n) => Array.from({ length: n }, (_, i) => ((i + 1) % 6 === 0 ? 1 : 0));
@@ -199,6 +231,17 @@ const EXPLAIN = {
     ],
     cost: "Anything that has to travel further than the window can only do so by riding through a global layer, so long-range facts pass through a narrow channel. Set the ratio too aggressively and the model stops being able to connect distant things at all.",
     fig: <Grid cell={band(4)} caption="A windowed layer: only the band near the diagonal is read." />,
+  },
+
+  "Sliding-window + attention sinks": {
+    family: "less",
+    how: [
+      "A windowed layer has a problem the window itself does not solve. Softmax has to sum to one, so a head must always distribute its full attention somewhere, even on a step where nothing it can see is relevant. The mass lands on whatever is nearest, and that noise is then written into the residual stream as though it were a finding.",
+      "A sink is somewhere else for that mass to go: a learned per-head quantity that sits in the softmax alongside the real tokens without being a token. A head with nothing to read attends to its sink and contributes almost nothing, which is the honest answer.",
+      "IBM's Granite SWASH models implement it as a scaling step after attention rather than an extra logit — the head's output is scaled by the sink weighed against the log-sum-exp of its own scores — but the effect is the same, and it is why they can push the window down to 128 tokens.",
+    ],
+    cost: "The sink is another thing that has to be trained, and it changes the arithmetic enough that some inference kernels cannot express it: Granite's card rules out SDPA as a backend entirely. Attention that can decline is also attention that can decline wrongly, and a head that learns to sink too readily is simply a head that stopped working.",
+    fig: <SinkGrid caption="A windowed layer plus a sink: somewhere for attention to go that is not a token." />,
   },
 
   "Sparse + long-context": {

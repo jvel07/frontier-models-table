@@ -29,6 +29,7 @@ export const PROVIDER_MARKS = {
 export const PROVIDER_MONOGRAMS = {
   "Sarvam AI": "Sv",
   "Thinking Machines": "TM",
+  "IBM": "IBM",
 };
 
 /**
