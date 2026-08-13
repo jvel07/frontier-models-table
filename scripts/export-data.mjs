@@ -85,7 +85,8 @@ const rows = MODELS.map((m) => {
       tokensPerParamFormula: "disclosedTrainingTokens / totalParams",
       kvCacheBytesPerTokenFp16: kv && kv.bytes ? kv.bytes : null,
       kvCacheFormula: kv && kv.bytes
-        ? "2 * layers * kvHeads * (hidden / qHeads) * 2 bytes; head_dim assumed hidden/qHeads"
+        ? `2 * layers * kvHeads * headDim * 2 bytes; head_dim ${kv.assumedHeadDim
+            ? "assumed hidden/qHeads, not published for this model" : "as published in config.json"}`
         : (kv && kv.unsupported) || null,
       weightBytesFp16: weightBytes(m),
       disclosureScore: disc.met,
@@ -128,7 +129,9 @@ const CSV_COLS = [
   ["open_weights", (r) => r.open], ["openness_tier", (r) => r.derived.opennessTier],
   ["intelligence_aa", (r) => r.intel], ["coding_aa", (r) => r.coding],
   ["layers", (r) => r.spec && r.spec.layers], ["hidden", (r) => r.spec && r.spec.hidden],
-  ["heads", (r) => r.spec && r.spec.heads], ["experts", (r) => r.spec && r.spec.experts],
+  ["heads", (r) => r.spec && r.spec.heads], ["head_dim", (r) => r.spec && r.spec.headDim],
+  ["experts", (r) => r.spec && r.spec.experts], ["ffn", (r) => r.spec && r.spec.ffn],
+  ["activation", (r) => r.spec && r.spec.activation], ["norm", (r) => r.spec && r.spec.norm],
   ["vocab", (r) => r.spec && r.spec.vocab], ["positional", (r) => r.spec && r.spec.posEmb],
   ["disclosed_tokens", (r) => r.derived.disclosedTrainingTokens],
   ["training_flops", (r) => r.derived.trainingFlops],
@@ -170,7 +173,7 @@ const schema = {
     training: "Array of stages: {label, tokens, detail, curriculum}. null = none published.",
     trainingSource: "Set when the pipeline shown belongs to another model; those tokens are never counted as disclosed.",
     note: "Prose written by this project.",
-    spec: "Read from the model's own config.json on Hugging Face.",
+    spec: "Read from the model's own config.json on Hugging Face: layers, hidden, heads, headDim (head_dim as published, which is usually not hidden/heads), experts, ffn (dense and per-expert intermediate_size), activation (hidden_act verbatim), norm, vocab, window, posEmb.",
     report: "URL of the technical report or model card.",
     huggingface: "Weights repo, where one exists.",
     derived: "Computed metrics; each carries the formula used.",

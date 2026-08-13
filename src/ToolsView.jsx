@@ -134,7 +134,9 @@ function Calculator() {
           <p style={T.formula}>
             KV bytes/token = 2 × {kv.layers} layers × {kv.kvHeads} KV heads × {kv.headDim} head
             dim × {kBytes} bytes = <strong>{fmtBytes(kv.bytes)}</strong> per token.
-            {kv.assumedHeadDim && " Head dimension is taken as hidden ÷ query heads, the usual construction, since the atlas does not record it separately."}
+            {kv.assumedHeadDim
+              ? " Head dimension is taken as hidden ÷ query heads, the usual construction, because this model's config.json does not publish head_dim."
+              : " Head dimension is the head_dim published in the model's config.json, not hidden ÷ query heads — for most models here the two disagree."}
             {" "}Activations, fragmentation and framework overhead are not included, so treat
             the total as a floor.
           </p>
@@ -153,6 +155,10 @@ const AXES = [
   { key: "layers", label: "Depth", get: (m) => (SPECS[m.name] || {}).layers },
   { key: "hidden", label: "Width", get: (m) => (SPECS[m.name] || {}).hidden },
   { key: "heads", label: "Heads", get: (m) => (SPECS[m.name] || {}).heads },
+  { key: "headDim", label: "Head dim", get: (m) => (SPECS[m.name] || {}).headDim },
+  { key: "ffn", label: "FFN size", get: (m) => (SPECS[m.name] || {}).ffn },
+  { key: "activation", label: "Activation", get: (m) => (SPECS[m.name] || {}).activation },
+  { key: "norm", label: "Normalisation", get: (m) => (SPECS[m.name] || {}).norm },
   { key: "posEmb", label: "Positional", get: (m) => (SPECS[m.name] || {}).posEmb },
   { key: "vocab", label: "Vocabulary", get: (m) => (SPECS[m.name] || {}).vocab },
   { key: "window", label: "Local window", get: (m) => (SPECS[m.name] || {}).window },

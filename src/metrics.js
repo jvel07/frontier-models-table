@@ -104,8 +104,12 @@ export function parseHeads(spec) {
  *     not describe its cache at all.
  *   - Linear-attention and SSM layers carry a fixed-size recurrent state that does
  *     not grow per token, so a per-token figure is meaningless for them.
- *   - head_dim is not published in the atlas, so it is taken as hidden / q_heads.
- *     That is the usual construction but it is an assumption, and it is flagged.
+ *   - head_dim is used as published when SPECS records it, and only falls back to
+ *     hidden / q_heads when it does not. That fallback is the usual construction and
+ *     nothing more: of the models whose config.json publishes head_dim, most
+ *     contradict it. Gemma 4 (31B) is 5,376 / 32 = 168 by construction and 256 in
+ *     the file; Laguna XS 2.1 is 42.7 against a published 128, a three-fold error in
+ *     a cache size someone might size a machine against. The fallback stays flagged.
  */
 export function kvBytesPerToken(model, spec, bytesPerElem = 2) {
   if (!spec) return null;
@@ -116,12 +120,14 @@ export function kvBytesPerToken(model, spec, bytesPerElem = 2) {
   const h = parseHeads(spec);
   const hidden = parseCount(spec.hidden);
   const layers = spec.layers;
-  if (!h || !hidden || !layers) return null;
-  const headDim = hidden / h.q;
+  if (!h || !layers) return null;
+  const published = spec.headDim;
+  if (!published && !hidden) return null;
+  const headDim = published || hidden / h.q;
   return {
     bytes: 2 * layers * h.kv * headDim * bytesPerElem,
     headDim,
-    assumedHeadDim: true,
+    assumedHeadDim: !published,
     layers, kvHeads: h.kv,
   };
 }

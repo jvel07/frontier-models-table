@@ -20,7 +20,7 @@
   "training": "Array of stages: {label, tokens, detail, curriculum}. null = none published.",
   "trainingSource": "Set when the pipeline shown belongs to another model; those tokens are never counted as disclosed.",
   "note": "Prose written by this project.",
-  "spec": "Read from the model's own config.json on Hugging Face.",
+  "spec": "Read from the model's own config.json on Hugging Face: layers, hidden, heads, headDim (head_dim as published, which is usually not hidden/heads), experts, ffn (dense and per-expert intermediate_size), activation (hidden_act verbatim), norm, vocab, window, posEmb.",
   "report": "URL of the technical report or model card.",
   "huggingface": "Weights repo, where one exists.",
   "derived": "Computed metrics; each carries the formula used."

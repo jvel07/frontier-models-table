@@ -124,6 +124,15 @@ const AXES = [
   { group: "Architecture", label: "Experts", pick: (m) => spec(m, "experts"),
     hint: "Routed · active per token · always-on shared",
     gloss: (m) => glossExperts(spec(m, "experts")) },
+  { group: "Architecture", label: "FFN size", pick: (m) => spec(m, "ffn"),
+    hint: "Inner width of the feed-forward block (intermediate_size). A sparse model publishes two: the dense layers' width and one expert's, which are rarely the same number.",
+    gloss: (m) => (/per expert/.test(spec(m, "ffn") || "")
+      ? "Each expert is far narrower than a dense FFN of the same model — that is what lets a router keep hundreds of them without the compute of hundreds of dense layers."
+      : null) },
+  { group: "Architecture", label: "Activation", pick: (m) => spec(m, "activation"),
+    hint: "hidden_act, verbatim from config.json. silu is SwiGLU's gate; gelu_pytorch_tanh is GELU's tanh approximation." },
+  { group: "Architecture", label: "Normalisation", pick: (m) => spec(m, "norm"),
+    hint: "The norm and its epsilon, from rms_norm_eps in config.json. Every model here that publishes one uses RMSNorm; ε only guards the division." },
 
   { group: "Attention", label: "Mechanism", pick: (m) => m.attn,
     hint: "How each token decides what to look at. Ratios in brackets count layers, not heads.",
@@ -133,6 +142,8 @@ const AXES = [
   { group: "Attention", label: "Heads", pick: (m) => spec(m, "heads"),
     hint: "Query heads / key-value heads. Fewer KV heads means a smaller cache to carry at long context.",
     gloss: (m) => glossHeads(spec(m, "heads")) },
+  { group: "Attention", label: "Head dim", pick: (m) => (spec(m, "headDim") ? String(spec(m, "headDim")) : null),
+    hint: "head_dim as published in config.json — not hidden ÷ query heads, which for most models here gives a different number. On MLA models it describes the latent projection rather than a per-head slice of the residual stream." },
   { group: "Attention", label: "Sliding window", pick: (m) => spec(m, "window"),
     hint: "On windowed layers, how many previous tokens a token may attend to. Blank means those layers are fully global." },
 
