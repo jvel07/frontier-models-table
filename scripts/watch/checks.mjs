@@ -5,7 +5,7 @@
  * the whole design is that automation detects and proposes, and a person merges,
  * because the atlas's value is that a human decided each field was sourced.
  */
-import { get, ogTitle, arxivId, INCONCLUSIVE, systemic } from "./lib.mjs";
+import { get, ogTitle, arxivId, isPdf, INCONCLUSIVE, systemic } from "./lib.mjs";
 
 /**
  * Every outbound citation still resolves, and still points at what we said it did.
@@ -18,20 +18,33 @@ export async function checkLinks(maps) {
   for (const [model, repo] of Object.entries(maps.HF_LINKS))
     targets.push({ model, url: `https://huggingface.co/${repo}`, kind: "weights", repo });
 
+  // Fetch each distinct URL once. Several models legitimately cite one page — the
+  // three GPT-5.6 variants share an OpenAI announcement — and fetching it per model
+  // both triples the requests and lets a rate-limiting host answer differently each
+  // time: one run returned 404 twice and 403 once for that single URL, reported as
+  // two dead links plus one unreachable target rather than one page nobody could
+  // judge. One request, one verdict, all the models that share it named together.
+  const byUrl = new Map();
+  for (const t of targets) {
+    if (!byUrl.has(t.url)) byUrl.set(t.url, []);
+    byUrl.get(t.url).push(t);
+  }
+
   const findings = [];
   let checked = 0, skipped = 0;
   const results = [];
-  for (const t of targets) results.push({ t, res: await get(t.url) });
+  for (const [url, group] of byUrl) results.push({ t: group[0], group, res: await get(url) });
 
   const blocked = systemic(results.map((r) => r.res));
   if (blocked) return { findings: [], checked: 0, skipped: results.length, blocked };
 
-  for (const { t, res } of results) {
+  for (const { t, group, res } of results) {
     if (INCONCLUSIVE.has(res.status)) { skipped++; continue; }
     checked++;
     const title = ogTitle(res.body);
+    const who = group.map((g) => g.model).join(", ");
     if (!res.ok) {
-      findings.push({ subject: `${t.model} (${t.kind})`, url: t.url,
+      findings.push({ subject: `${who} (${t.kind})`, url: t.url,
         detail: `HTTP ${res.status}` });
       continue;
     }
@@ -39,11 +52,11 @@ export async function checkLinks(maps) {
     if (t.kind === "weights") {
       const wanted = t.repo.split("/").pop().toLowerCase();
       if (!title || !title.toLowerCase().includes(wanted.slice(0, 8))) {
-        findings.push({ subject: `${t.model} (weights)`, url: t.url,
+        findings.push({ subject: `${who} (weights)`, url: t.url,
           detail: `og:title is ${title ? `"${title}"` : "missing"}, which does not look like \`${t.repo}\` — the repo may have moved or been withdrawn` });
       }
-    } else if (!title) {
-      findings.push({ subject: `${t.model} (report)`, url: t.url,
+    } else if (!title && !isPdf(res)) {
+      findings.push({ subject: `${who} (report)`, url: t.url,
         detail: "page returned 200 but carries no title; may have become a redirect or a shell" });
     }
   }
@@ -55,6 +68,28 @@ export async function checkLinks(maps) {
  * with the label the atlas shows. A citation pointing at the wrong paper is worse
  * than no citation, and it is invisible on the page.
  */
+/**
+ * Words that appear in our labels because of how a label is written, not because of
+ * what it cites. Matching on these would let any label pass against any paper.
+ */
+const LABEL_NOISE = new Set(["arxiv", "tech", "technical", "report", "paper", "preprint", "model", "card"]);
+
+/**
+ * Citations where the label and the title genuinely share nothing, and a human has
+ * confirmed the pairing is right anyway. Mamba-2's paper is titled "Transformers are
+ * SSMs"; no string comparison will ever reconcile those two, and re-reporting it
+ * every morning is how a watcher gets muted. Each entry records who resolved it and
+ * when, so a stale exemption can be re-checked rather than trusted forever.
+ */
+const RESOLVED = new Map([
+  ["2405.21060", 'cited as Mamba-2; the paper is titled "Transformers are SSMs" (resolved by hand 2026-08-13)'],
+]);
+
+/** Distinctive tokens of a string: what is left once noise and version numbers go. */
+const tokens = (s) =>
+  s.toLowerCase().split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3 && !/^\d+$/.test(w) && !LABEL_NOISE.has(w));
+
 export async function checkCitations(maps) {
   const cites = new Map();
   const add = (label, url) => { const id = arxivId(url); if (id && !cites.has(id)) cites.set(id, label); };
@@ -67,7 +102,8 @@ export async function checkCitations(maps) {
   let checked = 0, skipped = 0;
   const results = [];
   for (const [id, label] of cites)
-    results.push({ id, label, res: await get(`http://export.arxiv.org/api/query?id_list=${id}`) });
+    // https, not http: the http endpoint 301s to it, costing a round trip per id.
+    results.push({ id, label, res: await get(`https://export.arxiv.org/api/query?id_list=${id}`) });
 
   const blocked = systemic(results.map((r) => r.res));
   if (blocked) return { findings: [], checked: 0, skipped: results.length, blocked };
@@ -82,11 +118,17 @@ export async function checkCitations(maps) {
       continue;
     }
     const real = m[1].replace(/\s+/g, " ").trim();
-    // Compare on distinctive words rather than the whole string: our labels are
-    // deliberately shorter than paper titles, so an exact match would always fail.
+    if (RESOLVED.has(id)) continue;
+    // Compare in both directions. Matching only the title's long words against the
+    // label missed the one token that identifies the paper — "GQA" is three letters,
+    // "Kimi K3" is two short ones — so every correct-but-terse citation was reported:
+    // the GQA, GLM-5 and Kimi K3 entries were all flagged while pointing at exactly
+    // the right paper. A label is wrong only when nothing distinctive is shared
+    // either way.
     const words = real.toLowerCase().split(/\W+/).filter((w) => w.length > 4);
     const lab = label.toLowerCase();
-    const overlap = words.filter((w) => lab.includes(w)).length;
+    const overlap = words.filter((w) => lab.includes(w)).length
+      + tokens(label).filter((w) => real.toLowerCase().includes(w)).length;
     if (words.length && overlap === 0) {
       findings.push({ subject: `arXiv:${id}`, url: `https://arxiv.org/abs/${id}`,
         detail: `cited as "${label}" but the paper is titled "${real}" — no shared terms, so check this is the intended reference` });

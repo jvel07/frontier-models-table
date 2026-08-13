@@ -66,7 +66,8 @@ export async function get(url, { timeout = 20000, tries = 2, headers = {} } = {}
         redirect: "follow",
       });
       const body = await r.text();
-      return { ok: r.ok, status: r.status, body, url: r.url };
+      return { ok: r.ok, status: r.status, body, url: r.url,
+        type: r.headers.get("content-type") || "" };
     } catch (e) {
       if (i === tries - 1) return { ok: false, status: 0, body: "", error: String(e.message || e) };
       await new Promise((s) => setTimeout(s, 1500 * (i + 1)));
@@ -87,6 +88,15 @@ export const ogTitle = (html) => {
 };
 
 export const arxivId = (url) => (String(url).match(/arxiv\.org\/(?:abs|pdf)\/([\d.]+)/) || [])[1] || null;
+
+/**
+ * A PDF carries no og:title and never will. Most technical reports in `REPORTS` are
+ * served as one — arXiv's /pdf/ route, poolside's assets, NVIDIA's research site —
+ * so a title assertion against them reports live reports as empty shells. Sniff the
+ * body as well as the header: some hosts serve a PDF as application/octet-stream.
+ */
+export const isPdf = (res) =>
+  /application\/pdf/i.test(res.type || "") || (res.body || "").startsWith("%PDF-");
 
 /**
  * Statuses that mean "we could not check", not "this is broken".
