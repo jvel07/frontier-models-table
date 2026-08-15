@@ -159,6 +159,12 @@ await page.goto(BASE, { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
 const allCols = await page.locator("#atlas-table thead th").evaluateAll((e) =>
   e.filter((x) => x.offsetParent !== null).length);
+// The presets fold away with the rest of the secondary filters, so the panel has to
+// be opened before they can be clicked — and that it opens is worth asserting too.
+t("the preset buttons are folded away by default", (await page.locator("[data-presets]").count()) === 0);
+await page.locator("[data-filters-toggle]").click();
+await page.waitForTimeout(250);
+t("the filter panel opens", (await page.locator("[data-presets]").count()) === 1);
 await page.locator("[data-presets] button", { hasText: "Serving" }).click();
 await page.waitForTimeout(400);
 const servingCols = await page.locator("#atlas-table thead th").evaluateAll((e) =>

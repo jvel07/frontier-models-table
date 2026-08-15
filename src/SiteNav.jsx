@@ -17,13 +17,15 @@ const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
  * On a phone the old arrangement wrapped into overlapping blocks.
  */
 
+/**
+ * Attention, Trends and Tools are deliberately absent. Their routes still resolve —
+ * `#/attention`, `#/trends`, `#/tools` all render, and anything already linking to
+ * them keeps working — they are simply no longer offered in the bar.
+ */
 export const PAGES = [
   { key: "table", href: "#/", label: "Atlas" },
-  { key: "attention", href: "#/attention", label: "Attention" },
   { key: "papers", href: "#/papers", label: "Papers" },
-  { key: "trends", href: "#/trends", label: "Trends" },
   { key: "openness", href: "#/openness", label: "Openness" },
-  { key: "tools", href: "#/tools", label: "Tools" },
 ];
 
 export default function SiteNav({ current }) {
@@ -71,13 +73,13 @@ const N = {
     gap: 12, flexWrap: "wrap", marginBottom: 26, paddingBottom: 14,
     borderBottom: "1px solid var(--line)" },
   group: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" },
-  item: { display: "inline-block", padding: "7px 14px", borderRadius: 6,
+  item: { display: "inline-block", padding: "7px 14px", borderRadius: 0,
     fontFamily: mono, fontSize: 12.5, letterSpacing: "0.06em", textTransform: "uppercase",
     color: "var(--ink-soft)", textDecoration: "none", whiteSpace: "nowrap",
     border: "1px solid transparent" },
   itemOn: { background: "var(--clay)", color: "var(--on-clay)", borderColor: "var(--clay)" },
   theme: { display: "inline-flex", alignItems: "center", gap: 7, background: "transparent",
-    border: "1px solid var(--line)", borderRadius: 6, padding: "6px 12px",
+    border: "1px solid var(--line)", borderRadius: 0, padding: "6px 12px",
     fontFamily: mono, fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase",
     color: "var(--ink-soft)", cursor: "pointer", whiteSpace: "nowrap" },
 };

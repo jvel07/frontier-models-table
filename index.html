@@ -21,24 +21,40 @@
     <meta name="twitter:card" content="summary" />
     <style>
       /* Theme tokens. The component's style objects reference these via var(),
-         so switching data-theme on <html> restyles the whole table at once. */
-      :root {
-        --paper: #F4F2EC;
-        --card: #FBFAF6;
-        --ink: #2B2A27;
-        --ink-soft: #6B6862;
-        --ink-faint: #94918A;
-        --line: #E4E0D6;
-        --line-soft: #EDEAE1;
-        --clay: #C9633F;
-        --clay-soft: #E8D5CC;
+         so switching data-theme on <html> restyles the whole table at once.
 
-        --row-alt: #F0EDE4;
-        --row-open: #F3E9E2;
-        --detail-bg: #EFEADF;
-        --dim: #A8A39A;
-        --on-clay: #fff;
-        --open-fg: #3F7A5A;
+         The palette follows the printed technical report rather than the dashboard.
+         Two rules do most of the work, both borrowed from Tufte:
+
+         1. Off-white and off-black, never #fff on #000. Paper is #FFFEF6, ink is
+            #14120E, and the pairing is what a page under a lamp actually looks like.
+         2. Colour is data. The chrome — controls, rules, labels, surfaces — is
+            greyscale, and every remaining hue means something: architecture family,
+            model class, whether a token count was disclosed or estimated. A reader
+            who notices a colour here should be able to assume it is telling them
+            something, which is not true of a palette that also tints the furniture.
+
+         The single spot colour, --clay, is the ink red of a proof correction. It
+         marks the active control and nothing decorative. */
+      :root {
+        --paper: #FFFEF6;
+        --card: #FFFEF6;
+        --ink: #14120E;
+        --ink-soft: #4C4740;
+        --ink-faint: #7D776C;
+        --line: #C7C0AD;
+        --line-soft: #E4DECD;
+        --clay: #8E2B12;
+        --clay-soft: #EFE1D9;
+
+        /* Zebra striping is off: alternating fills compete with the data for
+           attention, and the row rules already carry the eye across. */
+        --row-alt: transparent;
+        --row-open: #F5F0DF;
+        --detail-bg: #F8F4E7;
+        --dim: #9A948A;
+        --on-clay: #FFFEF6;
+        --open-fg: #2F6B4F;
         --fallback: #64748b;
 
         --tok-ok-fg: #3F7A6A;
@@ -67,22 +83,24 @@
         --shadow: 0 1px 2px rgba(43, 42, 39, 0.04);
       }
 
+      /* The same page under a lamp instead of daylight: one surface, no raised
+         cards, warm ink on near-black rather than grey on grey. */
       :root[data-theme="dark"] {
-        --paper: #161513;
-        --card: #1F1D1A;
-        --ink: #ECE8E0;
-        --ink-soft: #A5A199;
-        --ink-faint: #7B776F;
-        --line: #34302A;
-        --line-soft: #262320;
-        --clay: #E5895F;
-        --clay-soft: #4A382E;
+        --paper: #13120E;
+        --card: #13120E;
+        --ink: #EDE7D7;
+        --ink-soft: #A8A192;
+        --ink-faint: #7C7568;
+        --line: #3D382C;
+        --line-soft: #262219;
+        --clay: #D2694A;
+        --clay-soft: #40291F;
 
-        --row-alt: #1B1917;
-        --row-open: #2B221C;
-        --detail-bg: #191714;
+        --row-alt: transparent;
+        --row-open: #241E14;
+        --detail-bg: #1A170F;
         --dim: #5C5952;
-        --on-clay: #1B1512;
+        --on-clay: #13120E;
         --open-fg: #6BAF87;
         --fallback: #94A3B8;
 

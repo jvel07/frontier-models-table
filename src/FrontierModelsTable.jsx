@@ -749,6 +749,10 @@ export default function FrontierModelsTable({ focus } = {}) {
   const [archFilter, setArchFilter] = useState("All");
   const [weightFilter, setWeightFilter] = useState("All");
   const [yearFilter, setYearFilter] = useState("All");
+  // Class, architecture, year and the column presets fold away: five button groups
+  // in a row was most of what the page looked like. Weights stays out because it is
+  // the split people actually come here to make.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [query, setQuery] = useState("");
   // #/model/<name> lands here: open that row so the link is worth sharing.
   const [expanded, setExpanded] = useState(() =>
@@ -820,6 +824,14 @@ export default function FrontierModelsTable({ focus } = {}) {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightbox, reader]);
 
+  // Buttons are divided by rules rather than gaps, so the last one in a group must
+  // drop its divider or it doubles up with the group's own edge.
+  const segOf = (on, last) => ({ ...S.seg, ...(last ? { borderRight: "none" } : null), ...(on ? S.segOn : null) });
+
+  // What the folded-away groups are currently doing, for the button that hides them.
+  const narrowed = [typeFilter, archFilter, yearFilter].filter((v) => v !== "All")
+    .concat(preset === "All" ? [] : [`${preset} cols`]);
+
   const types = ["All", "Frontier", "Mid", "SLM"];
   const archs = ["All", "Dense", "MoE", "Undisclosed"];
   const weights = ["All", "Open weights", "Proprietary"];
@@ -882,17 +894,10 @@ export default function FrontierModelsTable({ focus } = {}) {
         <SiteNav current="table" />
 
         <header style={S.header}>
-          <div style={{ ...S.eyebrow, marginBottom: 14 }}>Model landscape · July 2026</div>
           <div style={S.titleRow}>
             <img src={`${import.meta.env.BASE_URL}logo-atlas.png`} alt="" aria-hidden="true" style={S.logo} />
             <h1 style={{ ...S.title, margin: 0 }}>The Model Atlas</h1>
           </div>
-          <p style={S.sub}>
-            A living map of how frontier and small language models are actually built — architecture,
-            attention, training pipelines and data curricula, sourced from primary technical reports.
-            Built for engineers and researchers training their own. Sort or filter any column; tap a row
-            to see its architecture and a stage-by-stage training pipeline with disclosed token counts.
-          </p>
         </header>
 
         <div style={S.legend}>
@@ -906,38 +911,63 @@ export default function FrontierModelsTable({ focus } = {}) {
           <input style={S.search} placeholder="Search model or provider…"
             value={query} onChange={(e) => setQuery(e.target.value)} />
           <div style={S.segGroup}>
-            {types.map((t) => (
-              <button key={t} onClick={() => setTypeFilter(t)}
-                style={{ ...S.seg, ...(typeFilter === t ? S.segOn : {}) }}>{t}</button>
-            ))}
-          </div>
-          <div style={S.segGroup}>
-            {archs.map((a) => (
-              <button key={a} onClick={() => setArchFilter(a)}
-                style={{ ...S.seg, ...(archFilter === a ? S.segOn : {}) }}>{a}</button>
-            ))}
-          </div>
-          <div style={S.segGroup}>
-            {weights.map((w) => (
+            {weights.map((w, i) => (
               <button key={w} onClick={() => setWeightFilter(w)}
-                style={{ ...S.seg, ...(weightFilter === w ? S.segOn : {}) }}>{w}</button>
+                style={segOf(weightFilter === w, i === weights.length - 1)}>{w}</button>
             ))}
           </div>
-          <div style={S.segGroup}>
-            {years.map((y) => (
-              <button key={y} onClick={() => setYearFilter(y)}
-                style={{ ...S.seg, ...(yearFilter === y ? S.segOn : {}) }}>{y}</button>
-            ))}
-          </div>
-          <div style={S.segGroup} data-presets>
-            {Object.keys(PRESETS).map((p) => (
-              <button key={p} onClick={() => setPreset(p)} title={`Show the ${p.toLowerCase()} columns`}
-                style={{ ...S.seg, ...(preset === p ? S.segOn : {}) }}>
-                {p === "All" ? "All cols" : p}
-              </button>
-            ))}
-          </div>
+          {/* Anything set while the panel is shut would otherwise be invisible, so the
+              button names it rather than just counting. */}
+          <button type="button" data-filters-toggle aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((o) => !o)}
+            style={{ ...S.moreFilters, ...(narrowed.length ? S.moreFiltersOn : null) }}>
+            {narrowed.length ? narrowed.join(" · ") : "More filters"}
+            <span aria-hidden="true" style={S.moreCaret}>{filtersOpen ? "−" : "+"}</span>
+          </button>
         </div>
+
+        {filtersOpen && (
+          <div style={S.filterPanel} data-filter-panel>
+            <div style={S.filterRow}>
+              <span style={S.filterLabel}>Class</span>
+              <div style={S.segGroup}>
+                {types.map((t, i) => (
+                  <button key={t} onClick={() => setTypeFilter(t)}
+                    style={segOf(typeFilter === t, i === types.length - 1)}>{t}</button>
+                ))}
+              </div>
+            </div>
+            <div style={S.filterRow}>
+              <span style={S.filterLabel}>Architecture</span>
+              <div style={S.segGroup}>
+                {archs.map((a, i) => (
+                  <button key={a} onClick={() => setArchFilter(a)}
+                    style={segOf(archFilter === a, i === archs.length - 1)}>{a}</button>
+                ))}
+              </div>
+            </div>
+            <div style={S.filterRow}>
+              <span style={S.filterLabel}>Released</span>
+              <div style={S.segGroup}>
+                {years.map((y, i) => (
+                  <button key={y} onClick={() => setYearFilter(y)}
+                    style={segOf(yearFilter === y, i === years.length - 1)}>{y}</button>
+                ))}
+              </div>
+            </div>
+            <div style={S.filterRow}>
+              <span style={S.filterLabel}>Columns</span>
+              <div style={S.segGroup} data-presets>
+                {Object.keys(PRESETS).map((p, i, all) => (
+                  <button key={p} onClick={() => setPreset(p)} title={`Show the ${p.toLowerCase()} columns`}
+                    style={segOf(preset === p, i === all.length - 1)}>
+                    {p === "All" ? "All cols" : p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={S.count}>
           {rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand · tick up to {MAX_COMPARE} to compare side by side
@@ -1043,7 +1073,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                         </span>
                       </td>
                       <td style={S.td}>
-                        <span style={{ ...S.archTag, color: ac, borderColor: ac + "55" }}>{m.arch}</span>
+                        <span style={{ ...S.archTag, color: ac }}>{m.arch}</span>
                       </td>
                       <td style={S.td}>{m.params}</td>
                       <td style={{ ...S.td, color: m.active !== "—" && m.active !== m.params ? "var(--arch-moe)" : "var(--ink)" }}>{m.active}</td>
@@ -1460,12 +1490,21 @@ export default function FrontierModelsTable({ focus } = {}) {
 
 // ===== Claude-style theme: warm paper background, clay accent, serif display =====
 export const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
-export const serif = "'Tiempos Text', 'Georgia', 'Times New Roman', serif";
-const sans = "'Styrene B', 'Inter', system-ui, -apple-system, sans-serif";
-const CLAY = "var(--clay)";      // Claude clay/terracotta accent
-const CLAY_SOFT = "var(--clay-soft)"; // soft clay tint
-const PAPER = "var(--paper)";     // warm paper bg
-const CARD = "var(--card)";      // raised surface
+/**
+ * One old-style face for the whole page, controls included, the way a typeset
+ * report is set in one face rather than a display face over a UI face.
+ *
+ * These are all fonts a reader already has. Computer Modern would be the literal
+ * answer and it is the wrong one: it would mean shipping a webfont, and this site
+ * deliberately makes no third-party requests at runtime and hosts no binaries it
+ * does not need. Iowan Old Style and Palatino are what the transitional serifs of
+ * actual printed papers look like, and one of them is installed already.
+ */
+export const serif = "'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, 'Charter', Georgia, 'Times New Roman', serif";
+const CLAY = "var(--clay)";      // the one spot colour: a proof-correction red
+const CLAY_SOFT = "var(--clay-soft)"; // soft tint of it
+const PAPER = "var(--paper)";     // the page
+const CARD = "var(--card)";      // same as the page; nothing here is raised
 const INK = "var(--ink)";       // primary text
 const INK_SOFT = "var(--ink-soft)";  // secondary text
 const INK_FAINT = "var(--ink-faint)"; // tertiary
@@ -1473,7 +1512,7 @@ const LINE = "var(--line)";      // hairline border
 const LINE_SOFT = "var(--line-soft)";
 export const S = {
   page: { background: PAPER, minHeight: "100vh", padding: "40px 22px", color: INK,
-    fontFamily: sans },
+    fontFamily: serif },
   shell: { maxWidth: 1240, margin: "0 auto" },
   header: { marginBottom: 26 },
   eyebrow: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase",
@@ -1483,7 +1522,7 @@ export const S = {
   // The mark is wider than tall, so it is sized to sit against the cap height of
   // the title rather than to a square box.
   logo: { width: "clamp(62px, 9vw, 104px)", height: "auto", flexShrink: 0, display: "block",
-    borderRadius: 10 },
+    borderRadius: 0 },
   title: { fontFamily: serif, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.02em",
     margin: "0 0 14px", lineHeight: 1.02, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
@@ -1491,33 +1530,53 @@ export const S = {
   legendItem: { display: "inline-flex", alignItems: "center", gap: 7 },
   swatch: { width: 10, height: 10, borderRadius: 3, display: "inline-block" },
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
-  search: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 13px",
-    color: INK, fontSize: 14, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: sans },
+  // Underlined rather than boxed: a rule under a field is the form convention, and
+  // it removes one more rectangle from a page that had a great many.
+  search: { background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`,
+    borderRadius: 0, padding: "7px 2px",
+    color: INK, fontSize: 14.5, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: serif },
   // Wraps because the widest group (the column presets) is itself wider than a
   // 380px screen; without this the whole page picks up a horizontal scrollbar.
-  segGroup: { display: "inline-flex", flexWrap: "wrap", background: CARD,
-    border: `1px solid ${LINE}`, borderRadius: 9, padding: 3, gap: 2 },
-  seg: { background: "transparent", border: "none", color: INK_SOFT, padding: "6px 12px",
-    fontSize: 13, borderRadius: 6, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", fontFamily: sans },
+  segGroup: { display: "inline-flex", flexWrap: "wrap", background: "transparent",
+    border: `1px solid ${LINE}`, borderRadius: 0, padding: 0 },
+  seg: { background: "transparent", border: "none", borderRight: `1px solid ${LINE}`,
+    color: INK_SOFT, padding: "6px 13px", fontSize: 13, borderRadius: 0, cursor: "pointer",
+    fontWeight: 400, whiteSpace: "nowrap", fontFamily: serif },
   segOn: { background: CLAY, color: "var(--on-clay)" },
+  moreFilters: { display: "inline-flex", alignItems: "center", gap: 8, background: "transparent",
+    border: "none", borderBottom: `1px solid ${LINE}`, borderRadius: 0, padding: "7px 2px",
+    fontFamily: mono, fontSize: 11.5, letterSpacing: "0.08em", textTransform: "uppercase",
+    color: INK_FAINT, cursor: "pointer", whiteSpace: "nowrap" },
+  moreFiltersOn: { color: CLAY, borderBottomColor: CLAY },
+  moreCaret: { fontFamily: mono, fontSize: 13, lineHeight: 1 },
+  filterPanel: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16,
+    paddingLeft: 14, borderLeft: `2px solid ${LINE}` },
+  filterRow: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  filterLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em",
+    textTransform: "uppercase", color: INK_FAINT, minWidth: 92 },
   count: { fontFamily: mono, fontSize: 12, color: INK_FAINT, marginBottom: 10 },
-  // The table is its own scrollport in both directions: 58 rows would otherwise
-  // push the footer a couple of screens down the page.
+  // The table is its own scrollport in both directions: 66 rows would otherwise
+  // push the footer a couple of screens down the page. No box around it: a printed
+  // table is delimited by its rules, not by a frame, and the scrollport does not
+  // need to announce itself.
   tableWrap: { overflow: "auto", maxHeight: "clamp(380px, 72vh, 900px)",
-    border: `1px solid ${LINE}`, borderRadius: 14, background: CARD,
-    boxShadow: "0 1px 3px rgba(43,42,39,0.04)" },
+    borderBottom: `2px solid ${INK}`, background: CARD },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1240 },
-  // borderCollapse paints a cell's border on the table, not the cell, so a
-  // sticky header's bottom border scrolls away with the rows — inset shadow instead.
-  th: { padding: "14px 12px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", userSelect: "none",
-    boxShadow: `inset 0 -1px 0 ${LINE}`, position: "sticky", top: 0, zIndex: 2, background: CARD,
+  // Booktabs: a heavy rule above the header, a light one below it, a heavy one under
+  // the last row, and no vertical rules anywhere. borderCollapse paints a cell's
+  // border on the table rather than the cell, so a sticky header's own borders
+  // scroll away with the rows — both of its rules are inset shadows instead.
+  th: { padding: "13px 12px 9px", fontWeight: 400, fontSize: 11, cursor: "pointer", userSelect: "none",
+    fontFamily: mono, letterSpacing: "0.09em", textTransform: "uppercase",
+    boxShadow: `inset 0 2px 0 ${INK}, inset 0 -1px 0 ${INK}`,
+    position: "sticky", top: 0, zIndex: 2, background: CARD,
     whiteSpace: "nowrap", color: INK_SOFT },
   modelName: { display: "inline-flex", alignItems: "center", gap: 7 },
   compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
     accentColor: CLAY, verticalAlign: "middle" },
   // Fixed tray so the selection survives scrolling a 56-row table.
   compareBar: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60,
-    background: CARD, borderTop: `1px solid ${LINE}`, boxShadow: "0 -6px 24px rgba(0,0,0,0.10)",
+    background: CARD, borderTop: `1px solid ${LINE}`, boxShadow: "0 -6px 18px rgba(0,0,0,0.08)",
     padding: "12px 22px" },
   compareBarInner: { maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center",
     gap: 14, flexWrap: "wrap" },
@@ -1525,13 +1584,13 @@ export const S = {
     textTransform: "uppercase", color: INK_FAINT, flexShrink: 0 },
   compareChips: { display: "flex", gap: 7, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 },
   compareChip: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--detail-bg)",
-    border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 11px", cursor: "pointer",
-    fontSize: 12.5, color: INK, fontFamily: sans },
+    border: `1px solid ${LINE}`, borderRadius: 0, padding: "5px 11px", cursor: "pointer",
+    fontSize: 12.5, color: INK, fontFamily: serif },
   compareActions: { display: "flex", gap: 9, flexShrink: 0, alignItems: "center" },
   compareClear: { background: "transparent", border: "none", cursor: "pointer",
     fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
     color: INK_FAINT, padding: "8px 6px" },
-  compareGo: { background: CLAY, color: "var(--on-clay)", border: "none", borderRadius: 999,
+  compareGo: { background: CLAY, color: "var(--on-clay)", border: "none", borderRadius: 0,
     padding: "9px 18px", cursor: "pointer", fontFamily: mono, fontSize: 11.5,
     letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 },
   compareGoOff: { opacity: 0.42, cursor: "not-allowed" },
@@ -1555,8 +1614,9 @@ export const S = {
   intelNA: { fontFamily: mono, fontSize: 12, color: INK_FAINT },
   pill: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 },
   pillDot: { width: 6, height: 6, borderRadius: "50%", display: "inline-block" },
-  archTag: { fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 6,
-    border: "1px solid", whiteSpace: "nowrap" },
+  // No box. The colour already says which family this is, the legend above says what
+  // the colours mean, and a rectangle drawn 66 times down a column is pure furniture.
+  archTag: { fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap" },
   detailCell: { padding: 0, borderBottom: `1px solid ${LINE}` },
   // Pinned to the left edge of the scrollport so the panel stays put while the
   // table scrolls sideways underneath it. Width is set from the wrapper at runtime.
@@ -1564,19 +1624,19 @@ export const S = {
   // without it the panel would paint over the sticky header on vertical scroll.
   detailSticky: { position: "sticky", left: 0, zIndex: 1 },
   diagramBlock: { marginTop: 16 },
-  diagramBtn: { display: "block", padding: 0, border: `1px solid ${LINE}`, borderRadius: 10,
+  diagramBtn: { display: "block", padding: 0, border: `1px solid ${LINE}`, borderRadius: 0,
     background: CARD, cursor: "zoom-in", overflow: "hidden", position: "relative",
     width: "100%", maxWidth: 300, lineHeight: 0 },
   diagramImg: { width: "100%", height: "auto", display: "block" },
   diagramZoom: { position: "absolute", right: 7, bottom: 7, width: 24, height: 24,
-    display: "grid", placeItems: "center", borderRadius: 6, fontSize: 12,
+    display: "grid", placeItems: "center", borderRadius: 0, fontSize: 12,
     background: "var(--card)", border: `1px solid ${LINE}`, color: INK_SOFT, lineHeight: 1 },
   diagramCredit: { fontSize: 11, color: INK_FAINT, marginTop: 7, lineHeight: 1.5 },
   creditLink: { color: INK_SOFT, textDecoration: "underline", textUnderlineOffset: 2 },
   lightbox: { position: "fixed", inset: 0, zIndex: 100, background: "rgba(20,19,17,0.72)",
     display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" },
   // Reading view: generous measure and leading so long stage text is comfortable.
-  readerInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 16,
+  readerInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 0,
     padding: "26px 30px 24px", width: "min(760px, 94vw)", maxHeight: "92vh",
     overflow: "auto", cursor: "auto", boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
   readerBar: { display: "flex", alignItems: "flex-start", justifyContent: "space-between",
@@ -1594,21 +1654,21 @@ export const S = {
   readerStageHead: { display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap", marginBottom: 9 },
   readerStageName: { fontSize: 15, fontWeight: 650, color: INK },
   curriculum: { marginTop: 11, padding: "11px 14px", background: "var(--detail-bg)",
-    border: `1px solid ${LINE_SOFT}`, borderRadius: 9, borderLeft: `2px solid ${CLAY}` },
+    border: `1px solid ${LINE_SOFT}`, borderRadius: 0, borderLeft: `2px solid ${CLAY}` },
   curriculumLabel: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
     textTransform: "uppercase", color: CLAY, marginBottom: 5 },
   curriculumText: { margin: 0, fontSize: 13, lineHeight: 1.7, color: INK_SOFT, maxWidth: "66ch" },
   readerFoot: { display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center",
     justifyContent: "space-between", paddingTop: 16, borderTop: `1px solid ${LINE}`,
     fontSize: 12, color: INK_SOFT },
-  lightboxInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 14,
+  lightboxInner: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 0, padding: 14,
     maxWidth: "min(1100px, 96vw)", maxHeight: "94vh", overflow: "auto", cursor: "auto",
     boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
   lightboxBar: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 10 },
   lightboxTitle: { fontFamily: mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: INK_SOFT },
-  lightboxClose: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 7,
+  lightboxClose: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
     width: 28, height: 28, cursor: "pointer", color: INK_SOFT, fontSize: 13, lineHeight: 1, flexShrink: 0 },
-  lightboxImg: { display: "block", maxWidth: "100%", height: "auto", borderRadius: 8 },
+  lightboxImg: { display: "block", maxWidth: "100%", height: "auto", borderRadius: 0 },
   lightboxCredit: { fontSize: 11, color: INK_FAINT, marginTop: 10, lineHeight: 1.5 },
   detailInner: { padding: "18px 18px 22px 34px", boxSizing: "border-box" },
   detailCols: { display: "flex", flexWrap: "wrap", gap: 30, alignItems: "flex-start" },
@@ -1631,14 +1691,14 @@ export const S = {
   clampStage: { display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical",
     overflow: "hidden" },
   moreBtn: { marginTop: 12, display: "inline-flex", alignItems: "center", gap: 7,
-    background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999,
+    background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
     padding: "7px 15px", cursor: "pointer", fontFamily: mono, fontSize: 10.5,
     letterSpacing: "0.1em", textTransform: "uppercase", color: INK_SOFT },
   attnHover: { borderBottom: `1px dotted ${INK_FAINT}`, cursor: "help" },
   tooltip: { position: "fixed", zIndex: 50, maxWidth: 300, background: INK,
-    border: "none", borderRadius: 9, padding: "10px 12px",
+    border: "none", borderRadius: 0, padding: "10px 12px",
     fontSize: 12.5, lineHeight: 1.5, color: "var(--paper)", pointerEvents: "none",
-    boxShadow: "0 10px 32px rgba(43,42,39,0.22)" },
+    boxShadow: "0 6px 20px rgba(20,18,14,0.18)" },
   linkRow: { display: "flex", gap: 9, alignItems: "baseline", marginTop: 8, fontSize: 12.5, lineHeight: 1.5 },
   linkTag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
     color: INK_FAINT, flexShrink: 0, paddingTop: 1, minWidth: 44 },
@@ -1648,14 +1708,14 @@ export const S = {
   detailNA: { margin: 0, fontSize: 13.5, lineHeight: 1.6, color: INK_SOFT, fontStyle: "italic" },
   pipeline: { display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 10 },
   stage: { flex: "1 1 210px", minWidth: 200, maxWidth: 310, background: CARD,
-    border: `1px solid ${LINE}`, borderRadius: 10, padding: "14px 16px 16px" },
+    border: `1px solid ${LINE}`, borderRadius: 0, padding: "14px 16px 16px" },
   stageHead: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 },
   stageNum: { fontFamily: mono, fontSize: 11, fontWeight: 700, color: "var(--on-clay)", background: CLAY,
     width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center",
     justifyContent: "center", flexShrink: 0 },
   stageName: { fontSize: 13, fontWeight: 650, color: INK, lineHeight: 1.2 },
   stageTokens: { display: "inline-block", fontFamily: mono, fontSize: 11.5, fontWeight: 700,
-    color: "var(--tok-ok-fg)", background: "var(--tok-ok-bg)", border: "1px solid var(--tok-ok-line)", borderRadius: 5,
+    color: "var(--tok-ok-fg)", background: "var(--tok-ok-bg)", border: "1px solid var(--tok-ok-line)", borderRadius: 0,
     padding: "1px 6px", marginBottom: 6 },
   stageTokensEst: { color: "var(--tok-est-fg)", background: "var(--tok-est-bg)", border: "1px solid var(--tok-est-line)" },
   stageDetail: { margin: 0, fontSize: 12.5, lineHeight: 1.72, color: INK_SOFT },
@@ -1663,7 +1723,7 @@ export const S = {
     letterSpacing: "0.04em", color: CLAY },
   // Shown when a pipeline is borrowed from a predecessor: has to read as a warning,
   // not as this model's own disclosure.
-  provenance: { margin: "0 0 14px", padding: "12px 15px", borderRadius: 10,
+  provenance: { margin: "0 0 14px", padding: "12px 15px", borderRadius: 0,
     background: "var(--tok-est-bg)", border: `1px solid var(--tok-est-line)`,
     borderLeft: `3px solid var(--tok-est-fg)` },
   provenanceTag: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
@@ -1673,7 +1733,7 @@ export const S = {
   synthesis: { marginTop: 40 },
   synthHead: { fontFamily: serif, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },
   synthGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 },
-  synthCard: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: "20px 20px 22px" },
+  synthCard: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 0, padding: "20px 20px 22px" },
   synthNum: { fontFamily: mono, fontSize: 13, fontWeight: 700, color: CLAY, marginBottom: 10 },
   synthTitle: { fontFamily: serif, fontSize: 17, fontWeight: 500, margin: "0 0 9px", color: INK },
   synthBody: { margin: 0, fontSize: 13, lineHeight: 1.65, color: INK_SOFT },

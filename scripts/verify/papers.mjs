@@ -106,8 +106,13 @@ await page.getByPlaceholder(/Search paper/i).fill("");
 await page.waitForTimeout(250);
 
 console.log("\n=== NAV ===");
-for (const [label, hash] of [["Atlas", "#/"], ["Attention", "#/attention"], ["Papers", "#/papers"]]) {
+for (const [label, hash] of [["Atlas", "#/"], ["Papers", "#/papers"], ["Openness", "#/openness"]]) {
   t(`nav has ${label}`, (await page.locator(`nav a[href="${hash}"]`).count()) > 0);
+}
+// Removed from the bar on purpose. The routes still resolve — attention.mjs and
+// derived.mjs both load them directly — so this asserts the bar, not the router.
+for (const [label, hash] of [["Attention", "#/attention"], ["Trends", "#/trends"], ["Tools", "#/tools"]]) {
+  t(`nav does not offer ${label}`, (await page.locator(`nav a[href="${hash}"]`).count()) === 0);
 }
 await page.locator('nav a[href="#/"]').first().click();
 await page.waitForTimeout(500);

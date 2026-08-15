@@ -2,10 +2,10 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-13",
+ "version": "2026-08-15",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-13},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-15},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
  "count": 66,
  "models": [

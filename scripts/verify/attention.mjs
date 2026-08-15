@@ -73,14 +73,16 @@ t("every citation points at arxiv or a lab domain", links.every((h) => /^https:\
   links.filter((h) => !/^https:\/\//.test(h)).join(", "));
 t("at least one paper is cited", links.length > 0, `${links.length} citations`);
 
-console.log("\n=== REACHABLE FROM THE TABLE, AND BACK AGAIN ===");
+// The nav no longer offers this page, so the route itself is the entry point: a
+// pasted or bookmarked #/attention link has to keep working, and the way back has
+// to still be there once you are on it.
+console.log("\n=== REACHABLE BY URL, AND BACK AGAIN ===");
 await page.goto(BASE.replace(/#.*$/, ""), { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
-const entry = page.locator('nav a[href="#/attention"]');
-t("the table's nav links to the menu", (await entry.count()) > 0);
-await entry.first().click();
+t("the table's nav does not link to the menu", (await page.locator('nav a[href="#/attention"]').count()) === 0);
+await page.goto(URL, { waitUntil: "networkidle" });
 await page.waitForTimeout(500);
-t("that link opens the menu", (await page.locator("[data-attn]").count()) > 0);
+t("the route still opens the menu", (await page.locator("[data-attn]").count()) > 0);
 await page.locator('nav a[href="#/"]').first().click();
 await page.waitForTimeout(500);
 t("nav returns to the table", (await page.locator("table tbody tr").count()) > 0);
