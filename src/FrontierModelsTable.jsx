@@ -900,13 +900,6 @@ export default function FrontierModelsTable({ focus } = {}) {
           </div>
         </header>
 
-        <div style={S.legend}>
-          <span style={S.legendItem}><span style={{ ...S.swatch, background: ARCH_COLORS["Dense"] }} />Dense — all params active every token</span>
-          <span style={S.legendItem}><span style={{ ...S.swatch, background: ARCH_COLORS["Sparse MoE"] }} />MoE — router fires a subset of experts</span>
-          <span style={S.legendItem}><span style={{ ...S.swatch, background: ARCH_COLORS["MoE (reported)"] }} />MoE (reported) — stated as MoE, no counts published</span>
-          <span style={S.legendItem}><span style={{ ...S.swatch, background: ARCH_COLORS["Undisclosed"] }} />Undisclosed — closed flagship</span>
-        </div>
-
         <div style={S.controls}>
           <input style={S.search} placeholder="Search model or provider…"
             value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -1526,9 +1519,6 @@ export const S = {
   title: { fontFamily: serif, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.02em",
     margin: "0 0 14px", lineHeight: 1.02, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
-  legend: { display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 20, fontSize: 12.5, color: INK_SOFT },
-  legendItem: { display: "inline-flex", alignItems: "center", gap: 7 },
-  swatch: { width: 10, height: 10, borderRadius: 3, display: "inline-block" },
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
   // Underlined rather than boxed: a rule under a field is the form convention, and
   // it removes one more rectangle from a page that had a great many.
