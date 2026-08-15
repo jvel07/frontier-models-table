@@ -111,7 +111,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 7,
+   "intel": 6,
    "coding": null,
    "training": [
     {
@@ -199,7 +199,7 @@
    "maxOut": null,
    "license": "Modified MIT",
    "open": true,
-   "intel": 44,
+   "intel": 45,
    "coding": 62,
    "trainingSource": "Moonshot published no training details for K2.6 — neither its blog post nor its model card describes any stage, token budget or recipe. The pipeline below is Kimi K2.5's, taken from that model's technical report (arXiv 2602.02276), and is shown as the closest documented reference rather than as a description of K2.6. The one link Moonshot does state is architectural: the K2.6 model card says it \"has the same architecture as Kimi-K2.5, and the deployment method can be directly reused\". That covers architecture and deployment only — treat the stages here as K2.5's until Moonshot publishes K2.6's own.",
    "training": [
@@ -298,7 +298,7 @@
    "maxOut": null,
    "license": "MIT",
    "open": true,
-   "intel": 40,
+   "intel": 41,
    "coding": 56,
    "training": null,
    "note": "The middle release in Zhipu's fast GLM-5 cadence (5 in Feb, 5.1 in Apr, 5.2 in Jun 2026). Architecture is identical to GLM-5 — 744B/40B, 78 MLA layers with DeepSeek Sparse Attention, MTP-capable — with the entire gain coming from post-training aimed at long-horizon agentic coding.",
@@ -545,7 +545,7 @@
    "maxOut": null,
    "license": "Proprietary",
    "open": false,
-   "intel": 43,
+   "intel": 44,
    "coding": 59,
    "training": null,
    "note": "The first model out of Meta Superintelligence Labs, shipped 8 April 2026, and the first Meta flagship that is not a Llama. It is also the first one Meta kept closed — no weights, no Hugging Face repo, API and Meta AI only — which breaks the open-weight line that ran from Llama 1 through Llama 4. Meta describes it as natively multimodal, with vision trained into the model rather than attached to a finished text model, and frames it as the first rung of a scaling ladder rather than a finished frontier system. Parameter count, architecture, attention and training are all undisclosed, so the rows below stay empty by design.",
@@ -605,7 +605,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 60,
+   "intel": 63,
    "coding": 78,
    "training": null,
    "note": "Anthropic's new Opus-tier flagship, shipped 24 July 2026, succeeding Opus 4.8. Adds an 'xhigh' reasoning-effort mode and a Fast mode (~2.5x speed at 2x price). Positioned just below the Mythos-class Fable 5 — reported near-Fable intelligence at roughly half the cost. Architecture, parameters and training remain undisclosed, as with the rest of the Claude line. Intelligence figure reflects Artificial Analysis's own framing of Opus 5 as 'Fable 5 level intelligence at a lower cost per task' — the leaderboard snapshot checked had added Opus 5 evaluations but not yet a separate Index row, so treat 60 as provisional.",
@@ -665,7 +665,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 53,
+   "intel": 55,
    "coding": 72,
    "training": null,
    "note": "Sonnet tier crossed to 5 on 30 June 2026, becoming Anthropic's default high-volume workhorse. Roughly 63% on SWE-bench Pro against Opus 5's 79%, at about 0.6x the price. No architecture or training disclosure.",
@@ -725,7 +725,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 59,
+   "intel": 61,
    "coding": 78,
    "training": null,
    "note": "Top variant of the GPT-5.6 family (9 July 2026), which ships three fixed tiers: Luna, Terra, Sol. Artificial Analysis reports Sol at roughly Fable 5's intelligence for about a third of the cost, and leading its Coding Agent Index at ~80. Token-efficient: ~15k tokens per Index task vs GPT-5.5's 16k. Architecture undisclosed.",
@@ -785,7 +785,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 55,
+   "intel": 57,
    "coding": 77,
    "training": null,
    "note": "Middle tier of the GPT-5.6 family — OpenAI's intended production default. Reported to land just above Claude Fable 5 on the Artificial Analysis Coding Agent Index while sitting below Sol. No separate Intelligence Index figure published.",
@@ -845,7 +845,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 51,
+   "intel": 52,
    "coding": 71,
    "training": null,
    "note": "Cheapest, highest-volume tier of the GPT-5.6 family. Reported to outperform Claude Opus 4.8 on the Coding Agent Index despite the lower tier. Along with Sol it sits on Artificial Analysis's intelligence-vs-cost Pareto frontier (Terra does not).",
@@ -905,7 +905,7 @@
    "maxOut": null,
    "license": "Proprietary",
    "open": false,
-   "intel": 54,
+   "intel": 56,
    "coding": 72,
    "training": null,
    "note": "xAI's flagship as of 8 July 2026, trained in partnership with Cursor and aimed at coding, agentic tool calling and knowledge work. 500K context — notably smaller than the 2M window of Grok 4.3 — with configurable reasoning and ~80 tok/s serving. Architecture undisclosed.",
@@ -965,7 +965,7 @@
    "maxOut": null,
    "license": "Proprietary",
    "open": false,
-   "intel": 51,
+   "intel": 53,
    "coding": 71,
    "training": null,
    "note": "Meta's follow-up three months after Muse Spark (9 July 2026), and the release that put Meta behind a paid developer API for the first time. The context window goes from roughly 262K to 1M, and Artificial Analysis measured the Intelligence Index rising 43 → 51, with the coding sub-score alone up 12 points — an unusually large move for a point release. Positioned for agentic work: tool use, computer use and orchestration across external apps, taking text, image, video and audio in and returning text only. Architecture and training remain undisclosed, as with 1.0.",
@@ -1025,7 +1025,7 @@
    "maxOut": null,
    "license": "Proprietary",
    "open": false,
-   "intel": null,
+   "intel": 57,
    "coding": null,
    "training": null,
    "note": "A coding-focused point release on 5 August 2026, shipped alongside Muse Code, Meta's own terminal agent — the two were trained together, which is unusual enough to be the headline: the model is tuned for the harness it runs in. Meta reports scaling training compute on long-horizon coding work, whole-repository generation and end-to-end projects, but publishes no architecture, no parameter count and no token budget, exactly as with 1.0 and 1.1. Takes text, image, video, audio and PDF against one 1M-token budget, returns text. On 10 August Meta said it would open the weights, reversing the closed policy that covered the first three Muse Spark releases; until a repository exists, this stays closed here. Artificial Analysis has rated it, but no score is recorded here yet.",
@@ -1085,7 +1085,7 @@
    "maxOut": 131072,
    "license": "Proprietary (API)",
    "open": false,
-   "intel": null,
+   "intel": 58,
    "coding": null,
    "training": null,
    "note": "Previewed 19 July 2026, days after Kimi K3, and still a preview: the model id is qwen3.8-max-preview, and as of early August there is no general-availability release, no model card, no licence and no open-weight drop. The name carries \"(preview)\" here for that reason — Alibaba has committed to open weights but published no date, so whatever eventually ships under the plain name may not match these figures. 2.4T total parameters is Alibaba's own number and the first Qwen above a trillion to take image and video input. Active parameters per token are pointedly absent, which on a sparse MoE is the figure that determines what it costs to serve, so the sparsity of the largest Qwen is unknown. Attention is undisclosed too: the 3.5-3.7 line used a Gated DeltaNet hybrid, but nothing published says 3.8 does, so the atlas does not carry that forward. Not yet rated by Artificial Analysis.",
@@ -1145,7 +1145,7 @@
    "maxOut": 131072,
    "license": "Kimi K3 License",
    "open": true,
-   "intel": 57,
+   "intel": 60,
    "coding": 76,
    "training": [
     {
@@ -1249,7 +1249,7 @@
    "maxOut": 128000,
    "license": "MIT",
    "open": true,
-   "intel": 51,
+   "intel": 53,
    "coding": 69,
    "training": null,
    "note": "Third release in Zhipu's fast GLM-5 cadence (GLM-5 Feb, 5.1 Apr, 5.2 Jun 2026). ~753B total with ~40B active (256 routed experts, 8 per token). Uses DeepSeek-style sparse attention with MLA KV-cache compression plus IndexShare, which Zhipu reports cuts per-token FLOPs 2.9x at 1M context. MIT licensed with no regional restrictions. Shipped days after the US export clampdown on Anthropic's Fable/Mythos models.",
@@ -1321,7 +1321,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 41,
+   "intel": 42,
    "coding": 52,
    "training": null,
    "note": "First open-weights model from Thinking Machines Lab (Mira Murati's startup), released 15 July 2026. 975B total / 41B active MoE, Apache 2.0. Accepts text, image and audio but emits text only. Explicitly designed as a base for fine-tuning rather than a benchmark winner — it ships an 'effort dial' (0.2–0.99) instead of fixed tiers. Trails GLM-5.2 and Kimi on terminal-agent coding; SimpleQA Verified of 43.9% lags the closed flagships badly, so pair it with RAG for factual work. An Inkling-Small preview also exists.",
@@ -1548,7 +1548,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 60,
+   "intel": 62,
    "coding": 76,
    "training": null,
    "note": "Anthropic's Mythos-class flagship. Architecture undisclosed. Like all frontier closed models it is a decoder-only transformer at its core, but parameter counts, expert layout, and attention scheme are unpublished. Shares the long-context (1M) design goal of the Opus line with extra max-output headroom.",
@@ -1608,7 +1608,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 56,
+   "intel": 57,
    "coding": 74,
    "training": null,
    "note": "Dense-vs-MoE split unconfirmed. Anthropic publishes no parameter or architecture details. Differentiates on post-training (reasoning, tool use, safety) rather than disclosed structural innovations. 1M context with no long-context price tiering.",
@@ -1668,7 +1668,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 34,
+   "intel": 48,
    "coding": 63,
    "training": null,
    "note": "Mid-flagship tier. Same undisclosed-architecture posture as the rest of the Claude family; added a 1M-token window this generation. Optimized for latency/cost balance against Opus.",
@@ -1788,7 +1788,7 @@
    "maxOut": 128000,
    "license": "Proprietary",
    "open": false,
-   "intel": 55,
+   "intel": 56,
    "coding": 75,
    "training": null,
    "note": "Widely reported to be a sparse Mixture-of-Experts, but OpenAI publishes no counts or routing. Natively multimodal, hybrid reasoning model with adjustable thinking effort. 128K max output is among the highest of the closed flagships.",
@@ -1848,7 +1848,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": null,
+   "intel": 32,
    "coding": 16,
    "training": null,
    "note": "Distilled/smaller sibling of the GPT-5 line for high-volume, latency-sensitive work. Architecture undisclosed; assumed to share the family's MoE lineage at reduced scale.",
@@ -1908,7 +1908,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 46,
+   "intel": 48,
    "coding": 69,
    "training": null,
    "note": "Sparse MoE per Google's earlier Gemini disclosures; exact counts unpublished. The most fully multimodal flagship (native video). Largest hosted context at 2M, with tiered pricing above 200K. Same lineage as the open Gemma models but at far larger scale.",
@@ -1968,7 +1968,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 50,
+   "intel": 52,
    "coding": 70,
    "training": null,
    "note": "Speed-optimized Gemini tier. 1M context, very high throughput. Shares the family's sparse architecture at smaller effective compute.",
@@ -2088,7 +2088,7 @@
    "maxOut": 384000,
    "license": "MIT",
    "open": true,
-   "intel": 44,
+   "intel": 53,
    "coding": 59,
    "training": [
     {
@@ -2112,7 +2112,7 @@
      "detail": "A single student model distills from 10+ specialist teachers on its own rollouts (OPD), merging skills into one model."
     }
    ],
-   "note": "61 layers, 384 routed experts + 1 shared, 6 active per token, so only 49B of 1.6T params fire per token. Hybrid attention interleaves Compressed Sparse Attention (4x KV compression + FP4 'lightning indexer' top-k selection) with Hierarchical Chunked Attention, plus manifold-constrained hyper-connections (mHC) replacing the standard residual stream. 384K max output is 3-6x its peers. DeepSeek published DeepSeek-V4-Pro-0813 on 13 August 2026 as the official release superseding the preview, adding a DSpark speculative-decoding module; every architecture field recorded here is unchanged in its config, but the scores shown were measured before it and have not been re-sourced.",
+   "note": "61 layers, 384 routed experts + 1 shared, 6 active per token, so only 49B of 1.6T params fire per token. Hybrid attention interleaves Compressed Sparse Attention (4x KV compression + FP4 'lightning indexer' top-k selection) with Hierarchical Chunked Attention, plus manifold-constrained hyper-connections (mHC) replacing the standard residual stream. 384K max output is 3-6x its peers. DeepSeek published DeepSeek-V4-Pro-0813 on 13 August 2026 as the official release superseding the preview, adding a DSpark speculative-decoding module; every architecture field recorded here is unchanged in its config. The intelligence score is that release's — AA lists DeepSeek V4 Pro 0813 eight points above the preview it replaced — while the coding score is still the preview's.",
    "spec": {
     "vocab": "129,280",
     "layers": 61,
@@ -2182,7 +2182,7 @@
    "maxOut": 128000,
    "license": "MIT",
    "open": true,
-   "intel": 40,
+   "intel": 52,
    "coding": 56,
    "training": [
     {
@@ -2206,7 +2206,7 @@
      "detail": "Multi-teacher OPD into the unified student."
     }
    ],
-   "note": "Shares V4 Pro's attention stack and mHC design at a quarter the scale: 284B total, 13B active. The cheapest frontier-class model to run. Same 1M window, lower max output. DeepSeek published a refreshed checkpoint, DeepSeek-V4-Flash-0731, on 31 July 2026; the scores shown here were measured before it and have not been re-sourced.",
+   "note": "Shares V4 Pro's attention stack and mHC design at a quarter the scale: 284B total, 13B active. The cheapest frontier-class model to run. Same 1M window, lower max output. DeepSeek published a refreshed checkpoint, DeepSeek-V4-Flash-0731, on 31 July 2026. The intelligence score is that checkpoint's, ten points above the one it replaced; the coding score still predates it.",
    "spec": {
     "vocab": "129,280",
     "layers": 43,
@@ -2442,7 +2442,7 @@
    "maxOut": 65536,
    "license": "Proprietary (API)",
    "open": false,
-   "intel": 46,
+   "intel": 47,
    "coding": 66,
    "training": [
     {
@@ -2589,7 +2589,7 @@
    "maxOut": 64000,
    "license": "Proprietary",
    "open": false,
-   "intel": 44,
+   "intel": 45,
    "coding": 59,
    "training": null,
    "note": "Uses MiniMax Sparse Attention (MSA) for its 1M window. Multimodal across text/image/video. Pricing doubles past 512K input tokens.",
@@ -2785,7 +2785,7 @@
    "maxOut": 32000,
    "license": "MIT",
    "open": true,
-   "intel": null,
+   "intel": 41,
    "coding": null,
    "training": [
     {
@@ -2886,7 +2886,7 @@
    "maxOut": 32000,
    "license": "CC-BY-NC",
    "open": true,
-   "intel": 8,
+   "intel": 7,
    "coding": null,
    "training": [
     {
@@ -3052,7 +3052,7 @@
    "maxOut": 32000,
    "license": "NVIDIA Nemotron Open Model License",
    "open": true,
-   "intel": 25,
+   "intel": 26,
    "coding": 38,
    "training": [
     {
@@ -3138,7 +3138,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": null,
+   "intel": 35,
    "coding": null,
    "training": null,
    "note": "Meta's return to open weights, 10 August 2026, and the first Muse model with a licence that permits anything: Apache 2.0, after three closed Muse Spark releases. Built to run locally rather than to top a leaderboard — a dense 30B including its vision tower, quantised to roughly 4 bits so the language model, the KV cache, the perception encoder and a speculative drafter all fit inside a 24GB card. Attention repeats three sliding-window layers to one global, at a 2,048-token window. Weights ship in several formats from the same repository: BF16 for research, GGUF for llama.cpp, and ExecuTorch builds for on-device use. Not yet rated by Artificial Analysis. The layer and head figures widely reported for it are not recorded here, because no one has read them off the config.json for this atlas yet.",
@@ -3198,7 +3198,7 @@
    "maxOut": 8192,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 29,
+   "intel": 30,
    "coding": 43,
    "training": [
     {
@@ -3366,7 +3366,7 @@
    "maxOut": 8192,
    "license": "Gemma",
    "open": true,
-   "intel": null,
+   "intel": 1,
    "coding": 3,
    "training": [
     {
@@ -3751,7 +3751,7 @@
    "maxOut": 16000,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 21,
+   "intel": 22,
    "coding": 29,
    "training": [
     {
@@ -3922,7 +3922,7 @@
    "maxOut": 65536,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 37,
+   "intel": 38,
    "coding": 54,
    "training": [
     {
@@ -4094,7 +4094,7 @@
    "maxOut": 8192,
    "license": "Llama 3.2 Community",
    "open": true,
-   "intel": null,
+   "intel": 4,
    "coding": null,
    "training": [
     {
@@ -4165,7 +4165,7 @@
    "maxOut": 8192,
    "license": "Llama 3.2 Community",
    "open": true,
-   "intel": null,
+   "intel": 1,
    "coding": null,
    "training": [
     {
@@ -4671,7 +4671,7 @@
    "maxOut": 16000,
    "license": "NVIDIA Nemotron Open Model License",
    "open": true,
-   "intel": 14,
+   "intel": 15,
    "coding": 14,
    "training": [
     {
@@ -4762,7 +4762,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 11,
+   "intel": 13,
    "coding": null,
    "training": [
     {
@@ -4856,7 +4856,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": 14,
+   "intel": 21,
    "coding": null,
    "training": [
     {
