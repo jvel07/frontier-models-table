@@ -12,7 +12,7 @@ await page.goto(URL, { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
 
 // make sure no filters/search narrow the set, and sort by name for a stable 1:1 mapping
-await page.getByPlaceholder("Search model or provider…").fill("");
+await page.locator("[data-search]").fill("");
 for (const g of await page.getByRole("button", { name: "All", exact: true }).all()) await g.click();
 await page.waitForTimeout(200);
 await page.locator("thead th").filter({ hasText: "Model" }).first().click(); // asc

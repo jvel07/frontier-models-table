@@ -51,7 +51,7 @@ t("header has an opaque background", sticky.bg !== "rgba(0, 0, 0, 0)", sticky.bg
 t("header sits above the detail panel", Number(sticky.z) >= 2, `z-index ${sticky.z}`);
 
 console.log("\n=== EXPANDED ROW STILL BEHAVES ===");
-await p.getByPlaceholder("Search model or provider…").fill("");
+await p.locator("[data-search]").fill("");
 await p.waitForTimeout(200);
 // expand a row far down the list to exercise the scroll-into-view
 const rows = p.locator("table tbody tr[data-model]");

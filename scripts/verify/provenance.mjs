@@ -8,7 +8,7 @@ const t = (l, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : "
 
 await p.goto(B, { waitUntil: "networkidle" });
 await p.waitForSelector("table tbody tr");
-await p.getByPlaceholder("Search model or provider…").fill("Kimi K2.6");
+await p.locator("[data-search]").fill("Kimi K2.6");
 await p.waitForTimeout(320);
 await p.locator("table tbody tr").first().click();
 await p.waitForTimeout(600);

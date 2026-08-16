@@ -10,7 +10,7 @@ let pass = 0, fail = 0;
 const t = (l, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : "FAIL"}  ${l}${x ? " — " + x : ""}`); };
 
 const pick = async (name) => {
-  await page.getByPlaceholder("Search model or provider…").fill(name);
+  await page.locator("[data-search]").fill(name);
   await page.waitForTimeout(280);
   await page.locator(`input[aria-label="Select ${name} for comparison"]`).first().check();
   await page.waitForTimeout(150);
@@ -33,7 +33,7 @@ console.log("\n=== MAX 4 ENFORCED ===");
 await pick("Qwen3 235B-A22B");
 await pick("Gemma 4 26B-A4B");
 t("count reads 4 of 4", (await page.locator("[aria-label='Model comparison tray']").textContent()).includes("4 of 4"));
-await page.getByPlaceholder("Search model or provider…").fill("GLM-5.2");
+await page.locator("[data-search]").fill("GLM-5.2");
 await page.waitForTimeout(280);
 const fifth = page.locator('input[aria-label="Select GLM-5.2 for comparison"]').first();
 t("5th checkbox is disabled at the limit", await fifth.isDisabled());

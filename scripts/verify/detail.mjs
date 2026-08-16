@@ -35,7 +35,7 @@ const tipText = await page.locator("body").evaluate(() => document.body.innerTex
 t("hovering Intelligence header shows AA tooltip", tipText.includes("Artificial Analysis Intelligence Index"));
 
 console.log("\n=== #5 READABILITY: clamp + reader modal ===");
-await page.getByPlaceholder("Search model or provider…").fill("Kimi K3");
+await page.locator("[data-search]").fill("Kimi K3");
 await page.waitForTimeout(250);
 await page.locator("table tbody tr").first().click();
 await page.waitForTimeout(400);
@@ -59,7 +59,7 @@ await page.waitForTimeout(300);
 t("Esc closes reader", (await page.locator("[role=dialog]").count()) === 0);
 
 console.log("\n=== #6/#7 DATA CURRICULUM + PIPELINE PHASES ===");
-await page.getByPlaceholder("Search model or provider…").fill("GLM-5");
+await page.locator("[data-search]").fill("GLM-5");
 await page.waitForTimeout(250);
 const rows = await page.locator("table tbody tr[data-model]").evaluateAll(els => els.map(e => e.dataset.model));
 t("GLM-5 (exact) row found", rows.includes("GLM-5"), rows.join(","));
@@ -79,11 +79,11 @@ t("reader shows Data curriculum section", glmReader.includes("Data curriculum"))
 t("curriculum mentions specific % figures from the paper", glmReader.includes("28%") || glmReader.includes("DCLM"));
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
-await page.getByPlaceholder("Search model or provider…").fill("");
+await page.locator("[data-search]").fill("");
 await page.waitForTimeout(250);
 
 console.log("\n=== #1 LOCAL IMAGE FALLBACK ===");
-await page.getByPlaceholder("Search model or provider…").fill("Kimi K3");
+await page.locator("[data-search]").fill("Kimi K3");
 await page.waitForTimeout(250);
 await page.locator("table tbody tr").first().click();
 await page.waitForTimeout(500);
@@ -112,11 +112,54 @@ const lbSrc2 = await lbImg.getAttribute("src");
 t("lightbox img falls back to local /diagrams/full/ on error", lbSrc2.includes("/diagrams/full/kimi-k3.webp"), lbSrc2);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(200);
-await page.getByPlaceholder("Search model or provider…").fill("");
+await page.locator("[data-search]").fill("");
+await page.waitForTimeout(200);
+
+console.log("\n=== SEARCH ===");
+await page.locator("[data-search]").fill("");
+await page.waitForTimeout(200);
+// The search reads the columns it displays, so a mechanism name has to find models.
+// This is the check that would have failed before: "mamba" used to match nothing,
+// because only name and provider were searched.
+await page.locator("[data-search]").fill("mamba");
+await page.waitForTimeout(250);
+const mamba = await page.locator("table tbody tr[data-model]").evaluateAll((els) => els.map((e) => e.dataset.model));
+t("searching an attention mechanism finds models", mamba.length > 0, mamba.join(","));
+t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(11)")
+  .allTextContents()).every((s) => /mamba/i.test(s)));
+t("the live count matches the rows shown",
+  (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/71`);
+
+await page.locator("[data-search]").fill("zzzznope");
+await page.waitForTimeout(250);
+t("no matches shows an empty state, not a bare header",
+  (await page.locator("[data-empty]").count()) === 1 && !(await page.locator("#atlas-table").isVisible()));
+await page.locator("[data-empty] button").click();
+await page.waitForTimeout(250);
+t("clearing from the empty state restores every row", (await dataRows().count()) === 71);
+
+// "/" is a global shortcut, so it must not fire while the caret is already in a field.
+await page.locator("body").click({ position: { x: 5, y: 5 } });
+await page.keyboard.press("/");
+await page.waitForTimeout(150);
+t('"/" focuses the search field', await page.evaluate(() => document.activeElement?.dataset?.search !== undefined));
+await page.keyboard.type("glm");
+await page.keyboard.press("/");
+await page.waitForTimeout(150);
+t('"/" inside the field types a slash instead of hijacking',
+  (await page.locator("[data-search]").inputValue()) === "glm/");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+t("Escape clears the query", (await page.locator("[data-search]").inputValue()) === "");
+
+await page.locator("[data-tries] button").first().click();
+await page.waitForTimeout(250);
+t("a suggestion chip runs a query that lands on models", (await dataRows().count()) > 0);
+await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
 
 console.log("\n=== REGRESSION ===");
-await page.getByPlaceholder("Search model or provider…").fill("");
+await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
 t("all 71 models present", (await dataRows().count()) === 71);
 

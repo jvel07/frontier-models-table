@@ -665,6 +665,29 @@ export const PRESETS = {
 };
 
 /**
+ * Mark the searched-for text inside a model name.
+ *
+ * Only a literal, case-insensitive hit is marked. The filter itself is looser — it
+ * strips separators, so "qwen 3.8" matches Qwen3.8 — and it also reads columns this
+ * never touches, so a row can match without anything lighting up here. That is the
+ * right way round: a highlight that pointed at characters the reader did not type
+ * would be worse than no highlight at all.
+ */
+function Highlight({ text, query }) {
+  const q = query.trim();
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return text;
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark style={S.mark}>{text.slice(i, i + q.length)}</mark>
+      {text.slice(i + q.length)}
+    </>
+  );
+}
+
+/**
  * One of the three Artificial Analysis scores, as a bar plus its number.
  *
  * All three are 0-100 on the same footing, so they share one cell and one set of
@@ -702,6 +725,16 @@ function ScoreCell({ value, via }) {
     </td>
   );
 }
+
+/**
+ * One-tap queries offered under an empty search box.
+ *
+ * Every one is a substring of a value the search actually reads — an attention
+ * mechanism, a channel-mixing family, a licence, a modality — so a chip can never
+ * land on an empty table. Sorted roughly by how much of the field each one cuts
+ * away, so the first tap is a broad slice and the last is a narrow one.
+ */
+const SEARCH_SUGGESTIONS = ["MoE", "Dense", "MLA", "Sliding-window", "DeltaNet", "Mamba", "Apache 2.0"];
 
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
@@ -819,6 +852,8 @@ export default function FrontierModelsTable({ focus } = {}) {
   // the split people actually come here to make.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [searchFocus, setSearchFocus] = useState(false);
+  const searchRef = useRef(null);
   // #/model/<name> lands here: open that row so the link is worth sharing.
   const [expanded, setExpanded] = useState(() =>
     (focus && MODELS.some((m) => m.name === focus)) ? focus : null);
@@ -859,6 +894,32 @@ export default function FrontierModelsTable({ focus } = {}) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  /**
+   * "/" jumps to the search field, Escape leaves it — the two keys every reader
+   * already has in their fingers from every other search box on the internet.
+   *
+   * The guard matters more than the shortcut: typing a slash inside any field must
+   * type a slash. So the handler stands down whenever the event came from an input,
+   * a textarea or anything contenteditable, and whenever a modifier is held, which
+   * is where the browser's own shortcuts live.
+   */
+  useEffect(() => {
+    const onKey = (e) => {
+      const el = e.target;
+      const typing = el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (e.key === "Escape" && el === searchRef.current) {
+        if (query) setQuery("");
+        else searchRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [query]);
 
   // A row expanded near the bottom of the scrollport would open off-screen, so
   // park its top just under the sticky header whenever the panel doesn't fit.
@@ -916,8 +977,15 @@ export default function FrontierModelsTable({ focus } = {}) {
         // against Muse Spark 1.2 — so a raw substring match makes finding a model
         // depend on guessing where its lab put the spaces. Compare with the
         // separators removed from both sides; "qwen 3.8" then finds Qwen3.8.
+        //
+        // The fields searched are exactly the ones the table displays. Searching the
+        // notes as well would find more, and every extra hit would be a row with no
+        // visible reason to be there; a reader cannot see why "distillation" matched
+        // when the word is three clicks away inside a panel.
         const q = searchKey(query);
-        if (!searchKey(m.name).includes(q) && !searchKey(m.provider).includes(q)) return false;
+        const hit = [m.name, m.provider, m.arch, m.attn, m.license, m.modality, m.type]
+          .some((f) => searchKey(f).includes(q));
+        if (!hit) return false;
       }
       return true;
     });
@@ -966,8 +1034,25 @@ export default function FrontierModelsTable({ focus } = {}) {
         </header>
 
         <div style={S.controls}>
-          <input style={S.search} placeholder="Search model or provider…"
-            value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div style={{ ...S.searchWrap, ...(searchFocus ? S.searchWrapOn : null) }}>
+            <span aria-hidden="true" style={{ ...S.searchGlyph, ...(searchFocus ? S.searchGlyphOn : null) }}>⌕</span>
+            <input ref={searchRef} data-search style={S.search}
+              placeholder="Search model, lab, architecture, attention, licence…"
+              aria-label="Search models" value={query}
+              onFocus={() => setSearchFocus(true)} onBlur={() => setSearchFocus(false)}
+              onChange={(e) => setQuery(e.target.value)} />
+            {query ? (
+              <>
+                <span style={S.searchCount} data-search-count>{rows.length}/{MODELS.length}</span>
+                <button type="button" style={S.searchClear} aria-label="Clear search"
+                  onClick={() => { setQuery(""); searchRef.current?.focus(); }}>×</button>
+              </>
+            ) : (
+              // The shortcut is only advertised where it works: pressing it while the
+              // field already has focus would type a slash, not focus anything.
+              !searchFocus && <span aria-hidden="true" style={S.searchKey}>/</span>
+            )}
+          </div>
           <div style={S.segGroup}>
             {weights.map((w, i) => (
               <button key={w} onClick={() => setWeightFilter(w)}
@@ -983,6 +1068,19 @@ export default function FrontierModelsTable({ focus } = {}) {
             <span aria-hidden="true" style={S.moreCaret}>{filtersOpen ? "−" : "+"}</span>
           </button>
         </div>
+
+        {/* Nobody's first instinct is to search a reference table for "MLA". These
+            are here to say that they can: each one is a real value in a column the
+            search reads, so every chip lands on models rather than on nothing. */}
+        {!query && (
+          <div style={S.tries} data-tries>
+            <span style={S.triesLabel}>Try</span>
+            {SEARCH_SUGGESTIONS.map((s) => (
+              <button key={s} type="button" style={S.tryChip}
+                onClick={() => { setQuery(s); searchRef.current?.focus(); }}>{s}</button>
+            ))}
+          </div>
+        )}
 
         {filtersOpen && (
           <div style={S.filterPanel} data-filter-panel>
@@ -1027,9 +1125,30 @@ export default function FrontierModelsTable({ focus } = {}) {
           </div>
         )}
 
-        <div style={S.count}>
-          {rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand · tick up to {MAX_COMPARE} to compare side by side
-        </div>
+        {rows.length > 0 && (
+          <div style={S.count}>
+            {rows.length} model{rows.length !== 1 ? "s" : ""} · tap a row to expand · tick up to {MAX_COMPARE} to compare side by side
+          </div>
+        )}
+
+        {/* A table with no rows and no explanation reads as a broken page. Say what
+            was searched for, and put the way out one tap away. */}
+        {rows.length === 0 && (
+          <div style={S.empty} data-empty>
+            <div style={S.emptyLine}>
+              Nothing matches <span style={S.emptyQuery}>{query}</span>
+              {narrowed.length ? <> with {narrowed.join(" · ").toLowerCase()} set</> : null}.
+            </div>
+            <div style={S.emptyHint}>
+              Search reads the model, lab, architecture, attention, licence, modality
+              and class columns.
+            </div>
+            <button type="button" style={S.emptyBtn}
+              onClick={() => { setQuery(""); searchRef.current?.focus(); }}>
+              Clear the search
+            </button>
+          </div>
+        )}
 
         {/* Presets hide columns with generated CSS rather than by dropping cells from the
             markup. Every row keeps all fifteen cells in the same positions, so the header
@@ -1041,7 +1160,9 @@ export default function FrontierModelsTable({ focus } = {}) {
             `#atlas-table > tbody > tr > td:not([colspan]):nth-child(${i + 1})` +
             `{display:none}`).join("")}</style>
         )}
-        <div style={S.tableWrap} ref={wrapRef}>
+        {/* Hidden rather than emptied when nothing matches: a header row standing over
+            no rows reads as the table having failed, not as the search having. */}
+        <div style={{ ...S.tableWrap, ...(rows.length === 0 ? S.hidden : null) }} ref={wrapRef}>
           <table style={S.table} id="atlas-table">
             <thead>
               <tr>
@@ -1093,7 +1214,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                         />
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
                         <span style={S.modelName}>
-                          {m.name}
+                          <Highlight text={m.name} query={query} />
                           <ProviderMark provider={m.provider} />
                         </span>
                       </td>
@@ -1566,9 +1687,40 @@ export const S = {
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
   // Underlined rather than boxed: a rule under a field is the form convention, and
   // it removes one more rectangle from a page that had a great many.
-  search: { background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`,
-    borderRadius: 0, padding: "7px 2px",
-    color: INK, fontSize: 14.5, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: display },
+  // The field is a row of its own parts rather than a bare input: a glyph, the
+  // input, and whatever the state has to say — a live count and a clear button once
+  // there is a query, the keyboard hint before there is one. The rule under it is
+  // the only thing that moves on focus, and it takes the accent.
+  searchWrap: { display: "flex", alignItems: "center", gap: 9, flex: "1 1 280px",
+    minWidth: 220, padding: "7px 2px", borderBottom: `1px solid ${LINE}`,
+    transition: "border-color 120ms ease" },
+  searchWrapOn: { borderBottomColor: CLAY },
+  searchGlyph: { fontSize: 16, lineHeight: 1, color: INK_FAINT, transition: "color 120ms ease" },
+  searchGlyphOn: { color: CLAY },
+  search: { background: "transparent", border: "none", borderRadius: 0, padding: 0,
+    color: INK, fontSize: 14.5, flex: 1, minWidth: 0, outline: "none", fontFamily: display,
+    caretColor: CLAY },
+  searchCount: { fontFamily: mono, fontSize: 11, color: INK_FAINT,
+    fontVariantNumeric: "tabular-nums" },
+  searchClear: { background: "transparent", border: "none", cursor: "pointer", padding: "0 2px",
+    fontFamily: mono, fontSize: 16, lineHeight: 1, color: INK_FAINT },
+  // A key cap, sized like one. Hidden on focus, where pressing it would type it.
+  searchKey: { fontFamily: mono, fontSize: 10, color: INK_FAINT, border: `1px solid ${LINE}`,
+    borderRadius: 3, padding: "1px 6px", lineHeight: 1.4 },
+  mark: { background: CLAY_SOFT, color: "inherit", padding: "0 1px", borderRadius: 2 },
+  hidden: { display: "none" },
+  tries: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, margin: "14px 0 4px" },
+  triesLabel: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
+    color: INK_FAINT, marginRight: 1 },
+  tryChip: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999,
+    padding: "3px 11px", cursor: "pointer", fontFamily: mono, fontSize: 10.5, color: INK_SOFT },
+  empty: { border: `1px solid ${LINE}`, background: CARD, padding: "26px 24px", marginBottom: 20 },
+  emptyLine: { fontSize: 16, color: INK, marginBottom: 7 },
+  emptyQuery: { fontFamily: mono, fontSize: 14, color: CLAY },
+  emptyHint: { fontSize: 13, color: INK_FAINT, marginBottom: 16, maxWidth: 520, lineHeight: 1.6 },
+  emptyBtn: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
+    padding: "7px 15px", cursor: "pointer", fontFamily: mono, fontSize: 10.5,
+    letterSpacing: "0.03em", textTransform: "uppercase", color: INK_SOFT },
   // Wraps because the widest group (the column presets) is itself wider than a
   // 380px screen; without this the whole page picks up a horizontal scrollbar.
   segGroup: { display: "inline-flex", flexWrap: "wrap", background: "transparent",
