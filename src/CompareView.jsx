@@ -103,8 +103,9 @@ const AXES = [
     hint: "Whether you can download and run the model yourself" },
   { group: "Identity", label: "Intelligence (AA)", pick: (m) => (m.intel == null ? null : String(m.intel)),
     hint: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations. Higher is better; the scale is not a percentage." },
-  { group: "Identity", label: "Coding (AA)", pick: (m) => (m.coding == null ? null : String(m.coding)),
-    hint: "Artificial Analysis Coding Index — Terminal-Bench v2.1 and SciCode combined, scored 0-100. Measures coding alone, so it can diverge sharply from the broader Intelligence Index." },
+  { group: "Identity", label: "Coding agent (AA)",
+    pick: (m) => (m.codingAgent == null ? null : `${m.codingAgent} · via ${m.codingAgentVia}`),
+    hint: "Artificial Analysis Coding Agent Index v1.3 — DeepSWE, Terminal-Bench v2 and SWE-Atlas-QnA averaged, scored 0-100. It measures an agent driving a model, so the harness is part of the figure and is named alongside it; the highest-scoring pairing AA publishes for the model is shown." },
   { group: "Identity", label: "Agentic (AA)", pick: (m) => (m.agentic == null ? null : String(m.agentic)),
     hint: "Artificial Analysis Agentic Index — GDPval-AA v2 and 𝜏³-Banking averaged, scored 0-100. Long-horizon tool use rather than single answers. Both evaluations also sit inside the Intelligence Index, so this is that score re-cut, not an independent measurement." },
 

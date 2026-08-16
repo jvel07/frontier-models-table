@@ -49,7 +49,11 @@ for (const row of rows) {
   // Intelligence, Coding, Agentic; attention (index 10) has no source field to diff.
   const checks = [
     ["intel", cells[1].trim(), m.intel == null ? "—" : String(m.intel)],
-    ["coding", cells[2].trim(), m.coding == null ? "—" : String(m.coding)],
+    // The coding-agent cell prints the harness under the score, because the figure
+    // describes the pair. Asserting on both is the point: a score that lost its
+    // harness is the failure this column has to be protected against.
+    ["codingAgent", cells[2].trim().replace(/\s+/g, " "),
+      m.codingAgent == null ? "—" : `${m.codingAgent} via ${m.codingAgentVia}`],
     ["agentic", cells[3].trim(), m.agentic == null ? "—" : String(m.agentic)],
     ["released", cells[4].trim(), m.released],
     ["provider", cells[5].trim(), m.provider],
@@ -68,7 +72,7 @@ for (const row of rows) {
   if (!/^\d{4}\/\d{2}$/.test(cells[4].trim())) {
     console.log(`FAIL "${name}": Released column ("${cells[4].trim()}") is not a YYYY/MM date`); fail++;
   }
-  for (const [label, idx] of [["Intelligence", 1], ["Coding", 2], ["Agentic", 3]]) {
+  for (const [label, idx] of [["Intelligence", 1], ["Agentic", 3]]) {
     const v = cells[idx].trim();
     if (v !== "—" && !/^\d+$/.test(v)) {
       console.log(`FAIL "${name}": ${label} column ("${v}") is not a bare number`); fail++;
