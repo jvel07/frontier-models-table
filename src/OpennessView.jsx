@@ -46,47 +46,149 @@ const ctxFor = (m) => ({
   hfRepo: HF_LINKS[m.name] || null,
 });
 
-/** Scatter: openness across, disclosure up. The quadrants are the argument. */
-function Quadrant({ points }) {
-  const W = 660, H = 380, PAD = 46;
-  const x = (tier) => PAD + ({ closed: 0, restricted: 0.5, open: 1 }[tier]) * (W - PAD * 2);
-  const y = (pct) => H - PAD - pct * (H - PAD * 2);
-  // Jitter within a tier column so overlapping models stay countable.
-  const spread = (i, n) => (n <= 1 ? 0 : (i / (n - 1) - 0.5) * 92);
+const TIER_ORDER = ["closed", "restricted", "open"];
 
-  const cols = { closed: [], restricted: [], open: [] };
-  for (const p of points) cols[p.openness.tier].push(p);
+/**
+ * Scatter: weight availability across, documentation up. The corner is the argument.
+ *
+ * The horizontal axis is categorical — three tiers, not a continuum — so a model's
+ * position inside its column carries no meaning beyond which column it is in. Points
+ * are therefore laid out as a swarm: everything at the same disclosure level sits in
+ * one row, centred on its column, which keeps a stack of fourteen countable. The old
+ * version spread them by index across a fixed span, which put half the closed models
+ * outside the plot area and drew the 0% row on top of the axis.
+ *
+ * The vertical axis is counted in fields, not percentages: the score is met/12, and
+ * a tick reading 25% is a rounder number than the data actually has.
+ */
+function Quadrant({ points }) {
+  const [tip, setTip] = useState(null);
+  const W = 960, H = 470, L = 74, R = 26, T = 24, B = 66;
+  const bandW = (W - L - R) / 3;
+  const yFloor = H - B - 18, yTop = T + 12;
+  const bandX = (i) => L + (i + 0.5) * bandW;
+  const y = (pct) => yFloor - pct * (yFloor - yTop);
+  const total = points[0]?.disclosure.total || 12;
+  const ticks = [0, 1, 2, 3, 4].map((i) => Math.round((total * i) / 4));
+
+  const laid = useMemo(() => {
+    const out = [];
+    TIER_ORDER.forEach((tier, ti) => {
+      const rows = new Map();
+      for (const p of points) {
+        if (p.openness.tier !== tier) continue;
+        if (!rows.has(p.disclosure.met)) rows.set(p.disclosure.met, []);
+        rows.get(p.disclosure.met).push(p);
+      }
+      for (const list of rows.values()) {
+        list.sort((a, b) => a.model.name.localeCompare(b.model.name));
+        const gap = Math.min(13, (bandW - 30) / Math.max(1, list.length - 1));
+        list.forEach((p, i) => out.push({
+          ...p, tier,
+          cx: bandX(ti) + (i - (list.length - 1) / 2) * gap,
+          cy: y(p.disclosure.pct),
+        }));
+      }
+    });
+    return out;
+  }, [points]);
+
+  const counts = TIER_ORDER.map((t) => points.filter((p) => p.openness.tier === t).length);
+  const hovered = tip && laid.find((p) => p.model.name === tip.name);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
-      aria-label="Models plotted by weight availability against documentation disclosure">
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="var(--line)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="var(--line)" />
-      {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-        <g key={t}>
-          <line x1={PAD} y1={y(t)} x2={W - PAD} y2={y(t)} stroke="var(--line-soft)" strokeDasharray="2 4" />
-          <text x={PAD - 8} y={y(t) + 3} textAnchor="end" fontSize="9" fill="var(--ink-faint)"
-            fontFamily={mono}>{Math.round(t * 100)}%</text>
-        </g>
-      ))}
-      {Object.entries(cols).map(([tier, list]) =>
-        list.map((p, i) => (
-          <circle key={p.model.name} cx={x(tier) + spread(i, list.length)} cy={y(p.disclosure.pct)}
-            r={4.5} fill={TIER[tier].color} opacity="0.75">
-            <title>{`${p.model.name} — ${p.disclosure.met}/${p.disclosure.total} fields, ${TIER[tier].label}`}</title>
-          </circle>
-        ))
+    <figure style={O.fig}>
+      <div style={O.figScroll}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={O.svg} role="img"
+          aria-label="Models plotted by weight availability against documentation disclosure. Every model and every field is listed in the table below."
+          onMouseLeave={() => setTip(null)}>
+          <desc>
+            Each dot is one model, positioned by its weight-availability tier across and
+            the number of documentation fields it discloses up. The table below lists the
+            same data field by field.
+          </desc>
+
+          {ticks.map((n) => (
+            <g key={n}>
+              <line x1={L} y1={y(n / total)} x2={W - R} y2={y(n / total)}
+                stroke="var(--line-soft)" strokeDasharray="2 5" />
+              <text x={L - 10} y={y(n / total) + 3.5} textAnchor="end" fontSize="10"
+                fill="var(--ink-faint)" fontFamily={mono}>{n}</text>
+            </g>
+          ))}
+          {[1, 2].map((i) => (
+            <line key={i} x1={L + i * bandW} y1={T} x2={L + i * bandW} y2={H - B}
+              stroke="var(--line-soft)" />
+          ))}
+          <line x1={L} y1={T} x2={L} y2={H - B} stroke="var(--line)" />
+          <line x1={L} y1={H - B} x2={W - R} y2={H - B} stroke="var(--line)" />
+
+          {hovered && (
+            <line x1={L} y1={hovered.cy} x2={W - R} y2={hovered.cy}
+              stroke={TIER[hovered.tier].color} strokeDasharray="3 4" opacity="0.55" />
+          )}
+
+          {laid.map((p) => (
+            <g key={p.model.name}
+              onMouseEnter={(e) => setTip({ p, name: p.model.name, x: e.clientX, y: e.clientY })}
+              onMouseMove={(e) => setTip({ p, name: p.model.name, x: e.clientX, y: e.clientY })}>
+              <circle cx={p.cx} cy={p.cy} r="5.5" fill={TIER[p.tier].color}
+                stroke="var(--card)" strokeWidth="1.6"
+                opacity={tip && tip.name !== p.model.name ? 0.22 : 0.92} />
+              <circle cx={p.cx} cy={p.cy} r="9" fill="transparent" />
+            </g>
+          ))}
+          {hovered && (
+            <circle cx={hovered.cx} cy={hovered.cy} r="7.5" fill={TIER[hovered.tier].color}
+              stroke="var(--ink)" strokeWidth="1.5" pointerEvents="none" />
+          )}
+
+          {TIER_ORDER.map((k, i) => (
+            <g key={k}>
+              <circle cx={bandX(i) - measure(TIER[k].label) / 2 - 9} cy={H - B + 17} r="3.5"
+                fill={TIER[k].color} />
+              <text x={bandX(i) + 5} y={H - B + 21} textAnchor="middle" fontSize="11"
+                fill="var(--ink-soft)" fontFamily={mono}>{TIER[k].label}</text>
+              <text x={bandX(i)} y={H - B + 38} textAnchor="middle" fontSize="10"
+                fill="var(--ink-faint)" fontFamily={mono}>
+                {counts[i]} {counts[i] === 1 ? "model" : "models"}
+              </text>
+            </g>
+          ))}
+          <text transform={`rotate(-90 20 ${(T + H - B) / 2})`} x={20} y={(T + H - B) / 2}
+            textAnchor="middle" fontSize="10.5" fill="var(--ink-faint)" fontFamily={mono}>
+            documentation fields disclosed, of {total}
+          </text>
+        </svg>
+      </div>
+      <figcaption style={O.cap}>
+        Dots are spread sideways only so that a stack of them stays countable; position
+        within a column carries no meaning.
+      </figcaption>
+      {tip && (
+        <div style={{ ...S.tooltip, ...O.tipBox,
+          left: Math.min(tip.x + 16, (typeof window !== "undefined" ? window.innerWidth : 1200) - 280),
+          top: Math.min(tip.y + 16, (typeof window !== "undefined" ? window.innerHeight : 800) - 120) }}>
+          <div style={O.tipName}>{tip.p.model.name}</div>
+          <div style={O.tipMeta}>{tip.p.model.provider}
+            {tip.p.model.released ? ` · ${tip.p.model.released}` : ""}</div>
+          <div style={O.tipLine}>
+            <span style={{ color: TIER[tip.p.tier].color }}>●</span> {TIER[tip.p.tier].label}
+            {" · "}{tip.p.openness.met}/{tip.p.openness.total} verbs
+          </div>
+          <div style={O.tipLine}>
+            {tip.p.disclosure.met} of {tip.p.disclosure.total} documentation fields disclosed
+          </div>
+        </div>
       )}
-      {Object.entries(TIER).map(([k, v]) => (
-        <text key={k} x={x(k)} y={H - PAD + 18} textAnchor="middle" fontSize="9.5"
-          fill="var(--ink-faint)" fontFamily={mono}>{v.label}</text>
-      ))}
-      <text x={12} y={PAD - 16} fontSize="9.5" fill="var(--ink-faint)" fontFamily={mono}>
-        documentation disclosed →
-      </text>
-    </svg>
+    </figure>
   );
 }
+
+// SVG has no text metrics before layout, so the legend dot is placed off an estimate
+// of the label's width in monospace at 11px — the font is fixed-pitch, so it is exact
+// enough to sit the dot a constant gap from the first character.
+const measure = (s) => s.length * 6.6;
 
 export default function OpennessView() {
   const [sort, setSort] = useState("disclosure");
@@ -155,9 +257,10 @@ export default function OpennessView() {
         <section style={O.panel}>
           <h2 style={O.h2}>The two axes, plotted</h2>
           <p style={O.blurb}>
-            Each dot is a model. Left to right is the letter's test; bottom to top is how much
-            of its construction is on the record. The top-right corner is the only place a
-            model is both usable and understandable.
+            Each dot is a model — hover one to see which. Left to right is the letter's test;
+            bottom to top is how much of its construction is on the record, counted in fields
+            rather than rounded to percentages. The top-right corner is the only place a model
+            is both usable and understandable.
           </p>
           <Quadrant points={scored} />
         </section>
@@ -302,6 +405,18 @@ const O = {
   statLabel: { fontFamily: mono, fontSize: 10.5, color: "var(--ink-faint)", marginTop: 6,
     letterSpacing: "0.04em" },
   panel: { marginTop: 34 },
+  fig: { margin: 0, border: "1px solid var(--line)", borderRadius: 10,
+    background: "var(--card)", padding: "16px 14px 10px" },
+  // The plot is drawn at a fixed aspect, so on a phone it would otherwise scale its
+  // labels down to nothing. Scrolling inside the figure keeps them legible without
+  // widening the page.
+  figScroll: { overflowX: "auto" },
+  svg: { display: "block", width: "100%", minWidth: 560, height: "auto" },
+  cap: { fontSize: 11.5, color: "var(--ink-faint)", margin: "10px 4px 2px", lineHeight: 1.55 },
+  tipBox: { maxWidth: 260, padding: "11px 13px" },
+  tipName: { fontFamily: serif, fontSize: 15, marginBottom: 2 },
+  tipMeta: { fontFamily: mono, fontSize: 10.5, opacity: 0.72, marginBottom: 7 },
+  tipLine: { fontFamily: mono, fontSize: 10.5, lineHeight: 1.7 },
   h2: { fontFamily: serif, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
     color: "var(--ink)", margin: "0 0 6px" },
   blurb: { color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.6, maxWidth: 680,
