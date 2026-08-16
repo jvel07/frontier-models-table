@@ -20,6 +20,25 @@ import ToolsView from "./ToolsView.jsx";
  */
 const SEP = "|";
 
+/**
+ * Names that have appeared in a shared URL and no longer exist.
+ *
+ * The Anthropic rows dropped their "Claude " prefix, which would have 404'd every
+ * #/model/Claude%20Opus%205 and every comparison containing one — links this site
+ * chose hash routing specifically to keep working. Resolving the old name costs a
+ * lookup and keeps a citation from rotting, which is the whole argument for giving
+ * a row a URL in the first place.
+ */
+const RENAMED = {
+  "Claude Opus 5": "Opus 5",
+  "Claude Sonnet 5": "Sonnet 5",
+  "Claude Fable 5": "Fable 5",
+  "Claude Opus 4.8": "Opus 4.8",
+  "Claude Sonnet 4.6": "Sonnet 4.6",
+  "Claude Haiku 4.5": "Haiku 4.5",
+};
+const resolve = (name) => RENAMED[name] || name;
+
 export function parseHash(hash = window.location.hash) {
   if (/^#\/attention\/?$/.test(hash || "")) return { page: "attention", models: [] };
   if (/^#\/papers\/?$/.test(hash || "")) return { page: "papers", models: [] };
@@ -28,13 +47,13 @@ export function parseHash(hash = window.location.hash) {
   if (/^#\/tools\/?$/.test(hash || "")) return { page: "tools", models: [] };
   // A single model, so a row can be linked to and cited: #/model/Kimi%20K3
   const one = /^#\/model\/(.+)$/.exec(hash || "");
-  if (one) return { page: "table", models: [], focus: decodeURIComponent(one[1]) };
+  if (one) return { page: "table", models: [], focus: resolve(decodeURIComponent(one[1])) };
   const m = /^#\/compare\/?(.*)$/.exec(hash || "");
   if (!m) return { page: "table", models: [] };
   const raw = m[1] || "";
   const models = raw
     .split(SEP)
-    .map((s) => decodeURIComponent(s.trim()))
+    .map((s) => resolve(decodeURIComponent(s.trim())))
     .filter(Boolean);
   return { page: "compare", models };
 }

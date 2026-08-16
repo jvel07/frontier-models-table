@@ -592,7 +592,7 @@
    }
   },
   {
-   "name": "Claude Opus 5",
+   "name": "Opus 5",
    "provider": "Anthropic",
    "released": "2026/07",
    "type": "Frontier",
@@ -652,7 +652,7 @@
    }
   },
   {
-   "name": "Claude Sonnet 5",
+   "name": "Sonnet 5",
    "provider": "Anthropic",
    "released": "2026/06",
    "type": "Mid",
@@ -1679,7 +1679,7 @@
    }
   },
   {
-   "name": "Claude Fable 5",
+   "name": "Fable 5",
    "provider": "Anthropic",
    "released": "2026/06",
    "type": "Frontier",
@@ -1739,7 +1739,7 @@
    }
   },
   {
-   "name": "Claude Opus 4.8",
+   "name": "Opus 4.8",
    "provider": "Anthropic",
    "released": "2026/05",
    "type": "Frontier",
@@ -1799,7 +1799,7 @@
    }
   },
   {
-   "name": "Claude Sonnet 4.6",
+   "name": "Sonnet 4.6",
    "provider": "Anthropic",
    "released": "2026/02",
    "type": "Frontier",
@@ -1859,7 +1859,7 @@
    }
   },
   {
-   "name": "Claude Haiku 4.5",
+   "name": "Haiku 4.5",
    "provider": "Anthropic",
    "released": "2025/10",
    "type": "Mid",

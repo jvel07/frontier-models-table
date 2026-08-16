@@ -154,6 +154,15 @@ t("#/model/<name> opens that row expanded",
 t("the expanded row is the one asked for",
   (await page.locator("body").textContent()).includes(target));
 
+// A URL shared before the Anthropic rows lost their "Claude " prefix must still
+// land on the row it named, or every citation of one of them rots.
+await page.goto(BASE + "#/model/" + encodeURIComponent("Claude Opus 5"), { waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+t("a permalink using a renamed model still resolves",
+  (await page.locator("td[colspan]").count()) > 0);
+t("it opens the row under the new name",
+  (await page.locator("tr", { hasText: "Opus 5" }).count()) > 0);
+
 console.log("\n=== COLUMN PRESETS ===");
 await page.goto(BASE, { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
