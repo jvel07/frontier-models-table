@@ -735,7 +735,7 @@
    "license": "Proprietary",
    "open": false,
    "intel": 61,
-   "coding": 78,
+   "coding": 77,
    "agentic": 58,
    "training": null,
    "note": "Top variant of the GPT-5.6 family (9 July 2026), which ships three fixed tiers: Luna, Terra, Sol. Artificial Analysis reports Sol at roughly Fable 5's intelligence for about a third of the cost, and leading its Coding Agent Index at ~80. Token-efficient: ~15k tokens per Index task vs GPT-5.5's 16k. Architecture undisclosed.",
@@ -918,7 +918,7 @@
    "license": "Proprietary",
    "open": false,
    "intel": 61,
-   "coding": null,
+   "coding": 77,
    "agentic": 59,
    "training": null,
    "note": "xAI's flagship from 12 August 2026, aimed at long-running agentic work. Keeps Grok 4.5's 500K window and adds an xhigh reasoning tier above the previous high, along with tiered pricing that doubles above a 200K prompt — the first time the lab has priced long context separately, which says something about what serving it costs. Output length is documented as having no limit rather than as a number, so the max-output column is blank rather than guessing one. Nothing is published about the architecture, so unlike Grok 4.5 and 4.3 this row does not even carry a reported MoE label.",
@@ -1101,7 +1101,7 @@
    "license": "Proprietary",
    "open": false,
    "intel": 57,
-   "coding": null,
+   "coding": 72,
    "agentic": 49,
    "training": null,
    "note": "A coding-focused point release on 5 August 2026, shipped alongside Muse Code, Meta's own terminal agent — the two were trained together, which is unusual enough to be the headline: the model is tuned for the harness it runs in. Meta reports scaling training compute on long-horizon coding work, whole-repository generation and end-to-end projects, but publishes no architecture, no parameter count and no token budget, exactly as with 1.0 and 1.1. Takes text, image, video, audio and PDF against one 1M-token budget, returns text. On 10 August Meta said it would open the weights, reversing the closed policy that covered the first three Muse Spark releases; until a repository exists, this stays closed here. Artificial Analysis has rated it, but no score is recorded here yet.",
@@ -1162,7 +1162,7 @@
    "license": "Proprietary (API)",
    "open": false,
    "intel": 58,
-   "coding": null,
+   "coding": 72,
    "agentic": 58,
    "training": null,
    "note": "Previewed 19 July 2026, days after Kimi K3, and no longer a preview: the id is now qwen3.8-max, and the open-weights base landed on 8 August. That release answered what the preview would not. Active parameters are 95B of the 2.4T, so the largest Qwen serves at roughly 4% of its weight; attention is the Gated DeltaNet hybrid the 3.5-3.7 line used, three linear-attention layers to each gated full-attention one, which this atlas declined to assume until the config said so. Alibaba describes Max as the same model with vision input, non-thinking mode and a 1M window on by default, so the figures here are the hosted service's rather than the open weights'.",
@@ -1223,7 +1223,7 @@
    "license": "Qwen3.8-Max License",
    "open": true,
    "intel": 58,
-   "coding": null,
+   "coding": 72,
    "agentic": 57,
    "training": [
     {
@@ -2022,7 +2022,7 @@
    "open": false,
    "intel": 32,
    "coding": 16,
-   "agentic": null,
+   "agentic": 20,
    "training": null,
    "note": "Distilled/smaller sibling of the GPT-5 line for high-volume, latency-sensitive work. Architecture undisclosed; assumed to share the family's MoE lineage at reduced scale.",
    "spec": null,
@@ -2143,7 +2143,7 @@
    "license": "Proprietary",
    "open": false,
    "intel": 56,
-   "coding": null,
+   "coding": 76,
    "agentic": 45,
    "training": null,
    "note": "Released 13 August 2026 and pitched at coding and agent work at the Flash price rather than the Pro one. Its model card states the model is based on Gemini 3.6 Flash and refers the reader to that card for architecture, which in turn refers to 3.5 Flash — so the architecture and attention rows here are carried across that chain of Google's own statements rather than assumed from the family name, and both remain reported rather than confirmed. Knowledge cutoff March 2026, with some domains held back to January 2025.",
@@ -2204,7 +2204,7 @@
    "license": "Proprietary",
    "open": false,
    "intel": 52,
-   "coding": null,
+   "coding": 69,
    "agentic": 41,
    "training": null,
    "note": "The 21 July 2026 Flash, between 3.5 and 3.7 and matching 3.5's index score. Its card says it is based on Gemini 3.5 Flash and sends the reader there for architecture; nothing about parameters, sparsity or attention is published at any point in the chain. Same 1M window, 64K output and March 2026 cutoff as the generation either side of it.",
@@ -2387,7 +2387,7 @@
    "license": "MIT",
    "open": true,
    "intel": 53,
-   "coding": 59,
+   "coding": 69,
    "agentic": 50,
    "training": [
     {
@@ -2482,7 +2482,7 @@
    "license": "MIT",
    "open": true,
    "intel": 52,
-   "coding": 56,
+   "coding": 69,
    "agentic": 48,
    "training": [
     {
@@ -2578,7 +2578,7 @@
    "open": true,
    "intel": 34,
    "coding": 48,
-   "agentic": null,
+   "agentic": 20,
    "training": [
     {
      "label": "Pre-training",
@@ -3450,7 +3450,7 @@
    "license": "Apache 2.0",
    "open": true,
    "intel": 35,
-   "coding": null,
+   "coding": 49,
    "agentic": 23,
    "training": null,
    "note": "Meta's return to open weights, 10 August 2026, and the first Muse model with a licence that permits anything: Apache 2.0, after three closed Muse Spark releases. Built to run locally rather than to top a leaderboard — a dense 30B including its vision tower, quantised to roughly 4 bits so the language model, the KV cache, the perception encoder and a speculative drafter all fit inside a 24GB card. Attention repeats three sliding-window layers to one global, at a 2,048-token window. Weights ship in several formats from the same repository: BF16 for research, GGUF for llama.cpp, and ExecuTorch builds for on-device use. Not yet rated by Artificial Analysis. The layer and head figures widely reported for it are not recorded here, because no one has read them off the config.json for this atlas yet.",
@@ -4160,7 +4160,7 @@
    "license": "Apache 2.0",
    "open": true,
    "intel": 5,
-   "coding": 1,
+   "coding": 0,
    "agentic": null,
    "training": [
     {
