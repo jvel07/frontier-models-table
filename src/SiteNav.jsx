@@ -77,7 +77,7 @@ const N = {
     fontFamily: mono, fontSize: 12.5, letterSpacing: "0.02em", textTransform: "uppercase",
     color: "var(--ink-soft)", textDecoration: "none", whiteSpace: "nowrap",
     border: "1px solid transparent" },
-  itemOn: { background: "var(--clay)", color: "var(--on-clay)", borderColor: "var(--clay)" },
+  itemOn: { background: "var(--accent-fill)", color: "var(--on-clay)", borderColor: "var(--accent-fill)" },
   theme: { display: "inline-flex", alignItems: "center", gap: 7, background: "transparent",
     border: "1px solid var(--line)", borderRadius: 0, padding: "6px 12px",
     fontFamily: mono, fontSize: 12, letterSpacing: "0.02em", textTransform: "uppercase",

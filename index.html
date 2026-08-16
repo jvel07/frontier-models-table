@@ -48,123 +48,124 @@
          contrast against the surface — in both modes, which the warm palette they
          replaced did not: its worst pair collapsed to ΔE 1.8 for deuteranopes. */
       :root {
-        --paper: #EDEDED;
+        --paper: #F4F1F8;
         --card: #FFFFFF;
-        --ink: #111111;
-        --ink-soft: #4A4A4A;
-        --ink-faint: #666666;
-        --line: #D2D2D2;
-        --line-soft: #E4E4E4;
-        --clay: #03049C;
-        --clay-soft: #E3E3F7;
+        --ink: #1A1024;
+        --ink-soft: #4A3E5C;
+        --ink-faint: #6B5F7D;
+        --line: #DCD4E8;
+        --line-soft: #EBE5F3;
 
-        /* Zebra striping is off: alternating fills compete with the data for
-           attention, and the row rules already carry the eye across. */
+        /* The accent splits by surface, because the brief's yellow cannot carry
+           text on white — #FCEE0C measures 1.21:1 there, against the 4.5:1 bar.
+           So --accent-fill stays that yellow everywhere it is a *fill* with dark
+           text on top (15:1), and --clay, which is the text-and-rule accent, is a
+           deep magenta here and the yellow itself on the dark theme. */
+        --clay: #A8005E;
+        --clay-soft: #FBE9F2;
+        --accent-fill: #FCEE0C;
+        --on-clay: #1A1024;
+
         --row-alt: transparent;
-        --row-hover: #F5F5FB;
-        --row-open: #F0F0FA;
-        --detail-bg: #F6F6F8;
-        --dim: #9A9A9A;
-        --on-clay: #FFFFFF;
-        --open-fg: #0B7A34;
-        --fallback: #6E6E6E;
+        --row-hover: #FAF7FD;
+        --row-open: #F6F1FB;
+        --detail-bg: #F8F5FC;
+        --dim: #9C90AE;
+        --open-fg: #0A6E3C;
+        --fallback: #6B5F7D;
 
-        --tok-ok-fg: #0F6B4C;
-        --tok-ok-bg: #E8F2EC;
-        --tok-ok-line: #CFE3D8;
-        --tok-est-fg: #7E5E12;
-        --tok-est-bg: #F4EEDC;
-        --tok-est-line: #E2D5B0;
+        --tok-ok-fg: #0A6E3C;
+        --tok-ok-bg: #E8F4EC;
+        --tok-ok-line: #CBE5D6;
+        --tok-est-fg: #8A4A0C;
+        --tok-est-bg: #FBEFE2;
+        --tok-est-line: #EBD6BE;
 
-        --type-frontier-fg: #1272A8;  --type-frontier-dot: #1272A8;
-        --type-mid-fg: #6B33C4;       --type-mid-dot: #6B33C4;
-        --type-slm-fg: #007350;       --type-slm-dot: #007350;
+        --type-frontier-fg: #00799B;  --type-frontier-dot: #00799B;
+        --type-mid-fg: #3B45C4;       --type-mid-dot: #3B45C4;
+        --type-slm-fg: #0A6B36;       --type-slm-dot: #0A6B36;
 
-        --arch-dense: #9A6A0F;
-        --arch-moe: #E24B9C;
-        --arch-mamba: #007350;
-        --arch-kda: #6B33C4;
-        --arch-deltanet: #1272A8;
-        --arch-reported: #8C6A62;
-        --arch-undisclosed: #6E6E6E;
+        --arch-dense: #8A4A0C;
+        --arch-moe: #D4157F;
+        --arch-mamba: #0A6B36;
+        --arch-kda: #3B45C4;
+        --arch-deltanet: #00799B;
+        --arch-reported: #8A6A76;
+        --arch-undisclosed: #6B5F7D;
 
-        /* The score bars carry magnitude, so they are one hue light-to-dark
-           rather than three unrelated colours pretending to be a scale. */
-        --intel-hi: #03049C;
-        --intel-mid: #5A5CD0;
-        --intel-lo: #BFBFC8;
+        --intel-hi: #A8005E;
+        --intel-mid: #D4157F;
+        --intel-lo: #D9CFE4;
 
-        /* The score meter: a sunken trough with a bevel, and the neon the leading
-           model's blocks are lit with. */
-        --meter-trough: #DCDCDC;
-        --meter-shadow: #9A9A9A;
+        --meter-trough: #EDE7F3;
+        --meter-shadow: #B9AECB;
         --meter-highlight: #FFFFFF;
-        --meter-lead: #2A2CFF;
+        --meter-lead: #C79A00;
 
-        /* Backdrop: ruled field and the one decorative use of the accent. */
-        --grid-line: rgba(17, 17, 17, 0.045);
-        --glow: rgba(99, 102, 241, 0.10);
+        --grid-line: rgba(168, 0, 94, 0.055);
+        --glow: rgba(212, 21, 127, 0.10);
 
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow: 0 1px 2px rgba(26, 16, 36, 0.06);
       }
 
-      /* The home key: near-black page, panels recessed rather than raised, and
-         nothing at full white — #D9D9D9 on #1A1A1A is what a screen in a dark
-         room actually looks like, where #FFF on #000 vibrates. */
+      /* The home key: a synthwave night — deep violet-black ground, magenta glow on
+         the horizon, and the brief's #FCEE0C carrying every accent. Yellow on this
+         ground measures 15.6:1, which is why it can do the work here that a deep
+         magenta has to do on the light theme. */
       :root[data-theme="dark"] {
-        --paper: #1A1A1A;
-        --card: #111111;
-        --ink: #D9D9D9;
-        --ink-soft: #B0B0B0;
-        --ink-faint: #858585;
-        --line: #2E2E2E;
-        --line-soft: #202020;
-        --clay: #6E70FF;
-        --clay-soft: #16173D;
+        --paper: #150E1F;
+        --card: #0F0A17;
+        --ink: #EDE4F5;
+        --ink-soft: #B9AED0;
+        --ink-faint: #8F84A8;
+        --line: #332448;
+        --line-soft: #241834;
+
+        --clay: #FCEE0C;
+        --clay-soft: #3A3405;
+        --accent-fill: #FCEE0C;
+        --on-clay: #150E1F;
 
         --row-alt: transparent;
-        --row-hover: #16161C;
-        --row-open: #15151E;
-        --detail-bg: #0D0D0D;
-        --dim: #5A5A5A;
-        /* Near-black on the accent, not white: the lifted blue is bright enough
-           that white text on it lands at 3.9:1, under the 4.5:1 small-text bar. */
-        --on-clay: #0B0B14;
-        --open-fg: #3BE07A;
-        --fallback: #8A8A8A;
+        --row-hover: #1C1329;
+        --row-open: #211735;
+        --detail-bg: #0B0712;
+        --dim: #5B4E70;
+        --open-fg: #3DE8A0;
+        --fallback: #8F84A8;
 
-        --tok-ok-fg: #4FD08C;
-        --tok-ok-bg: #10231A;
-        --tok-ok-line: #1D3A2A;
-        --tok-est-fg: #D9A441;
-        --tok-est-bg: #241E10;
-        --tok-est-line: #3B321C;
+        --tok-ok-fg: #3DE8A0;
+        --tok-ok-bg: #0C2419;
+        --tok-ok-line: #17402D;
+        --tok-est-fg: #F0A93C;
+        --tok-est-bg: #2A1D0A;
+        --tok-est-line: #43301A;
 
-        --type-frontier-fg: #1FA0DE;  --type-frontier-dot: #1FA0DE;
-        --type-mid-fg: #9457E0;       --type-mid-dot: #9457E0;
-        --type-slm-fg: #3BE07A;       --type-slm-dot: #3BE07A;
+        --type-frontier-fg: #22D3EE;  --type-frontier-dot: #22D3EE;
+        --type-mid-fg: #8F8CFF;       --type-mid-dot: #8F8CFF;
+        --type-slm-fg: #3DE8A0;       --type-slm-dot: #3DE8A0;
 
-        --arch-dense: #BE8416;
-        --arch-moe: #F04E9E;
-        --arch-mamba: #0C8C74;
-        --arch-kda: #9457E0;
-        --arch-deltanet: #1FA0DE;
-        --arch-reported: #B08C84;
-        --arch-undisclosed: #8A8A8A;
+        --arch-dense: #C0651A;
+        --arch-moe: #F53F9C;
+        --arch-mamba: #0F9E50;
+        --arch-kda: #5566E8;
+        --arch-deltanet: #088C9E;
+        --arch-reported: #A98494;
+        --arch-undisclosed: #8F84A8;
 
-        --intel-hi: #7C7EFF;
-        --intel-mid: #4E52D8;
-        --intel-lo: #3E3E4A;
+        --intel-hi: #F53F9C;
+        --intel-mid: #A93A8E;
+        --intel-lo: #3A2A4E;
 
-        --meter-trough: #0C0C0F;
+        --meter-trough: #0A0611;
         --meter-shadow: #000000;
-        --meter-highlight: #3A3A46;
-        --meter-lead: #8F91FF;
+        --meter-highlight: #4A3568;
+        --meter-lead: #FCEE0C;
 
-        --grid-line: rgba(255, 255, 255, 0.030);
-        --glow: rgba(99, 102, 241, 0.16);
+        --grid-line: rgba(245, 63, 156, 0.045);
+        --glow: rgba(245, 63, 156, 0.20);
 
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
       }
 
       html { -webkit-text-size-adjust: 100%; }
@@ -181,7 +182,7 @@
         pointer-events: none;
         z-index: 9999;
         background: repeating-linear-gradient(
-          0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+          0deg, rgba(245, 63, 156, 0.020) 0 1px, transparent 1px 3px);
       }
 
       /* Row hover.
