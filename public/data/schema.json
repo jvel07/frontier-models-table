@@ -17,6 +17,7 @@
   "open": "Whether weights are downloadable.",
   "intel": "Artificial Analysis Intelligence Index. Third-party.",
   "coding": "Artificial Analysis Coding Index. Third-party.",
+  "agentic": "Artificial Analysis Agentic Index. Third-party. Shares two of its component evaluations with the Intelligence Index, so the two are not independent.",
   "training": "Array of stages: {label, tokens, detail, curriculum}. null = none published.",
   "trainingSource": "Set when the pipeline shown belongs to another model; those tokens are never counted as disclosed.",
   "note": "Prose written by this project.",

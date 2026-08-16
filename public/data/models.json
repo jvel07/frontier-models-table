@@ -25,6 +25,7 @@
    "open": true,
    "intel": 12,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -113,6 +114,7 @@
    "open": true,
    "intel": 6,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -201,6 +203,7 @@
    "open": true,
    "intel": 45,
    "coding": 62,
+   "agentic": 31,
    "trainingSource": "Moonshot published no training details for K2.6 — neither its blog post nor its model card describes any stage, token budget or recipe. The pipeline below is Kimi K2.5's, taken from that model's technical report (arXiv 2602.02276), and is shown as the closest documented reference rather than as a description of K2.6. The one link Moonshot does state is architectural: the K2.6 model card says it \"has the same architecture as Kimi-K2.5, and the deployment method can be directly reused\". That covers architecture and deployment only — treat the stages here as K2.5's until Moonshot publishes K2.6's own.",
    "training": [
     {
@@ -300,6 +303,7 @@
    "open": true,
    "intel": 41,
    "coding": 56,
+   "agentic": 31,
    "training": null,
    "note": "The middle release in Zhipu's fast GLM-5 cadence (5 in Feb, 5.1 in Apr, 5.2 in Jun 2026). Architecture is identical to GLM-5 — 744B/40B, 78 MLA layers with DeepSeek Sparse Attention, MTP-capable — with the entire gain coming from post-training aimed at long-horizon agentic coding.",
    "spec": {
@@ -372,6 +376,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -473,6 +478,7 @@
    "open": true,
    "intel": 26,
    "coding": 39,
+   "agentic": 11,
    "training": null,
    "note": "The sparse sibling of the dense Gemma 4 31B: 25.2B total with 3.8B active (15.1%), using 128 experts of which 8 are routed plus 1 shared per token. Keeps the family's 5:1 sliding-window/global attention backbone with QK-Norm, unified K/V and p-RoPE on global layers, swapping only the dense FFNs for MoE layers. 25 sliding-window + 5 global layers, 262k vocabulary.",
    "spec": {
@@ -547,6 +553,7 @@
    "open": false,
    "intel": 44,
    "coding": 59,
+   "agentic": null,
    "training": null,
    "note": "The first model out of Meta Superintelligence Labs, shipped 8 April 2026, and the first Meta flagship that is not a Llama. It is also the first one Meta kept closed — no weights, no Hugging Face repo, API and Meta AI only — which breaks the open-weight line that ran from Llama 1 through Llama 4. Meta describes it as natively multimodal, with vision trained into the model rather than attached to a finished text model, and frames it as the first rung of a scaling ladder rather than a finished frontier system. Parameter count, architecture, attention and training are all undisclosed, so the rows below stay empty by design.",
    "spec": null,
@@ -607,8 +614,9 @@
    "open": false,
    "intel": 63,
    "coding": 78,
+   "agentic": 59,
    "training": null,
-   "note": "Anthropic's new Opus-tier flagship, shipped 24 July 2026, succeeding Opus 4.8. Adds an 'xhigh' reasoning-effort mode and a Fast mode (~2.5x speed at 2x price). Positioned just below the Mythos-class Fable 5 — reported near-Fable intelligence at roughly half the cost. Architecture, parameters and training remain undisclosed, as with the rest of the Claude line. Intelligence figure reflects Artificial Analysis's own framing of Opus 5 as 'Fable 5 level intelligence at a lower cost per task' — the leaderboard snapshot checked had added Opus 5 evaluations but not yet a separate Index row, so treat 60 as provisional.",
+   "note": "Anthropic's new Opus-tier flagship, shipped 24 July 2026, succeeding Opus 4.8. Adds an 'xhigh' reasoning-effort mode and a Fast mode (~2.5x speed at 2x price). Positioned just below the Mythos-class Fable 5 — reported near-Fable intelligence at roughly half the cost. Architecture, parameters and training remain undisclosed, as with the rest of the Claude line. Artificial Analysis framed it as 'Fable 5 level intelligence at a lower cost per task'; the leaderboard now carries its own rows per reasoning effort, and the figures here are the max-effort variant.",
    "spec": null,
    "huggingface": null,
    "report": "https://www.anthropic.com/claude",
@@ -667,6 +675,7 @@
    "open": false,
    "intel": 55,
    "coding": 72,
+   "agentic": 50,
    "training": null,
    "note": "Sonnet tier crossed to 5 on 30 June 2026, becoming Anthropic's default high-volume workhorse. Roughly 63% on SWE-bench Pro against Opus 5's 79%, at about 0.6x the price. No architecture or training disclosure.",
    "spec": null,
@@ -727,6 +736,7 @@
    "open": false,
    "intel": 61,
    "coding": 78,
+   "agentic": 58,
    "training": null,
    "note": "Top variant of the GPT-5.6 family (9 July 2026), which ships three fixed tiers: Luna, Terra, Sol. Artificial Analysis reports Sol at roughly Fable 5's intelligence for about a third of the cost, and leading its Coding Agent Index at ~80. Token-efficient: ~15k tokens per Index task vs GPT-5.5's 16k. Architecture undisclosed.",
    "spec": null,
@@ -787,6 +797,7 @@
    "open": false,
    "intel": 57,
    "coding": 77,
+   "agentic": 50,
    "training": null,
    "note": "Middle tier of the GPT-5.6 family — OpenAI's intended production default. Reported to land just above Claude Fable 5 on the Artificial Analysis Coding Agent Index while sitting below Sol. No separate Intelligence Index figure published.",
    "spec": null,
@@ -847,6 +858,7 @@
    "open": false,
    "intel": 52,
    "coding": 71,
+   "agentic": 47,
    "training": null,
    "note": "Cheapest, highest-volume tier of the GPT-5.6 family. Reported to outperform Claude Opus 4.8 on the Coding Agent Index despite the lower tier. Along with Sol it sits on Artificial Analysis's intelligence-vs-cost Pareto frontier (Terra does not).",
    "spec": null,
@@ -907,6 +919,7 @@
    "open": false,
    "intel": 61,
    "coding": null,
+   "agentic": 59,
    "training": null,
    "note": "xAI's flagship from 12 August 2026, aimed at long-running agentic work. Keeps Grok 4.5's 500K window and adds an xhigh reasoning tier above the previous high, along with tiered pricing that doubles above a 200K prompt — the first time the lab has priced long context separately, which says something about what serving it costs. Output length is documented as having no limit rather than as a number, so the max-output column is blank rather than guessing one. Nothing is published about the architecture, so unlike Grok 4.5 and 4.3 this row does not even carry a reported MoE label.",
    "spec": null,
@@ -967,6 +980,7 @@
    "open": false,
    "intel": 56,
    "coding": 72,
+   "agentic": 49,
    "training": null,
    "note": "xAI's flagship as of 8 July 2026, trained in partnership with Cursor and aimed at coding, agentic tool calling and knowledge work. 500K context — notably smaller than the 2M window of Grok 4.3 — with configurable reasoning and ~80 tok/s serving. Architecture undisclosed.",
    "spec": null,
@@ -1027,6 +1041,7 @@
    "open": false,
    "intel": 53,
    "coding": 71,
+   "agentic": 40,
    "training": null,
    "note": "Meta's follow-up three months after Muse Spark (9 July 2026), and the release that put Meta behind a paid developer API for the first time. The context window goes from roughly 262K to 1M, and Artificial Analysis measured the Intelligence Index rising 43 → 51, with the coding sub-score alone up 12 points — an unusually large move for a point release. Positioned for agentic work: tool use, computer use and orchestration across external apps, taking text, image, video and audio in and returning text only. Architecture and training remain undisclosed, as with 1.0.",
    "spec": null,
@@ -1087,6 +1102,7 @@
    "open": false,
    "intel": 57,
    "coding": null,
+   "agentic": 49,
    "training": null,
    "note": "A coding-focused point release on 5 August 2026, shipped alongside Muse Code, Meta's own terminal agent — the two were trained together, which is unusual enough to be the headline: the model is tuned for the harness it runs in. Meta reports scaling training compute on long-horizon coding work, whole-repository generation and end-to-end projects, but publishes no architecture, no parameter count and no token budget, exactly as with 1.0 and 1.1. Takes text, image, video, audio and PDF against one 1M-token budget, returns text. On 10 August Meta said it would open the weights, reversing the closed policy that covered the first three Muse Spark releases; until a repository exists, this stays closed here. Artificial Analysis has rated it, but no score is recorded here yet.",
    "spec": null,
@@ -1147,6 +1163,7 @@
    "open": false,
    "intel": 58,
    "coding": null,
+   "agentic": 58,
    "training": null,
    "note": "Previewed 19 July 2026, days after Kimi K3, and no longer a preview: the id is now qwen3.8-max, and the open-weights base landed on 8 August. That release answered what the preview would not. Active parameters are 95B of the 2.4T, so the largest Qwen serves at roughly 4% of its weight; attention is the Gated DeltaNet hybrid the 3.5-3.7 line used, three linear-attention layers to each gated full-attention one, which this atlas declined to assume until the config said so. Alibaba describes Max as the same model with vision input, non-thinking mode and a 1M window on by default, so the figures here are the hosted service's rather than the open weights'.",
    "spec": null,
@@ -1207,6 +1224,7 @@
    "open": true,
    "intel": 58,
    "coding": null,
+   "agentic": 57,
    "training": [
     {
      "label": "Pre-training",
@@ -1291,6 +1309,7 @@
    "open": true,
    "intel": 60,
    "coding": 76,
+   "agentic": 54,
    "training": [
     {
      "label": "Pre-training",
@@ -1395,6 +1414,7 @@
    "open": true,
    "intel": 53,
    "coding": 69,
+   "agentic": 46,
    "training": null,
    "note": "Third release in Zhipu's fast GLM-5 cadence (GLM-5 Feb, 5.1 Apr, 5.2 Jun 2026). ~753B total with ~40B active (256 routed experts, 8 per token). Uses DeepSeek-style sparse attention with MLA KV-cache compression plus IndexShare, which Zhipu reports cuts per-token FLOPs 2.9x at 1M context. MIT licensed with no regional restrictions. Shipped days after the US export clampdown on Anthropic's Fable/Mythos models.",
    "spec": {
@@ -1467,6 +1487,7 @@
    "open": true,
    "intel": 42,
    "coding": 52,
+   "agentic": 34,
    "training": null,
    "note": "First open-weights model from Thinking Machines Lab (Mira Murati's startup), released 15 July 2026. 975B total / 41B active MoE, Apache 2.0. Accepts text, image and audio but emits text only. Explicitly designed as a base for fine-tuning rather than a benchmark winner — it ships an 'effort dial' (0.2–0.99) instead of fixed tiers. Trails GLM-5.2 and Kimi on terminal-agent coding; SimpleQA Verified of 43.9% lags the closed flagships badly, so pair it with RAG for factual work. An Inkling-Small preview also exists.",
    "spec": {
@@ -1537,6 +1558,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -1621,6 +1643,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": null,
    "note": "The small end of Poolside's Laguna line: 33B total / 3B active MoE with a 100,352-token vocabulary, published to Hugging Face 2 July 2026. Supports optional thinking, tool calls and preserved reasoning content. Context window not stated in the model card sources checked — the sibling Laguna M.1 is 262K. Runs on consumer GPUs when quantized.",
    "spec": {
@@ -1694,6 +1717,7 @@
    "open": false,
    "intel": 62,
    "coding": 76,
+   "agentic": 57,
    "training": null,
    "note": "Anthropic's Mythos-class flagship. Architecture undisclosed. Like all frontier closed models it is a decoder-only transformer at its core, but parameter counts, expert layout, and attention scheme are unpublished. Shares the long-context (1M) design goal of the Opus line with extra max-output headroom.",
    "spec": null,
@@ -1754,6 +1778,7 @@
    "open": false,
    "intel": 57,
    "coding": 74,
+   "agentic": 49,
    "training": null,
    "note": "Dense-vs-MoE split unconfirmed. Anthropic publishes no parameter or architecture details. Differentiates on post-training (reasoning, tool use, safety) rather than disclosed structural innovations. 1M context with no long-context price tiering.",
    "spec": null,
@@ -1814,6 +1839,7 @@
    "open": false,
    "intel": 48,
    "coding": 63,
+   "agentic": 42,
    "training": null,
    "note": "Mid-flagship tier. Same undisclosed-architecture posture as the rest of the Claude family; added a 1M-token window this generation. Optimized for latency/cost balance against Opus.",
    "spec": null,
@@ -1874,6 +1900,7 @@
    "open": false,
    "intel": 30,
    "coding": 44,
+   "agentic": 16,
    "training": null,
    "note": "Smallest, fastest Claude tier. 200K window (not 1M) is the main structural difference from its larger siblings. Architecture unpublished.",
    "spec": null,
@@ -1934,6 +1961,7 @@
    "open": false,
    "intel": 56,
    "coding": 75,
+   "agentic": 47,
    "training": null,
    "note": "Widely reported to be a sparse Mixture-of-Experts, but OpenAI publishes no counts or routing. Natively multimodal, hybrid reasoning model with adjustable thinking effort. 128K max output is among the highest of the closed flagships.",
    "spec": null,
@@ -1994,6 +2022,7 @@
    "open": false,
    "intel": 32,
    "coding": 16,
+   "agentic": null,
    "training": null,
    "note": "Distilled/smaller sibling of the GPT-5 line for high-volume, latency-sensitive work. Architecture undisclosed; assumed to share the family's MoE lineage at reduced scale.",
    "spec": null,
@@ -2054,6 +2083,7 @@
    "open": false,
    "intel": 48,
    "coding": 69,
+   "agentic": 23,
    "training": null,
    "note": "Sparse MoE per Google's earlier Gemini disclosures; exact counts unpublished. The most fully multimodal flagship (native video). Largest hosted context at 2M, with tiered pricing above 200K. Same lineage as the open Gemma models but at far larger scale.",
    "spec": null,
@@ -2114,6 +2144,7 @@
    "open": false,
    "intel": 56,
    "coding": null,
+   "agentic": 45,
    "training": null,
    "note": "Released 13 August 2026 and pitched at coding and agent work at the Flash price rather than the Pro one. Its model card states the model is based on Gemini 3.6 Flash and refers the reader to that card for architecture, which in turn refers to 3.5 Flash — so the architecture and attention rows here are carried across that chain of Google's own statements rather than assumed from the family name, and both remain reported rather than confirmed. Knowledge cutoff March 2026, with some domains held back to January 2025.",
    "spec": null,
@@ -2174,6 +2205,7 @@
    "open": false,
    "intel": 52,
    "coding": null,
+   "agentic": 41,
    "training": null,
    "note": "The 21 July 2026 Flash, between 3.5 and 3.7 and matching 3.5's index score. Its card says it is based on Gemini 3.5 Flash and sends the reader there for architecture; nothing about parameters, sparsity or attention is published at any point in the chain. Same 1M window, 64K output and March 2026 cutoff as the generation either side of it.",
    "spec": null,
@@ -2234,6 +2266,7 @@
    "open": false,
    "intel": 52,
    "coding": 70,
+   "agentic": 40,
    "training": null,
    "note": "Speed-optimized Gemini tier. 1M context, very high throughput. Shares the family's sparse architecture at smaller effective compute.",
    "spec": null,
@@ -2294,6 +2327,7 @@
    "open": false,
    "intel": 38,
    "coding": 42,
+   "agentic": 24,
    "training": null,
    "note": "Reported MoE; xAI publishes little structural detail. Ties Gemini for the largest hosted window (2M). Emphasis on long-context retrieval and tool use.",
    "spec": null,
@@ -2354,6 +2388,7 @@
    "open": true,
    "intel": 53,
    "coding": 59,
+   "agentic": 50,
    "training": [
     {
      "label": "Pre-training",
@@ -2448,6 +2483,7 @@
    "open": true,
    "intel": 52,
    "coding": 56,
+   "agentic": 48,
    "training": [
     {
      "label": "Pre-training",
@@ -2542,6 +2578,7 @@
    "open": true,
    "intel": 34,
    "coding": 48,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -2632,6 +2669,7 @@
    "open": false,
    "intel": 40,
    "coding": 55,
+   "agentic": 29,
    "training": [
     {
      "label": "Pre-training",
@@ -2708,6 +2746,7 @@
    "open": false,
    "intel": 47,
    "coding": 66,
+   "agentic": 31,
    "training": [
     {
      "label": "Pre-training",
@@ -2784,6 +2823,7 @@
    "open": false,
    "intel": 39,
    "coding": 56,
+   "agentic": 21,
    "training": [
     {
      "label": "Pre-training",
@@ -2855,6 +2895,7 @@
    "open": false,
    "intel": 45,
    "coding": 59,
+   "agentic": 36,
    "training": null,
    "note": "Uses MiniMax Sparse Attention (MSA) for its 1M window. Multimodal across text/image/video. Pricing doubles past 512K input tokens.",
    "spec": null,
@@ -2915,6 +2956,7 @@
    "open": true,
    "intel": 10,
    "coding": 8,
+   "agentic": 1,
    "training": [
     {
      "label": "Pre-training",
@@ -2991,6 +3033,7 @@
    "open": true,
    "intel": 16,
    "coding": 20,
+   "agentic": 6,
    "training": null,
    "note": "MoE flagship now under fully permissive Apache 2.0, a shift from Mistral's earlier restrictive terms. GQA-based attention. 256K context, large but not in the 1M+ club.",
    "spec": null,
@@ -3051,6 +3094,7 @@
    "open": true,
    "intel": 41,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3152,6 +3196,7 @@
    "open": true,
    "intel": 7,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3228,6 +3273,7 @@
    "open": true,
    "intel": 38,
    "coding": 49,
+   "agentic": 27,
    "training": [
     {
      "label": "Pre-training P1",
@@ -3318,6 +3364,7 @@
    "open": true,
    "intel": 26,
    "coding": 38,
+   "agentic": 9,
    "training": [
     {
      "label": "Pre-training",
@@ -3404,6 +3451,7 @@
    "open": true,
    "intel": 35,
    "coding": null,
+   "agentic": 23,
    "training": null,
    "note": "Meta's return to open weights, 10 August 2026, and the first Muse model with a licence that permits anything: Apache 2.0, after three closed Muse Spark releases. Built to run locally rather than to top a leaderboard — a dense 30B including its vision tower, quantised to roughly 4 bits so the language model, the KV cache, the perception encoder and a speculative drafter all fit inside a 24GB card. Attention repeats three sliding-window layers to one global, at a 2,048-token window. Weights ship in several formats from the same repository: BF16 for research, GGUF for llama.cpp, and ExecuTorch builds for on-device use. Not yet rated by Artificial Analysis. The layer and head figures widely reported for it are not recorded here, because no one has read them off the config.json for this atlas yet.",
    "spec": null,
@@ -3464,6 +3512,7 @@
    "open": true,
    "intel": 30,
    "coding": 43,
+   "agentic": 14,
    "training": [
     {
      "label": "Pre-training",
@@ -3548,6 +3597,7 @@
    "open": true,
    "intel": 12,
    "coding": 9,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3632,6 +3682,7 @@
    "open": true,
    "intel": 1,
    "coding": 3,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3703,6 +3754,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3774,6 +3826,7 @@
    "open": true,
    "intel": 6,
    "coding": 4,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -3861,6 +3914,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Supervised fine-tuning",
@@ -3939,6 +3993,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Supervised fine-tuning",
@@ -4017,6 +4072,7 @@
    "open": true,
    "intel": 22,
    "coding": 29,
+   "agentic": 7,
    "training": [
     {
      "label": "Pre-training",
@@ -4105,6 +4161,7 @@
    "open": true,
    "intel": 5,
    "coding": 1,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -4188,6 +4245,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -4271,6 +4329,7 @@
    "open": true,
    "intel": 38,
    "coding": 54,
+   "agentic": 28,
    "training": [
     {
      "label": "Pre-training",
@@ -4359,6 +4418,7 @@
    "open": true,
    "intel": 32,
    "coding": 42,
+   "agentic": 22,
    "training": [
     {
      "label": "Pre-training",
@@ -4443,6 +4503,7 @@
    "open": true,
    "intel": 4,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -4514,6 +4575,7 @@
    "open": true,
    "intel": 1,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -4585,6 +4647,7 @@
    "open": true,
    "intel": 20,
    "coding": 27,
+   "agentic": 5,
    "training": null,
    "note": "Sits oddly across the SLM/large line: 119B total but only 6.5B active, so its inference compute is SLM-class while weights are large. Apache 2.0. Shows how 'small' increasingly means active-params, not total.",
    "spec": {
@@ -4657,6 +4720,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": null,
    "note": "A proof-assistant specialist: Mistral built it to write Lean 4, where what the model produces is checked mechanically rather than eyeballed, so the reward signal is unusually honest. Published as an update to the earlier Leanstral rather than a new design, and it carries the Mistral Small 4 shape unchanged — 36 layers, 128 experts firing 4 per token plus one shared, MLA splitting each head into 64 rotated and 64 unrotated dimensions. Weights ship quantised to FP8. Mistral publishes no training pipeline for it, so none is shown here. Architecture is read from params.json; this repository has no config.json.",
    "spec": {
@@ -4728,6 +4792,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training",
@@ -4815,6 +4880,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": null,
    "note": "IBM published this as an experiment rather than a product: a base model with no safety alignment, released to show what the next Granite series is being built out of. Seven of its 24 layers see the whole sequence and the other 17 look back only 128 tokens. Every head also learns a sink — a parameter compared against the log-sum-exp of that head's own scores, scaling the head's output down when nothing in range was worth reading. The training mix is described only as open source and proprietary data, with no stages or token counts, so none are shown. The 8,192-token window is small for 2026, which is rather the point of a study model.",
    "spec": {
@@ -4887,6 +4953,7 @@
    "open": true,
    "intel": null,
    "coding": null,
+   "agentic": null,
    "training": null,
    "note": "The sparse half of the same experiment: 28 layers, 48 experts with 4 firing per token plus a shared one, so 3B of weights run at 0.6B of compute. Same sliding-window-plus-sinks attention as the dense 2B and the same 128-token window, which makes the pair a controlled comparison of dense against sparse at fixed attention design — the reason to publish both. Experts are narrow at 512 dimensions against a 1,280-wide shared expert. Base model, no alignment, no published training breakdown.",
    "spec": {
@@ -4960,6 +5027,7 @@
    "open": true,
    "intel": 1,
    "coding": null,
+   "agentic": null,
    "training": null,
    "note": "Multilingual-first small model covering 70+ languages at 3.35B. Dense, non-commercial license.",
    "spec": null,
@@ -5020,6 +5088,7 @@
    "open": true,
    "intel": 15,
    "coding": 14,
+   "agentic": 2,
    "training": [
     {
      "label": "Pre-training P1",
@@ -5111,6 +5180,7 @@
    "open": true,
    "intel": 13,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "Pre-training S1",
@@ -5205,6 +5275,7 @@
    "open": true,
    "intel": 21,
    "coding": null,
+   "agentic": null,
    "training": [
     {
      "label": "S0 · VL alignment",
