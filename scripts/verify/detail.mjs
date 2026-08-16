@@ -117,7 +117,7 @@ await page.waitForTimeout(200);
 console.log("\n=== REGRESSION ===");
 await page.getByPlaceholder("Search model or provider…").fill("");
 await page.waitForTimeout(200);
-t("all 66 models present", (await dataRows().count()) === 66);
+t("all 71 models present", (await dataRows().count()) === 71);
 
 await page.setViewportSize({ width: 380, height: 800 });
 await page.waitForTimeout(400);
