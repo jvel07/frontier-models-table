@@ -715,7 +715,7 @@ function SplitName({ text, query }) {
  * scaffolding produced it, or the column is quietly attributing one company's
  * agent engineering to another company's model.
  */
-function ScoreCell({ value, via }) {
+function ScoreCell({ value, via, lead }) {
   return (
     <td style={{ ...S.td }}>
       {value == null ? (
@@ -723,11 +723,15 @@ function ScoreCell({ value, via }) {
       ) : (
         <>
           <span style={S.intelWrap}>
-            <span style={S.intelTrack}>
+            <span style={S.intelTrack} className={lead ? "atlas-meter atlas-meter-lead" : "atlas-meter"}>
+              {/* backgroundColor, not the background shorthand: the shorthand comes
+                  after the spread and would reset backgroundImage, taking the block
+                  gaps with it and leaving one solid bar. */}
               <span style={{ ...S.intelFill, width: `${value}%`,
-                background: value >= 55 ? "var(--intel-hi)" : value >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
+                backgroundColor: lead ? "var(--meter-lead)"
+                  : value >= 55 ? "var(--intel-hi)" : value >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
             </span>
-            <span style={S.intelVal}>{value}</span>
+            <span style={{ ...S.intelVal, ...(lead ? S.intelValLead : null) }}>{value}</span>
           </span>
           {/* The space is a text node, not decoration: the tag is display:block, so
               without it the cell's textContent — what a copy-paste or a scraper gets
@@ -738,6 +742,16 @@ function ScoreCell({ value, via }) {
     </td>
   );
 }
+
+/**
+ * The highest score in each of the three Artificial Analysis columns.
+ *
+ * Computed from the whole table rather than from whatever the current filter shows,
+ * so "lead" means the best in the atlas and does not change when someone ticks
+ * "Open weights". Ties are all marked — two models really are level.
+ */
+const LEADERS = Object.fromEntries(["intel", "codingAgent", "agentic"].map((k) =>
+  [k, Math.max(...MODELS.map((m) => (m[k] == null ? -1 : m[k])))]));
 
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
@@ -1223,9 +1237,10 @@ export default function FrontierModelsTable({ focus } = {}) {
                           <ProviderMark provider={m.provider} />
                         </span>
                       </td>
-                      <ScoreCell value={m.intel} />
-                      <ScoreCell value={m.codingAgent} via={m.codingAgentVia} />
-                      <ScoreCell value={m.agentic} />
+                      <ScoreCell value={m.intel} lead={m.intel === LEADERS.intel} />
+                      <ScoreCell value={m.codingAgent} via={m.codingAgentVia}
+                        lead={m.codingAgent === LEADERS.codingAgent} />
+                      <ScoreCell value={m.agentic} lead={m.agentic === LEADERS.agentic} />
                       <td style={S.td}>
                         <span style={{ ...S.archTag, color: ac }}>{m.arch}</span>
                       </td>
@@ -1816,19 +1831,23 @@ export const S = {
   caret: { display: "inline-block", marginRight: 8, color: CLAY, fontSize: 10, transition: "transform 0.15s", verticalAlign: "middle" },
   num: { textAlign: "right", fontFamily: mono, fontVariantNumeric: "tabular-nums", color: INK },
   intelWrap: { display: "inline-flex", alignItems: "center", gap: 8, minWidth: 92 },
-  // A segmented meter, in the register of a VU meter or a DOS progress bar: square
-  // ends, a hairline box, and the fill cut into blocks.
+  // The meter is a Windows 95 progress bar: a sunken trough — dark bevel on the
+  // top and left, light on the bottom and right — filled with solid blocks that
+  // have the trough showing between them.
   //
-  // The segmentation is drawn *over* an exact-width fill rather than by rounding the
-  // value to a number of whole blocks. A 63 is still exactly 63% of the track long,
-  // with the last block clipped mid-stride — so the retro reading costs no precision,
-  // which quantising into ten lit segments would have.
-  intelTrack: { position: "relative", width: 58, height: 9, borderRadius: 0,
-    background: "transparent", border: `1px solid ${LINE}`, padding: 1,
-    overflow: "hidden", flexShrink: 0, boxSizing: "border-box" },
+  // The blocks are drawn as a repeating gradient over an exact-width fill rather
+  // than by rounding the score into whole lit blocks, so a 63 is still exactly 63%
+  // of the track long with the last block clipped mid-stride. The retro reading
+  // costs no precision, which quantising into ten segments would have.
+  intelTrack: { position: "relative", width: 58, height: 11, borderRadius: 0,
+    background: "var(--meter-trough)", padding: 1, flexShrink: 0, boxSizing: "border-box",
+    borderTop: "1px solid var(--meter-shadow)", borderLeft: "1px solid var(--meter-shadow)",
+    borderRight: "1px solid var(--meter-highlight)", borderBottom: "1px solid var(--meter-highlight)",
+    overflow: "hidden" },
   intelFill: { position: "absolute", left: 1, top: 1, bottom: 1, borderRadius: 0,
-    backgroundImage: `repeating-linear-gradient(90deg, transparent 0 4px, var(--card) 4px 6px)` },
+    backgroundImage: "repeating-linear-gradient(90deg, transparent 0 5px, var(--meter-trough) 5px 7px)" },
   intelVal: { fontFamily: mono, fontSize: 12, fontVariantNumeric: "tabular-nums", color: INK, minWidth: 18 },
+  intelValLead: { color: "var(--meter-lead)" },
   intelNA: { fontFamily: mono, fontSize: 12, color: INK_FAINT },
   // The harness that produced the coding-agent figure, printed under it: the score
   // belongs to the pair, and a bare number would read as a property of the model.

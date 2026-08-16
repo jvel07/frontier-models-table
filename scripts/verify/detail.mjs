@@ -190,6 +190,25 @@ const rail = await firstRow.locator("td").first().evaluate((el) =>
   getComputedStyle(el, "::before").transform);
 t("hovering wipes in the accent rail", rail !== "none" && !/matrix\(1, 0, 0, 0/.test(rail), rail);
 
+console.log("\n=== METER ===");
+// The neon marks the top score in a column. If it ever marked something else it
+// would be worse than decoration — it would be a claim about the data that is wrong.
+const lit = await page.locator(".atlas-meter-lead").count();
+t("some meters are lit", lit > 0, `${lit} lit`);
+const intelLead = await page.locator("table tbody tr[data-model]").evaluateAll((rows) => {
+  const vals = rows.map((r) => ({
+    name: r.dataset.model,
+    v: parseInt(r.querySelectorAll("td")[1].textContent, 10),
+    lit: !!r.querySelectorAll("td")[1].querySelector(".atlas-meter-lead"),
+  })).filter((x) => !Number.isNaN(x.v));
+  const max = Math.max(...vals.map((x) => x.v));
+  return { max, litNames: vals.filter((x) => x.lit).map((x) => x.name),
+    shouldBe: vals.filter((x) => x.v === max).map((x) => x.name) };
+});
+t("the lit intelligence meters are exactly the top-scoring rows",
+  JSON.stringify(intelLead.litNames.sort()) === JSON.stringify(intelLead.shouldBe.sort()),
+  `lit ${intelLead.litNames.join(",")} vs top ${intelLead.shouldBe.join(",")} at ${intelLead.max}`);
+
 console.log("\n=== BACKDROP ===");
 // The parallax layer is fixed, so it must never lengthen the document or widen it;
 // that is the whole reason it can be there at all on a page with a wide table.

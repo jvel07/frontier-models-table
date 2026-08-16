@@ -94,6 +94,13 @@
         --intel-mid: #5A5CD0;
         --intel-lo: #BFBFC8;
 
+        /* The score meter: a sunken trough with a bevel, and the neon the leading
+           model's blocks are lit with. */
+        --meter-trough: #DCDCDC;
+        --meter-shadow: #9A9A9A;
+        --meter-highlight: #FFFFFF;
+        --meter-lead: #2A2CFF;
+
         /* Backdrop: ruled field and the one decorative use of the accent. */
         --grid-line: rgba(17, 17, 17, 0.045);
         --glow: rgba(99, 102, 241, 0.10);
@@ -148,6 +155,11 @@
         --intel-hi: #7C7EFF;
         --intel-mid: #4E52D8;
         --intel-lo: #3E3E4A;
+
+        --meter-trough: #0C0C0F;
+        --meter-shadow: #000000;
+        --meter-highlight: #3A3A46;
+        --meter-lead: #8F91FF;
 
         --grid-line: rgba(255, 255, 255, 0.030);
         --glow: rgba(99, 102, 241, 0.16);
@@ -221,6 +233,10 @@
         }
         .atlas-row:hover .atlas-char { transform: none; }
       }
+
+      /* Only the leader glows. Neon on every bar is wallpaper; on one bar per column
+         it is information — that row holds the highest score in the table. */
+      .atlas-meter-lead > span { box-shadow: 0 0 6px var(--meter-lead), 0 0 2px var(--meter-lead); }
 
       /* The block cursor of a terminal prompt, which a real <input> caret cannot be.
          It only ever runs on an empty, unfocused field, so it is a hint that the
