@@ -659,9 +659,9 @@ export const ARCH_PAPERS = {
  */
 export const PRESETS = {
   All: null,
-  Serving: ["name", "intel", "codingAgent", "agentic", "params", "active", "context", "maxOut", "license"],
-  Training: ["name", "arch", "params", "active", "attn", "released", "provider"],
-  Architecture: ["name", "arch", "attn", "params", "active", "modality", "context"],
+  Serving: ["name", "intel", "codingAgent", "agentic", "params", "context", "maxOut", "license"],
+  Training: ["name", "arch", "params", "attn", "released", "provider"],
+  Architecture: ["name", "arch", "params", "attn", "context", "modality"],
 };
 
 /**
@@ -745,15 +745,18 @@ const COLUMNS = [
     tip: "Artificial Analysis Coding Agent Index v1.3 — an equal-weighted composite of DeepSWE (113 software-engineering tasks, Datacurve), Terminal-Bench v2 (84 agentic terminal tasks, Laude Institute) and SWE-Atlas-QnA (124 technical Q&A tasks, Scale AI), each scored pass@1 averaged over three attempts. It measures a coding agent driving a model, not a model: the same model scores differently through different harnesses, so the harness is named under the figure. Where AA publishes several pairings for one model, the highest-scoring one is shown. This replaced the Coding Index column, which AA withdrew from its site. “—” = AA publishes no pairing for this model." },
   { key: "agentic", label: "Agentic", numeric: true, sub: "Artificial Analysis",
     tip: "Artificial Analysis Agentic Index — the equal-weighted average of two evaluations of long-horizon, tool-using work: GDPval-AA v2 (real tasks across 44 occupations, run in an agentic loop with shell and browser access, scored by blind pairwise Elo) and τ³-Banking (multi-step tool calls against a large unstructured knowledge base). Scored 0-100 on the same footing as the Intelligence Index. Both evaluations are also among the nine inside the Intelligence Index, so this is a re-cut of part of that score rather than an independent axis. Leaderboard snapshot 16 August 2026. “—” = AA does not score this model on the agentic index." },
+  // What the model is, right after what it scores: architecture, size, attention
+  // and context are the four fields someone comparing designs actually reads
+  // together. Provenance — when, who, what class — follows them.
+  { key: "arch", label: "Architecture", numeric: false },
+  { key: "params", label: "Params", numeric: false, sub: "total / active",
+    tip: "Total parameters and the number that actually run for a given token. On a dense model the two are equal, so only the total is shown; on a mixture of experts the active figure is what sets speed and cost, and it is coloured to make the gap visible. Sorting this column sorts by the total." },
+  { key: "attn", label: "Attention", numeric: false },
+  { key: "context", label: "Context", numeric: true },
   { key: "released", label: "Released", numeric: true },
   { key: "provider", label: "Provider", numeric: false },
   { key: "type", label: "Class", numeric: false },
-  { key: "arch", label: "Architecture", numeric: false },
-  { key: "params", label: "Total params", numeric: false },
-  { key: "active", label: "Active params", numeric: false },
-  { key: "attn", label: "Attention", numeric: false },
   { key: "modality", label: "Modality", numeric: false },
-  { key: "context", label: "Context", numeric: true },
   { key: "maxOut", label: "Max out", numeric: true },
   { key: "license", label: "License", numeric: false },
 ];
@@ -1004,7 +1007,7 @@ export default function FrontierModelsTable({ focus } = {}) {
         av = a[sortKey] == null ? -1 : a[sortKey];
         bv = b[sortKey] == null ? -1 : b[sortKey];
       }
-      else if (sortKey === "params" || sortKey === "active") { av = paramSort(a[sortKey]); bv = paramSort(b[sortKey]); }
+      else if (sortKey === "params") { av = paramSort(a.params); bv = paramSort(b.params); }
       else { av = String(a[sortKey]).toLowerCase(); bv = String(b[sortKey]).toLowerCase(); }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
@@ -1221,18 +1224,23 @@ export default function FrontierModelsTable({ focus } = {}) {
                       <ScoreCell value={m.intel} />
                       <ScoreCell value={m.codingAgent} via={m.codingAgentVia} />
                       <ScoreCell value={m.agentic} />
-                      <td style={{ ...S.td, ...S.num, ...S.releasedCell }}>{m.released}</td>
-                      <td style={S.td}>{m.provider}</td>
-                      <td style={S.td}>
-                        <span style={{ ...S.pill, color: tc.fg }}>
-                          <span style={{ ...S.pillDot, background: tc.dot }} />{m.type}
-                        </span>
-                      </td>
                       <td style={S.td}>
                         <span style={{ ...S.archTag, color: ac }}>{m.arch}</span>
                       </td>
-                      <td style={S.td}>{m.params}</td>
-                      <td style={{ ...S.td, color: m.active !== "—" && m.active !== m.params ? "var(--arch-moe)" : "var(--ink)" }}>{m.active}</td>
+                      {/* Total and active in one cell. They are one fact about a model —
+                          how much of it exists against how much of it runs — and reading
+                          them as a pair is the only way the sparsity is visible. Active
+                          takes the MoE colour exactly when it differs from total, which
+                          is what makes a sparse model legible at a glance. */}
+                      <td style={S.td}>
+                        <span style={S.paramTotal}>{m.params}</span>
+                        {m.active !== "—" && m.active !== m.params && (
+                          <>
+                            {" "}<span style={S.paramSep}>/</span>{" "}
+                            <span style={S.paramActive}>{m.active}</span>
+                          </>
+                        )}
+                      </td>
                       <td style={S.td}>
                         {(() => {
                           const info = ATTENTION_INFO[m.attn];
@@ -1246,8 +1254,15 @@ export default function FrontierModelsTable({ focus } = {}) {
                           ) : m.attn;
                         })()}
                       </td>
-                      <td style={S.td}>{m.modality}</td>
                       <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.context)}</td>
+                      <td style={{ ...S.td, ...S.num, ...S.releasedCell }}>{m.released}</td>
+                      <td style={S.td}>{m.provider}</td>
+                      <td style={S.td}>
+                        <span style={{ ...S.pill, color: tc.fg }}>
+                          <span style={{ ...S.pillDot, background: tc.dot }} />{m.type}
+                        </span>
+                      </td>
+                      <td style={S.td}>{m.modality}</td>
                       <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.maxOut)}</td>
                       <td style={{ ...S.td, color: m.open ? "var(--open-fg)" : "var(--ink-faint)" }}>{m.license}</td>
                     </tr>
@@ -1749,7 +1764,7 @@ export const S = {
   // need to announce itself.
   tableWrap: { overflow: "auto", maxHeight: "clamp(380px, 72vh, 900px)",
     borderBottom: `2px solid ${INK}`, background: CARD },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1240 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1180 },
   // Booktabs: a heavy rule above the header, a light one below it, a heavy one under
   // the last row, and no vertical rules anywhere. borderCollapse paints a cell's
   // border on the table rather than the cell, so a sticky header's own borders
@@ -1761,6 +1776,9 @@ export const S = {
     whiteSpace: "nowrap", color: INK_SOFT },
   modelName: { display: "inline-flex", alignItems: "center", gap: 7 },
   modelNameText: { display: "inline-block", whiteSpace: "nowrap" },
+  paramTotal: { color: INK },
+  paramSep: { color: "var(--dim)", margin: "0 5px", fontFamily: mono, fontSize: 11 },
+  paramActive: { fontVariantNumeric: "tabular-nums", color: "var(--arch-moe)" },
   compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
     accentColor: CLAY, verticalAlign: "middle" },
   // Fixed tray so the selection survives scrolling a 56-row table.
@@ -1796,9 +1814,18 @@ export const S = {
   caret: { display: "inline-block", marginRight: 8, color: CLAY, fontSize: 10, transition: "transform 0.15s", verticalAlign: "middle" },
   num: { textAlign: "right", fontFamily: mono, fontVariantNumeric: "tabular-nums", color: INK },
   intelWrap: { display: "inline-flex", alignItems: "center", gap: 8, minWidth: 92 },
-  intelTrack: { position: "relative", width: 56, height: 6, borderRadius: 3, background: LINE,
-    overflow: "hidden", flexShrink: 0 },
-  intelFill: { position: "absolute", left: 0, top: 0, bottom: 0, borderRadius: 3 },
+  // A segmented meter, in the register of a VU meter or a DOS progress bar: square
+  // ends, a hairline box, and the fill cut into blocks.
+  //
+  // The segmentation is drawn *over* an exact-width fill rather than by rounding the
+  // value to a number of whole blocks. A 63 is still exactly 63% of the track long,
+  // with the last block clipped mid-stride — so the retro reading costs no precision,
+  // which quantising into ten lit segments would have.
+  intelTrack: { position: "relative", width: 58, height: 9, borderRadius: 0,
+    background: "transparent", border: `1px solid ${LINE}`, padding: 1,
+    overflow: "hidden", flexShrink: 0, boxSizing: "border-box" },
+  intelFill: { position: "absolute", left: 1, top: 1, bottom: 1, borderRadius: 0,
+    backgroundImage: `repeating-linear-gradient(90deg, transparent 0 4px, var(--card) 4px 6px)` },
   intelVal: { fontFamily: mono, fontSize: 12, fontVariantNumeric: "tabular-nums", color: INK, minWidth: 18 },
   intelNA: { fontFamily: mono, fontSize: 12, color: INK_FAINT },
   // The harness that produced the coding-agent figure, printed under it: the score

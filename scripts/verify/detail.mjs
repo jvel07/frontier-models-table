@@ -125,7 +125,8 @@ await page.locator("[data-search]").fill("mamba");
 await page.waitForTimeout(250);
 const mamba = await page.locator("table tbody tr[data-model]").evaluateAll((els) => els.map((e) => e.dataset.model));
 t("searching an attention mechanism finds models", mamba.length > 0, mamba.join(","));
-t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(11)")
+// Attention is the 7th column since the architecture group moved up behind the scores.
+t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(7)")
   .allTextContents()).every((s) => /mamba/i.test(s)));
 t("the live count matches the rows shown",
   (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/71`);

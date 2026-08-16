@@ -44,9 +44,10 @@ for (const row of rows) {
   const m = byName[name];
   if (!m) { console.log(`FAIL unknown model rendered: "${name}"`); fail++; continue; }
 
-  // Indices are positional, so they all shift when a column is inserted. The three
-  // Artificial Analysis scores sit between Model and Released, in the order
-  // Intelligence, Coding, Agentic; attention (index 10) has no source field to diff.
+  // Indices are positional, so they all shift when a column moves. Order is Model,
+  // the three Artificial Analysis scores, then what the model is — architecture,
+  // params, attention, context — then provenance. Attention (index 6) has no source
+  // field to diff against.
   const checks = [
     ["intel", cells[1].trim(), m.intel == null ? "—" : String(m.intel)],
     // The coding-agent cell prints the harness under the score, because the figure
@@ -55,22 +56,24 @@ for (const row of rows) {
     ["codingAgent", cells[2].trim().replace(/\s+/g, " "),
       m.codingAgent == null ? "—" : `${m.codingAgent} via ${m.codingAgentVia}`],
     ["agentic", cells[3].trim(), m.agentic == null ? "—" : String(m.agentic)],
-    ["released", cells[4].trim(), m.released],
-    ["provider", cells[5].trim(), m.provider],
-    ["type", cells[6].trim(), m.type],
-    ["arch", cells[7].trim(), m.arch],
-    ["params", cells[8].trim(), m.params],
-    ["active", cells[9].trim(), m.active],
+    ["arch", cells[4].trim(), m.arch],
+    // Total and active share a cell. Checking the joined string is what stops the
+    // two halves being silently swapped, which neither figure alone would catch.
+    ["params", cells[5].trim().replace(/\s+/g, " "),
+      m.active === "—" || m.active === m.params ? m.params : `${m.params} / ${m.active}`],
+    ["context", cells[7].trim(), fmtTokens(m.context)],
+    ["released", cells[8].trim(), m.released],
+    ["provider", cells[9].trim(), m.provider],
+    ["type", cells[10].trim(), m.type],
     ["modality", cells[11].trim(), m.modality],
-    ["context", cells[12].trim(), fmtTokens(m.context)],
-    ["maxOut", cells[13].trim(), fmtTokens(m.maxOut)],
-    ["license", cells[14].trim(), m.license],
+    ["maxOut", cells[12].trim(), fmtTokens(m.maxOut)],
+    ["license", cells[13].trim(), m.license],
   ];
   // released must never look like a score, and vice versa — the exact bug reported.
   // With three adjacent score columns this also catches any two being swapped into
   // each other's slot, which no per-cell diff above would notice on its own.
-  if (!/^\d{4}\/\d{2}$/.test(cells[4].trim())) {
-    console.log(`FAIL "${name}": Released column ("${cells[4].trim()}") is not a YYYY/MM date`); fail++;
+  if (!/^\d{4}\/\d{2}$/.test(cells[8].trim())) {
+    console.log(`FAIL "${name}": Released column ("${cells[8].trim()}") is not a YYYY/MM date`); fail++;
   }
   for (const [label, idx] of [["Intelligence", 1], ["Agentic", 3]]) {
     const v = cells[idx].trim();
