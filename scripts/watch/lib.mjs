@@ -51,6 +51,7 @@ export function loadMaps() {
     ATTENTION_INFO: grab("ATTENTION_INFO"),
     POSITIONAL_PAPERS: grab("POSITIONAL_PAPERS", "[", "]"),
     ARCH_PAPERS: grab("ARCH_PAPERS"),
+    DIAGRAMS: grab("DIAGRAMS"),
   };
 }
 

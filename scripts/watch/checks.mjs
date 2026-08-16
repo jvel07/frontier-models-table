@@ -233,3 +233,99 @@ export async function watchReleases(maps, sinceDays = 45) {
   findings.sort((a, b) => a.subject.localeCompare(b.subject));
   return { findings: findings.slice(0, 40), checked, skipped };
 }
+
+/**
+ * The architecture gallery's changelog feed.
+ *
+ * The diagrams on this site are hot-linked from Sebastian Raschka's LLM
+ * Architecture Gallery, so when he publishes a card we may have a diagram to add,
+ * and when he publishes a card for something we do not carry at all, that is a
+ * release worth looking at from someone who has already read the architecture.
+ *
+ * Two kinds of finding, deliberately separated, because they cost a reviewer very
+ * different amounts of work:
+ *
+ *   1. A card whose model is already in the atlas but has no DIAGRAMS entry. This
+ *      is a five-minute job: confirm the image resolves, mirror it, add the entry.
+ *   2. A card for a model the atlas does not have. This is a research pass, and
+ *      the check says so rather than pretending the two are the same task.
+ *
+ * The slug is guessed from the changelog anchor and then *verified* against the
+ * gallery's own structured data rather than trusted, because a guessed slug that
+ * 404s would send a reviewer to add a broken image — the exact failure the
+ * verify-every-link rule exists to prevent.
+ */
+const GALLERY = "https://sebastianraschka.com/llm-architecture-gallery";
+
+export async function checkGallery(maps, sinceDays = 45) {
+  const feed = await get(`${GALLERY}/rss.xml`);
+  const index = await get(`${GALLERY}/`);
+  if (INCONCLUSIVE.has(feed.status) || !feed.ok || !index.ok) {
+    return { findings: [], checked: 0, skipped: 1, blocked: true };
+  }
+
+  // The gallery index carries a JSON-LD ItemList: every card's display name against
+  // its "#card-<slug>" anchor. This is the authority for what is a card at all, and
+  // it is what keeps the check quiet — changelog entries also announce explainers,
+  // meta-analyses and batch updates ("Added May 10 architecture gallery updates"),
+  // and none of those are a model. A name that is not in this list is not reported.
+  const cards = new Map();
+  for (const m of index.body.matchAll(/"name":"([^"]+)","url":"[^"]*#card-([a-z0-9.-]+)"/g)) {
+    cards.set(m[1], m[2]);
+  }
+  if (!cards.size) return { findings: [], checked: 0, skipped: 1, blocked: true };
+
+  const known = new Set(Object.keys(maps.DIAGRAMS));
+  const slugs = new Set(Object.values(maps.DIAGRAMS).map((d) => d.slug));
+  const cutoff = Date.now() - sinceDays * 864e5;
+  const findings = [];
+  const seen = new Set();
+
+  for (const item of feed.body.match(/<item>[\s\S]*?<\/item>/g) || []) {
+    const tag = (t) => ((item.match(new RegExp(`<${t}>([\\s\\S]*?)</${t}>`)) || [])[1] || "")
+      .replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+    const when = Date.parse(tag("pubDate"));
+    if (!when || when < cutoff) continue;
+    const title = tag("title");
+    const date = new Date(when).toISOString().slice(0, 10);
+
+    // Every card the entry names, found by looking for card names in the title
+    // rather than by trying to parse the sentence. Titles are prose — "Added Kimi
+    // K2.7 Code and MiniMax M3", "Mega update: Added Antares 1B, BTL-3, …" — and
+    // matching against the known list is the only way that does not invent models.
+    for (const [cardName, slug] of cards) {
+      if (!title.includes(cardName) || seen.has(cardName)) continue;
+      seen.add(cardName);
+      const ours = matchModel(maps.MODELS, cardName);
+      if (ours && (known.has(ours) || slugs.has(slug))) continue;
+      findings.push(ours
+        ? { subject: `${ours} — gallery card, no diagram here`,
+            url: `${GALLERY}/#card-${slug}`,
+            detail: `${date}: "${title}". Slug ${slug}; add to DIAGRAMS and mirror into public/diagrams/.` }
+        : { subject: `${cardName} — in the gallery, not in the atlas`,
+            url: `${GALLERY}/#card-${slug}`,
+            detail: `${date}: "${title}". Needs the full research pass, not just a diagram.` });
+    }
+  }
+  return { findings: findings.slice(0, 40), checked: 1, skipped: 0 };
+}
+
+/**
+ * The atlas's name for a gallery card, or null.
+ *
+ * Names travel between the two with different punctuation and different amounts of
+ * size in them: "Qwen3.8 27B" here is "Qwen3.8 (27B)" there, "Muse Glimmer 30B" is
+ * "Muse Glimmer". An exact normalised match is tried first, then a prefix match —
+ * but only when exactly one model matches, because "Muse Spark" is a prefix of
+ * three of them and guessing which is worse than reporting nothing.
+ */
+function matchModel(models, cardName) {
+  const want = norm(cardName);
+  const exact = models.find((m) => norm(m.name) === want);
+  if (exact) return exact.name;
+  const prefix = models.filter((m) => want.startsWith(norm(m.name)));
+  return prefix.length === 1 ? prefix[0].name : null;
+}
+
+// Punctuation and spacing differ on both sides; compare on letters and digits only.
+const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");

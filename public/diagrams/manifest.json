@@ -75,6 +75,10 @@
   "slug": "mistral-small-4",
   "title": "Mistral Small 4 (119B)"
  },
+ "Muse Glimmer": {
+  "slug": "muse-glimmer-30b",
+  "title": "Muse Glimmer 30B"
+ },
  "Nemotron 3 Nano": {
   "slug": "nemotron-3-nano-30b-a3b",
   "title": "Nemotron 3 Nano (30B-A3B)"
@@ -87,6 +91,10 @@
   "slug": "nemotron-3-ultra-550b-a55b",
   "title": "Nemotron 3 Ultra (550B-A55B)"
  },
+ "Qwen3 235B-A22B": {
+  "slug": "qwen3-235b-a22b",
+  "title": "Qwen3 235B-A22B"
+ },
  "Qwen3.6 (27B)": {
   "slug": "qwen3-6-27b",
   "title": "Qwen3.6 (27B)"
@@ -94,6 +102,10 @@
  "Qwen3.6 35B-A3B": {
   "slug": "qwen3-6-35b-a3b",
   "title": "Qwen3.6 (35B-A3B)"
+ },
+ "Qwen3.8 (27B)": {
+  "slug": "qwen3-8-27b",
+  "title": "Qwen3.8 27B"
  },
  "Sarvam 105B": {
   "slug": "sarvam-105b",

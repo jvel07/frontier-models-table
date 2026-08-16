@@ -11,7 +11,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { loadMaps, section } from "./lib.mjs";
-import { checkLinks, checkCitations, checkSpecs, watchReleases } from "./checks.mjs";
+import { checkLinks, checkCitations, checkSpecs, watchReleases, checkGallery } from "./checks.mjs";
 
 const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
@@ -27,6 +27,8 @@ const CHECKS = [
     empty: "Every SPECS entry still matches its config.json." },
   { key: "releases", title: "Models on Hugging Face that are not in the atlas", fn: watchReleases,
     empty: "No unrecognised releases from the labs we track." },
+  { key: "gallery", title: "New cards in the LLM Architecture Gallery", fn: checkGallery,
+    empty: "Every recent gallery card is either already illustrated here or already in the table." },
 ];
 
 const maps = loadMaps();
