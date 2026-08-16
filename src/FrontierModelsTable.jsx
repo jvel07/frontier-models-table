@@ -1035,9 +1035,15 @@ export default function FrontierModelsTable({ focus } = {}) {
 
         <div style={S.controls}>
           <div style={{ ...S.searchWrap, ...(searchFocus ? S.searchWrapOn : null) }}>
-            <span aria-hidden="true" style={{ ...S.searchGlyph, ...(searchFocus ? S.searchGlyphOn : null) }}>⌕</span>
+            <span aria-hidden="true" style={{ ...S.searchLegend, ...(searchFocus ? S.searchLegendOn : null) }}>
+              search
+            </span>
+            <span aria-hidden="true" style={S.searchPrompt}>&gt;</span>
+            {!query && !searchFocus && (
+              <span aria-hidden="true" className="atlas-cursor" style={S.searchCursor}>█</span>
+            )}
             <input ref={searchRef} data-search style={S.search}
-              placeholder="Search model, lab, architecture, attention, licence…"
+              placeholder="model, lab, architecture, attention, licence…"
               aria-label="Search models" value={query}
               onFocus={() => setSearchFocus(true)} onBlur={() => setSearchFocus(false)}
               onChange={(e) => setQuery(e.target.value)} />
@@ -1669,7 +1675,9 @@ const INK_FAINT = "var(--ink-faint)"; // tertiary
 const LINE = "var(--line)";      // hairline border
 const LINE_SOFT = "var(--line-soft)";
 export const S = {
-  page: { background: PAPER, minHeight: "100vh", padding: "40px 22px", color: INK,
+  // Transparent on purpose: the fixed parallax field behind the app paints the
+  // page colour, and a solid background here would cover it.
+  page: { background: "transparent", minHeight: "100vh", padding: "40px 22px", color: INK,
     fontFamily: display },
   shell: { maxWidth: 1240, margin: "0 auto" },
   header: { marginBottom: 26 },
@@ -1687,33 +1695,38 @@ export const S = {
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
   // Underlined rather than boxed: a rule under a field is the form convention, and
   // it removes one more rectangle from a page that had a great many.
-  // The field is a row of its own parts rather than a bare input: a glyph, the
-  // input, and whatever the state has to say — a live count and a clear button once
-  // there is a query, the keyboard hint before there is one. The rule under it is
-  // the only thing that moves on focus, and it takes the accent.
-  searchWrap: { display: "flex", alignItems: "center", gap: 9, flex: "1 1 280px",
-    minWidth: 220, padding: "7px 2px", borderBottom: `1px solid ${LINE}`,
-    transition: "border-color 120ms ease" },
-  searchWrapOn: { borderBottomColor: CLAY },
-  searchGlyph: { fontSize: 16, lineHeight: 1, color: INK_FAINT, transition: "color 120ms ease" },
-  searchGlyphOn: { color: CLAY },
+  // A terminal prompt, boxed, with its label cut into the top rule the way a
+  // fieldset legend sits in its border. Everything inside is monospace: the whole
+  // point of the old-school register is that the field looks like somewhere you
+  // type commands rather than somewhere you fill in a form.
+  searchWrap: { position: "relative", display: "flex", alignItems: "center", gap: 8,
+    flex: "1 1 300px", minWidth: 240, padding: "9px 11px", border: `1px solid ${LINE}`,
+    borderRadius: 0, background: "transparent", transition: "border-color 120ms ease" },
+  searchWrapOn: { borderColor: CLAY },
+  searchLegend: { position: "absolute", top: -7, left: 9, padding: "0 5px",
+    background: PAPER, fontFamily: mono, fontSize: 9, letterSpacing: "0.14em",
+    textTransform: "uppercase", color: INK_FAINT, transition: "color 120ms ease" },
+  searchLegendOn: { color: CLAY },
+  searchPrompt: { fontFamily: mono, fontSize: 13, lineHeight: 1, color: CLAY },
+  searchCursor: { fontFamily: mono, fontSize: 12, lineHeight: 1, color: CLAY,
+    marginLeft: -3, animation: "atlas-blink 1.1s step-end infinite" },
   search: { background: "transparent", border: "none", borderRadius: 0, padding: 0,
-    color: INK, fontSize: 14.5, flex: 1, minWidth: 0, outline: "none", fontFamily: display,
-    caretColor: CLAY },
+    color: INK, fontSize: 13, flex: 1, minWidth: 0, outline: "none", fontFamily: mono,
+    letterSpacing: "0.01em", caretColor: CLAY },
   searchCount: { fontFamily: mono, fontSize: 11, color: INK_FAINT,
     fontVariantNumeric: "tabular-nums" },
   searchClear: { background: "transparent", border: "none", cursor: "pointer", padding: "0 2px",
     fontFamily: mono, fontSize: 16, lineHeight: 1, color: INK_FAINT },
   // A key cap, sized like one. Hidden on focus, where pressing it would type it.
   searchKey: { fontFamily: mono, fontSize: 10, color: INK_FAINT, border: `1px solid ${LINE}`,
-    borderRadius: 3, padding: "1px 6px", lineHeight: 1.4 },
+    borderRadius: 0, padding: "1px 6px", lineHeight: 1.4 },
   mark: { background: CLAY_SOFT, color: "inherit", padding: "0 1px", borderRadius: 2 },
   hidden: { display: "none" },
   tries: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, margin: "14px 0 4px" },
   triesLabel: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
     color: INK_FAINT, marginRight: 1 },
-  tryChip: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999,
-    padding: "3px 11px", cursor: "pointer", fontFamily: mono, fontSize: 10.5, color: INK_SOFT },
+  tryChip: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
+    padding: "3px 10px", cursor: "pointer", fontFamily: mono, fontSize: 10.5, color: INK_SOFT },
   empty: { border: `1px solid ${LINE}`, background: CARD, padding: "26px 24px", marginBottom: 20 },
   emptyLine: { fontSize: 16, color: INK, marginBottom: 7 },
   emptyQuery: { fontFamily: mono, fontSize: 14, color: CLAY },

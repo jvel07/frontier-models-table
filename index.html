@@ -93,6 +93,10 @@
         --intel-mid: #5A5CD0;
         --intel-lo: #BFBFC8;
 
+        /* Backdrop: ruled field and the one decorative use of the accent. */
+        --grid-line: rgba(17, 17, 17, 0.045);
+        --glow: rgba(99, 102, 241, 0.10);
+
         --shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
@@ -143,6 +147,9 @@
         --intel-mid: #4E52D8;
         --intel-lo: #3E3E4A;
 
+        --grid-line: rgba(255, 255, 255, 0.030);
+        --glow: rgba(99, 102, 241, 0.16);
+
         --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
       }
 
@@ -161,6 +168,15 @@
         z-index: 9999;
         background: repeating-linear-gradient(
           0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+      }
+
+      /* The block cursor of a terminal prompt, which a real <input> caret cannot be.
+         It only ever runs on an empty, unfocused field, so it is a hint that the
+         thing is ready for typing rather than something blinking at you while you
+         type. Stopped outright for readers who asked for less motion. */
+      @keyframes atlas-blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+      @media (prefers-reduced-motion: reduce) {
+        .atlas-cursor { animation: none !important; }
       }
     </style>
     <script>

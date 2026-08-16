@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createRoot } from "react-dom/client";
+import Backdrop from "./Backdrop.jsx";
 import FrontierModelsTable from "./FrontierModelsTable.jsx";
 import CompareView from "./CompareView.jsx";
 import AttentionView from "./AttentionView.jsx";
@@ -79,13 +80,17 @@ function Root() {
     else window.location.hash = "";
   }, []);
 
-  if (route.page === "compare") return <CompareView names={route.models} onBack={goBack} />;
-  if (route.page === "attention") return <AttentionView />;
-  if (route.page === "papers") return <PapersView />;
-  if (route.page === "trends") return <TrendsView />;
-  if (route.page === "openness") return <OpennessView />;
-  if (route.page === "tools") return <ToolsView />;
-  return <FrontierModelsTable focus={route.focus} />;
+  // The backdrop sits outside the route switch so it survives navigation: rebuilding
+  // it per page would restart the parallax from zero on every hash change.
+  const page =
+    route.page === "compare" ? <CompareView names={route.models} onBack={goBack} />
+      : route.page === "attention" ? <AttentionView />
+      : route.page === "papers" ? <PapersView />
+      : route.page === "trends" ? <TrendsView />
+      : route.page === "openness" ? <OpennessView />
+      : route.page === "tools" ? <ToolsView />
+      : <FrontierModelsTable focus={route.focus} />;
+  return <><Backdrop />{page}</>;
 }
 
 createRoot(document.getElementById("root")).render(

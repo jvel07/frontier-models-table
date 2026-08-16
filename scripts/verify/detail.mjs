@@ -158,6 +158,21 @@ t("a suggestion chip runs a query that lands on models", (await dataRows().count
 await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
 
+console.log("\n=== BACKDROP ===");
+// The parallax layer is fixed, so it must never lengthen the document or widen it;
+// that is the whole reason it can be there at all on a page with a wide table.
+const beforeH = await page.evaluate(() => document.documentElement.scrollHeight);
+await page.evaluate(() => window.scrollTo(0, 1200));
+await page.waitForTimeout(400);
+const moved = await page.evaluate(() => {
+  const layer = document.querySelector("[aria-hidden='true'] > div:last-child");
+  return layer ? getComputedStyle(layer).transform : "none";
+});
+t("the backdrop parallaxes on scroll", moved !== "none" && moved !== "matrix(1, 0, 0, 1, 0, 0)", moved);
+t("scrolling does not grow the document", (await page.evaluate(() => document.documentElement.scrollHeight)) === beforeH);
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.waitForTimeout(300);
+
 console.log("\n=== REGRESSION ===");
 await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
