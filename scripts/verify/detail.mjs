@@ -152,11 +152,42 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(200);
 t("Escape clears the query", (await page.locator("[data-search]").inputValue()) === "");
 
-await page.locator("[data-tries] button").first().click();
-await page.waitForTimeout(250);
-t("a suggestion chip runs a query that lands on models", (await dataRows().count()) > 0);
 await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
+
+console.log("\n=== ROW HOVER ===");
+// Splitting the name into per-character spans must not change what the cell says:
+// the column suite diffs cells against the source data, and a reader copying a
+// name has to get a name.
+const firstRow = page.locator("table tbody tr[data-model]").first();
+const rowName = await firstRow.getAttribute("data-model");
+t("splitting the name leaves the cell text intact",
+  (await firstRow.locator("td").first().textContent()).includes(rowName), rowName);
+t("every character carries its stagger index",
+  (await firstRow.locator(".atlas-char").count()) === rowName.length,
+  `${await firstRow.locator(".atlas-char").count()} spans for ${rowName.length} chars`);
+// Splitting a name into boxes is exactly how kerning gets silently destroyed — the
+// first attempt put every letter in a flex container with a 7px gap and rendered
+// "O p u s  5" at more than twice the width. Measure it rather than trust it.
+const widths = await firstRow.locator(".atlas-char").first().evaluate((el) => {
+  const wrap = el.parentElement;
+  const probe = document.createElement("span");
+  probe.textContent = wrap.textContent;
+  probe.style.cssText = "position:absolute;visibility:hidden;font:" + getComputedStyle(wrap).font;
+  document.body.appendChild(probe);
+  const out = [wrap.getBoundingClientRect().width, probe.getBoundingClientRect().width];
+  probe.remove();
+  return out;
+});
+t("the split name sets to the same width as the unsplit text",
+  Math.abs(widths[0] - widths[1]) < 1, `${widths[0].toFixed(1)}px split vs ${widths[1].toFixed(1)}px plain`);
+await firstRow.hover();
+await page.waitForTimeout(400);
+const lifted = await firstRow.locator(".atlas-char").first().evaluate((el) => getComputedStyle(el).transform);
+t("hovering lifts the name", lifted !== "none", lifted);
+const rail = await firstRow.locator("td").first().evaluate((el) =>
+  getComputedStyle(el, "::before").transform);
+t("hovering wipes in the accent rail", rail !== "none" && !/matrix\(1, 0, 0, 0/.test(rail), rail);
 
 console.log("\n=== BACKDROP ===");
 // The parallax layer is fixed, so it must never lengthen the document or widen it;

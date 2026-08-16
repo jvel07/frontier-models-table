@@ -61,6 +61,7 @@
         /* Zebra striping is off: alternating fills compete with the data for
            attention, and the row rules already carry the eye across. */
         --row-alt: transparent;
+        --row-hover: #F5F5FB;
         --row-open: #F0F0FA;
         --detail-bg: #F6F6F8;
         --dim: #9A9A9A;
@@ -115,6 +116,7 @@
         --clay-soft: #16173D;
 
         --row-alt: transparent;
+        --row-hover: #16161C;
         --row-open: #15151E;
         --detail-bg: #0D0D0D;
         --dim: #5A5A5A;
@@ -168,6 +170,56 @@
         z-index: 9999;
         background: repeating-linear-gradient(
           0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+      }
+
+      /* Row hover.
+         ------------------------------------------------------------------
+         Three things happen, in order of how much they matter: the row lifts onto
+         a tinted surface, an accent rule wipes down its left edge, and the model
+         name rises one character at a time.
+
+         The stagger is the whole effect. Each character carries its index as --i
+         and delays by 14ms times that, so a nine-letter name finishes its wave in
+         about an eighth of a second — read as a single gesture travelling left to
+         right, not as nine separate animations. The name also takes the accent
+         colour, which is what tells you the row is the one you are about to open.
+
+         Transform and colour only: no layout property changes on hover, so a
+         pointer dragged down 71 rows never triggers a reflow. */
+      .atlas-row { transition: background-color 140ms ease; }
+      .atlas-row > td:first-child { position: relative; }
+      .atlas-row > td:first-child::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 2px;
+        background: var(--clay);
+        transform: scaleY(0);
+        transform-origin: top;
+        transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .atlas-row:hover > td:first-child::before,
+      .atlas-row-open > td:first-child::before { transform: scaleY(1); }
+      .atlas-row:hover { background-color: var(--row-hover) !important; }
+
+      .atlas-char {
+        display: inline-block;
+        white-space: pre;
+        transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), color 220ms ease;
+        transition-delay: calc(var(--i) * 14ms);
+      }
+      .atlas-row:hover .atlas-char { transform: translateY(-2px); color: var(--clay); }
+      /* A search hit stays marked whether or not the row is hovered. */
+      .atlas-hit { background: var(--clay-soft); border-radius: 2px; }
+
+      /* Nothing above is load-bearing: without motion the row still tints and the
+         rule still appears, they just arrive at once. */
+      @media (prefers-reduced-motion: reduce) {
+        .atlas-row, .atlas-char, .atlas-row > td:first-child::before {
+          transition-duration: 0ms !important;
+          transition-delay: 0ms !important;
+        }
+        .atlas-row:hover .atlas-char { transform: none; }
       }
 
       /* The block cursor of a terminal prompt, which a real <input> caret cannot be.

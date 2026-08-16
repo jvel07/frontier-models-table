@@ -665,24 +665,35 @@ export const PRESETS = {
 };
 
 /**
- * Mark the searched-for text inside a model name.
+ * A model name, one span per character, carrying its own index.
  *
- * Only a literal, case-insensitive hit is marked. The filter itself is looser — it
- * strips separators, so "qwen 3.8" matches Qwen3.8 — and it also reads columns this
- * never touches, so a row can match without anything lighting up here. That is the
- * right way round: a highlight that pointed at characters the reader did not type
- * would be worse than no highlight at all.
+ * The index is what makes the hover read as a wave rather than a jump: the CSS
+ * delays each character by `--i` steps, so the name lifts left to right as the
+ * pointer arrives. It costs one span per letter — around 850 across the table,
+ * which is nothing next to the fifteen cells each row already renders.
+ *
+ * Splitting is invisible to everything that reads the table: `textContent` is
+ * unchanged, so the column suite still diffs the cell against the source data,
+ * and selecting a name still copies a name.
+ *
+ * Search hits are marked here too, on the same spans. Only a literal,
+ * case-insensitive hit is marked: the filter is looser — it strips separators, so
+ * "qwen 3.8" matches Qwen3.8 — and it reads columns this never touches, so a row
+ * can match with nothing lit up. A highlight over characters the reader did not
+ * type would be worse than no highlight at all.
  */
-function Highlight({ text, query }) {
+function SplitName({ text, query }) {
   const q = query.trim();
-  if (!q) return text;
-  const i = text.toLowerCase().indexOf(q.toLowerCase());
-  if (i < 0) return text;
+  const at = q ? text.toLowerCase().indexOf(q.toLowerCase()) : -1;
   return (
     <>
-      {text.slice(0, i)}
-      <mark style={S.mark}>{text.slice(i, i + q.length)}</mark>
-      {text.slice(i + q.length)}
+      {Array.from(text).map((ch, i) => (
+        // The character goes in verbatim. The span's `white-space: pre` is what
+        // keeps a space a space, so nothing is substituted for one and the cell's
+        // text stays byte-identical to the model's name.
+        <span key={i} className={at >= 0 && i >= at && i < at + q.length ? "atlas-char atlas-hit" : "atlas-char"}
+          style={{ "--i": i }}>{ch}</span>
+      ))}
     </>
   );
 }
@@ -725,16 +736,6 @@ function ScoreCell({ value, via }) {
     </td>
   );
 }
-
-/**
- * One-tap queries offered under an empty search box.
- *
- * Every one is a substring of a value the search actually reads — an attention
- * mechanism, a channel-mixing family, a licence, a modality — so a chip can never
- * land on an empty table. Sorted roughly by how much of the field each one cuts
- * away, so the first tap is a broad slice and the last is a narrow one.
- */
-const SEARCH_SUGGESTIONS = ["MoE", "Dense", "MLA", "Sliding-window", "DeltaNet", "Mamba", "Apache 2.0"];
 
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
@@ -1075,19 +1076,6 @@ export default function FrontierModelsTable({ focus } = {}) {
           </button>
         </div>
 
-        {/* Nobody's first instinct is to search a reference table for "MLA". These
-            are here to say that they can: each one is a real value in a column the
-            search reads, so every chip lands on models rather than on nothing. */}
-        {!query && (
-          <div style={S.tries} data-tries>
-            <span style={S.triesLabel}>Try</span>
-            {SEARCH_SUGGESTIONS.map((s) => (
-              <button key={s} type="button" style={S.tryChip}
-                onClick={() => { setQuery(s); searchRef.current?.focus(); }}>{s}</button>
-            ))}
-          </div>
-        )}
-
         {filtersOpen && (
           <div style={S.filterPanel} data-filter-panel>
             <div style={S.filterRow}>
@@ -1201,6 +1189,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                   <React.Fragment key={m.name}>
                     <tr onClick={() => setExpanded(isOpen ? null : m.name)}
                       data-model={m.name}
+                      className={isOpen ? "atlas-row atlas-row-open" : "atlas-row"}
                       style={{ ...S.tr, background: isOpen ? "var(--row-open)" : i % 2 ? "var(--row-alt)" : "transparent",
                         cursor: "pointer" }}>
                       <td style={{ ...S.td, ...S.modelCell }}>
@@ -1220,7 +1209,12 @@ export default function FrontierModelsTable({ focus } = {}) {
                         />
                         <span style={{ ...S.caret, transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
                         <span style={S.modelName}>
-                          <Highlight text={m.name} query={query} />
+                          {/* The characters need their own box: the row above is an
+                              inline-flex with a gap, and without this each letter
+                              would be a flex item with 7px of air after it. */}
+                          <span style={S.modelNameText}>
+                            <SplitName text={m.name} query={query} />
+                          </span>
                           <ProviderMark provider={m.provider} />
                         </span>
                       </td>
@@ -1722,11 +1716,6 @@ export const S = {
     borderRadius: 0, padding: "1px 6px", lineHeight: 1.4 },
   mark: { background: CLAY_SOFT, color: "inherit", padding: "0 1px", borderRadius: 2 },
   hidden: { display: "none" },
-  tries: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, margin: "14px 0 4px" },
-  triesLabel: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
-    color: INK_FAINT, marginRight: 1 },
-  tryChip: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
-    padding: "3px 10px", cursor: "pointer", fontFamily: mono, fontSize: 10.5, color: INK_SOFT },
   empty: { border: `1px solid ${LINE}`, background: CARD, padding: "26px 24px", marginBottom: 20 },
   emptyLine: { fontSize: 16, color: INK, marginBottom: 7 },
   emptyQuery: { fontFamily: mono, fontSize: 14, color: CLAY },
@@ -1771,6 +1760,7 @@ export const S = {
     position: "sticky", top: 0, zIndex: 2, background: CARD,
     whiteSpace: "nowrap", color: INK_SOFT },
   modelName: { display: "inline-flex", alignItems: "center", gap: 7 },
+  modelNameText: { display: "inline-block", whiteSpace: "nowrap" },
   compareBox: { width: 14, height: 14, marginRight: 9, cursor: "pointer", flexShrink: 0,
     accentColor: CLAY, verticalAlign: "middle" },
   // Fixed tray so the selection survives scrolling a 56-row table.
