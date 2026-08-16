@@ -667,6 +667,21 @@ export const PRESETS = {
 };
 
 /**
+ * The filter funnel, drawn rather than typed.
+ *
+ * A glyph would have been simpler, but the ones that look like a funnel are not
+ * in every system font and fall back to a box. Nine points of SVG always render.
+ */
+function FilterIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"
+      style={{ display: "block", flexShrink: 0 }}>
+      <path d="M1 2h10L7 6.6V11L5 9.6V6.6L1 2z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
  * A model name, one span per character, carrying its own index.
  *
  * The index is what makes the hover read as a wave rather than a jump: the CSS
@@ -727,7 +742,10 @@ function ScoreCell({ value, via, lead }) {
               {/* backgroundColor, not the background shorthand: the shorthand comes
                   after the spread and would reset backgroundImage, taking the block
                   gaps with it and leaving one solid bar. */}
-              <span style={{ ...S.intelFill, width: `${value}%`,
+              {/* --fill carries the target width so the recharge keyframes can animate
+                  up to the real score; the inline width is what shows when the
+                  animation is off, so a reduced-motion reader still sees 63%. */}
+              <span style={{ ...S.intelFill, width: `${value}%`, "--fill": `${value}%`,
                 backgroundColor: lead ? "var(--meter-lead)"
                   : value >= 55 ? "var(--intel-hi)" : value >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
             </span>
@@ -1118,9 +1136,15 @@ export default function FrontierModelsTable({ focus } = {}) {
           {/* Anything set while the panel is shut would otherwise be invisible, so the
               button names it rather than just counting. */}
           <button type="button" data-filters-toggle aria-expanded={filtersOpen}
+            aria-label={narrowed.length ? `Filters: ${narrowed.join(", ")}` : "More filters"}
+            title="More filters"
             onClick={() => setFiltersOpen((o) => !o)}
             style={{ ...S.moreFilters, ...(narrowed.length ? S.moreFiltersOn : null) }}>
-            {narrowed.length ? narrowed.join(" · ") : "More filters"}
+            <FilterIcon />
+            {/* The icon alone when nothing is set; the active filters named when
+                something is, because a filter you cannot see is a filter you forget
+                you applied. */}
+            {narrowed.length ? <span>{narrowed.join(" · ")}</span> : null}
             <span aria-hidden="true" style={S.moreCaret}>{filtersOpen ? "−" : "+"}</span>
           </button>
         </div>
@@ -1264,7 +1288,16 @@ export default function FrontierModelsTable({ focus } = {}) {
                           <span style={S.modelNameText}>
                             <SplitName text={m.name} query={query} />
                           </span>
-                          <ProviderMark provider={m.provider} />
+                          {/* The mark is hidden until the row is hovered, then jumps out
+                              of the end of the name. Its slot stays in the layout while
+                              invisible: dropping it out of flow would reflow the column
+                              on every hover, and a table that twitches under the pointer
+                              is worse than one with a little trailing space. --n is the
+                              name's length, so the mark lands just after the last
+                              character finishes its own wave. */}
+                          <span className="atlas-mark" style={{ "--n": m.name.length }}>
+                            <ProviderMark provider={m.provider} />
+                          </span>
                         </span>
                       </td>
                       <ScoreCell value={m.intel} lead={m.intel === LEADERS.intel} />

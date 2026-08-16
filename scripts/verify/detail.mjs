@@ -182,10 +182,21 @@ const widths = await firstRow.locator(".atlas-char").first().evaluate((el) => {
 });
 t("the split name sets to the same width as the unsplit text",
   Math.abs(widths[0] - widths[1]) < 1, `${widths[0].toFixed(1)}px split vs ${widths[1].toFixed(1)}px plain`);
+// The provider mark is hidden until hover, but its slot stays in the layout —
+// dropping it out of flow would reflow the whole column under the pointer.
+const markBefore = await firstRow.locator(".atlas-mark").first().evaluate((el) => ({
+  opacity: getComputedStyle(el).opacity, width: el.getBoundingClientRect().width,
+}));
+t("the provider mark is invisible at rest", markBefore.opacity === "0", `opacity ${markBefore.opacity}`);
+t("its slot still occupies width, so hovering cannot reflow the column",
+  markBefore.width > 0, `${markBefore.width.toFixed(1)}px`);
+
 await firstRow.hover();
-await page.waitForTimeout(400);
+await page.waitForTimeout(700);
 const lifted = await firstRow.locator(".atlas-char").first().evaluate((el) => getComputedStyle(el).transform);
 t("hovering lifts the name", lifted !== "none", lifted);
+const markAfter = await firstRow.locator(".atlas-mark").first().evaluate((el) => getComputedStyle(el).opacity);
+t("hovering brings the provider mark out", markAfter === "1", `opacity ${markAfter}`);
 const rail = await firstRow.locator("td").first().evaluate((el) =>
   getComputedStyle(el, "::before").transform);
 t("hovering wipes in the accent rail", rail !== "none" && !/matrix\(1, 0, 0, 0/.test(rail), rail);

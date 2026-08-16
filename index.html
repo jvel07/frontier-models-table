@@ -214,6 +214,27 @@
       .atlas-row-open > td:first-child::before { transform: scaleY(1); }
       .atlas-row:hover { background-color: var(--row-hover) !important; }
 
+      /* The provider mark: absent until hover, then it jumps out of the name.
+         The overshoot in the easing is the jump — it passes its resting size and
+         settles back. It waits for the name's character wave to finish (--n
+         characters at the same 14ms step) so the two read as one gesture, first
+         the name, then the mark. */
+      .atlas-mark {
+        display: inline-flex;
+        opacity: 0;
+        transform: translateX(-9px) scale(0.4);
+        transition: opacity 140ms ease, transform 300ms cubic-bezier(0.18, 1.5, 0.4, 1);
+      }
+      .atlas-row:hover .atlas-mark {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        transition-delay: calc(var(--n) * 14ms);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .atlas-mark { transition-duration: 0ms !important; transition-delay: 0ms !important; }
+        .atlas-row:hover .atlas-mark { transform: none; }
+      }
+
       .atlas-char {
         display: inline-block;
         white-space: pre;
@@ -238,9 +259,39 @@
          indents unpredictably across browsers at this size. */
       .atlas-tip-point::before { content: "–"; position: absolute; left: 0; opacity: 0.55; }
 
-      /* Only the leader glows. Neon on every bar is wallpaper; on one bar per column
-         it is information — that row holds the highest score in the table. */
-      .atlas-meter-lead > span { box-shadow: 0 0 6px var(--meter-lead), 0 0 2px var(--meter-lead); }
+      /* Only the leader glows, and it charges rather than sitting full.
+         ------------------------------------------------------------------
+         The blocks fill left to right up to the row's real score, hold, and reset —
+         a battery topping up. `steps(9)` is what makes them arrive one bin at a
+         time instead of sliding; the width target is --fill, set per row, so the
+         animation stops exactly where that model's score does rather than at 100%.
+         The neon is on its own timeline, dark until the last bin lands, so the glow
+         reads as "charged" rather than as decoration that happens to be blue.
+
+         Neon on every bar would be wallpaper; on one bar per column it is
+         information — that row holds the highest score in the table. */
+      @keyframes atlas-charge {
+        0%   { width: 0; }
+        55%  { width: var(--fill); }
+        92%  { width: var(--fill); }
+        100% { width: 0; }
+      }
+      @keyframes atlas-charge-glow {
+        0%, 45%  { box-shadow: none; }
+        58%, 92% { box-shadow: 0 0 7px var(--meter-lead), 0 0 2px var(--meter-lead); }
+        100%     { box-shadow: none; }
+      }
+      .atlas-meter-lead > span {
+        animation: atlas-charge 3.4s steps(9, end) infinite,
+                   atlas-charge-glow 3.4s ease-in-out infinite;
+      }
+      /* Charged and still, for readers who asked for less motion. */
+      @media (prefers-reduced-motion: reduce) {
+        .atlas-meter-lead > span {
+          animation: none;
+          box-shadow: 0 0 7px var(--meter-lead), 0 0 2px var(--meter-lead);
+        }
+      }
 
       /* The block cursor of a terminal prompt, which a real <input> caret cannot be.
          It only ever runs on an empty, unfocused field, so it is a hint that the
