@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ProviderMark } from "./providerIcons.jsx";
 import SiteNav from "./SiteNav.jsx";
-import { MODELS, SPECS, S, mono, serif } from "./FrontierModelsTable.jsx";
+import { MODELS, SPECS, S, mono, display } from "./FrontierModelsTable.jsx";
 import { kvBytesPerToken, weightBytes, parseCount, parseHeads, fmtBytes } from "./metrics.js";
 
 /**
@@ -366,14 +366,14 @@ export default function ToolsView() {
 
 const T = {
   panel: { marginTop: 38 },
-  h2: { fontFamily: serif, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
+  h2: { fontFamily: display, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
     color: "var(--ink)", margin: "0 0 6px" },
   blurb: { color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.62, maxWidth: 700,
     margin: "0 0 18px" },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12,
     marginBottom: 18 },
   field: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase",
+  label: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.03em", textTransform: "uppercase",
     color: "var(--ink-faint)" },
   input: { padding: "9px 11px", borderRadius: 6, border: "1px solid var(--line)",
     background: "var(--card)", color: "var(--ink)", fontSize: 13.5, fontFamily: "inherit",
@@ -382,9 +382,9 @@ const T = {
     gap: 12, marginBottom: 14 },
   result: { border: "1px solid var(--line)", borderRadius: 10, background: "var(--card)",
     padding: "13px 15px" },
-  resultLabel: { fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+  resultLabel: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
     color: "var(--ink-faint)" },
-  resultValue: { fontFamily: serif, fontSize: 25, color: "var(--ink)", margin: "5px 0 3px" },
+  resultValue: { fontFamily: display, fontSize: 25, color: "var(--ink)", margin: "5px 0 3px" },
   resultSub: { fontFamily: mono, fontSize: 10.5, color: "var(--ink-faint)" },
   formula: { fontFamily: mono, fontSize: 11.5, lineHeight: 1.65, color: "var(--ink-soft)",
     background: "var(--detail-bg)", border: "1px solid var(--line)", borderRadius: 8,
@@ -403,7 +403,7 @@ const T = {
     background: "var(--card)" },
   synthTable: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
   sth: { textAlign: "left", padding: "10px 13px", fontFamily: mono, fontSize: 10,
-    letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)",
+    letterSpacing: "0.03em", textTransform: "uppercase", color: "var(--ink-soft)",
     borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" },
   str: { borderBottom: "1px solid var(--line-soft)" },
   std: { padding: "9px 13px", color: "var(--ink)", verticalAlign: "middle" },
@@ -421,7 +421,7 @@ const T = {
   fileDesc: { display: "block", fontSize: 12.5, color: "var(--ink-soft)", marginTop: 5,
     lineHeight: 1.5 },
   snippet: { marginTop: 14 },
-  snippetHead: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.1em",
+  snippetHead: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.03em",
     textTransform: "uppercase", color: "var(--ink-faint)" },
   code: { fontFamily: mono, fontSize: 12.5, background: "var(--detail-bg)", padding: "1px 5px",
     borderRadius: 4 },

@@ -3,7 +3,7 @@ import { ProviderMark } from "./providerIcons.jsx";
 import SiteNav from "./SiteNav.jsx";
 import {
   MODELS, REPORTS, ATTENTION_INFO, ARCH_PAPERS, positionalPapers,
-  S, mono, serif,
+  S, mono, display,
 } from "./FrontierModelsTable.jsx";
 
 /**
@@ -190,16 +190,16 @@ const P = {
   table: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
   th: { position: "sticky", top: 0, zIndex: 2, background: "var(--card)",
     textAlign: "left", padding: "12px 16px", fontFamily: mono, fontSize: 11,
-    letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-soft)",
+    letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ink-soft)",
     borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" },
   thPaper: { width: "44%" },
   tr: { borderBottom: "1px solid var(--line-soft)", verticalAlign: "top" },
   td: { padding: "14px 16px", color: "var(--ink)", lineHeight: 1.5 },
   tdPaper: { borderRight: "1px solid var(--line-soft)" },
-  link: { color: "var(--ink)", textDecoration: "none", fontFamily: serif, fontSize: 15.5,
+  link: { color: "var(--ink)", textDecoration: "none", fontFamily: display, fontSize: 15.5,
     lineHeight: 1.35, borderBottom: "1px solid var(--clay-soft)" },
   meta: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" },
-  tag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+  tag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
     color: "var(--ink-soft)", border: "1px solid var(--line)", borderRadius: 4,
     padding: "2px 6px", whiteSpace: "nowrap" },
   arxiv: { fontFamily: mono, fontSize: 10.5, color: "var(--ink-faint)" },

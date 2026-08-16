@@ -1511,19 +1511,19 @@ export default function FrontierModelsTable({ focus } = {}) {
   );
 }
 
-// ===== Claude-style theme: warm paper background, clay accent, serif display =====
+// ===== Theme: near-black surfaces, electric blue accent, grotesque display =====
 export const mono = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace";
 /**
- * One old-style face for the whole page, controls included, the way a typeset
- * report is set in one face rather than a display face over a UI face.
+ * One neutral grotesque for the whole page, controls included, set tight.
  *
- * These are all fonts a reader already has. Computer Modern would be the literal
- * answer and it is the wrong one: it would mean shipping a webfont, and this site
- * deliberately makes no third-party requests at runtime and hosts no binaries it
- * does not need. Iowan Old Style and Palatino are what the transitional serifs of
- * actual printed papers look like, and one of them is installed already.
+ * These are all fonts a reader already has. The face this theme is modelled on is
+ * a licensed squeezed grotesque, and buying it would mean shipping a webfont: this
+ * site deliberately makes no third-party requests at runtime and hosts no binaries
+ * it does not need. Helvetica Neue is the closest thing already installed, and the
+ * tight negative tracking on the display sizes does most of the work anyway — the
+ * squeeze reads as tracking long before it reads as a different typeface.
  */
-export const serif = "'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, 'Charter', Georgia, 'Times New Roman', serif";
+export const display = "'Helvetica Neue', Helvetica, Inter, 'Segoe UI', Arial, sans-serif";
 const CLAY = "var(--clay)";      // the one spot colour: a proof-correction red
 const CLAY_SOFT = "var(--clay-soft)"; // soft tint of it
 const PAPER = "var(--paper)";     // the page
@@ -1535,10 +1535,10 @@ const LINE = "var(--line)";      // hairline border
 const LINE_SOFT = "var(--line-soft)";
 export const S = {
   page: { background: PAPER, minHeight: "100vh", padding: "40px 22px", color: INK,
-    fontFamily: serif },
+    fontFamily: display },
   shell: { maxWidth: 1240, margin: "0 auto" },
   header: { marginBottom: 26 },
-  eyebrow: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase",
+  eyebrow: { fontFamily: mono, fontSize: 11.5, letterSpacing: "0.04em", textTransform: "uppercase",
     color: CLAY, marginBottom: 14 },
   titleRow: { display: "flex", alignItems: "center", gap: 16, margin: "0 0 14px", flexWrap: "wrap" },
   // Decorative: the adjacent <h1> already carries the name, so the img is aria-hidden.
@@ -1546,7 +1546,7 @@ export const S = {
   // the title rather than to a square box.
   logo: { width: "clamp(62px, 9vw, 104px)", height: "auto", flexShrink: 0, display: "block",
     borderRadius: 0 },
-  title: { fontFamily: serif, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.02em",
+  title: { fontFamily: display, fontSize: "clamp(38px, 7vw, 76px)", fontWeight: 500, letterSpacing: "-0.035em",
     margin: "0 0 14px", lineHeight: 1.02, color: INK },
   sub: { color: INK_SOFT, fontSize: 15.5, lineHeight: 1.6, maxWidth: 700, margin: 0 },
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 },
@@ -1554,25 +1554,25 @@ export const S = {
   // it removes one more rectangle from a page that had a great many.
   search: { background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`,
     borderRadius: 0, padding: "7px 2px",
-    color: INK, fontSize: 14.5, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: serif },
+    color: INK, fontSize: 14.5, minWidth: 220, flex: "1 1 220px", outline: "none", fontFamily: display },
   // Wraps because the widest group (the column presets) is itself wider than a
   // 380px screen; without this the whole page picks up a horizontal scrollbar.
   segGroup: { display: "inline-flex", flexWrap: "wrap", background: "transparent",
     border: `1px solid ${LINE}`, borderRadius: 0, padding: 0 },
   seg: { background: "transparent", border: "none", borderRight: `1px solid ${LINE}`,
     color: INK_SOFT, padding: "6px 13px", fontSize: 13, borderRadius: 0, cursor: "pointer",
-    fontWeight: 400, whiteSpace: "nowrap", fontFamily: serif },
+    fontWeight: 400, whiteSpace: "nowrap", fontFamily: display },
   segOn: { background: CLAY, color: "var(--on-clay)" },
   moreFilters: { display: "inline-flex", alignItems: "center", gap: 8, background: "transparent",
     border: "none", borderBottom: `1px solid ${LINE}`, borderRadius: 0, padding: "7px 2px",
-    fontFamily: mono, fontSize: 11.5, letterSpacing: "0.08em", textTransform: "uppercase",
+    fontFamily: mono, fontSize: 11.5, letterSpacing: "0.03em", textTransform: "uppercase",
     color: INK_FAINT, cursor: "pointer", whiteSpace: "nowrap" },
   moreFiltersOn: { color: CLAY, borderBottomColor: CLAY },
   moreCaret: { fontFamily: mono, fontSize: 13, lineHeight: 1 },
   filterPanel: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16,
     paddingLeft: 14, borderLeft: `2px solid ${LINE}` },
   filterRow: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
-  filterLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em",
+  filterLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.03em",
     textTransform: "uppercase", color: INK_FAINT, minWidth: 92 },
   count: { fontFamily: mono, fontSize: 12, color: INK_FAINT, marginBottom: 10 },
   // The table is its own scrollport in both directions: 66 rows would otherwise
@@ -1587,7 +1587,7 @@ export const S = {
   // border on the table rather than the cell, so a sticky header's own borders
   // scroll away with the rows — both of its rules are inset shadows instead.
   th: { padding: "13px 12px 9px", fontWeight: 400, fontSize: 11, cursor: "pointer", userSelect: "none",
-    fontFamily: mono, letterSpacing: "0.09em", textTransform: "uppercase",
+    fontFamily: mono, letterSpacing: "0.03em", textTransform: "uppercase",
     boxShadow: `inset 0 2px 0 ${INK}, inset 0 -1px 0 ${INK}`,
     position: "sticky", top: 0, zIndex: 2, background: CARD,
     whiteSpace: "nowrap", color: INK_SOFT },
@@ -1600,23 +1600,23 @@ export const S = {
     padding: "12px 22px" },
   compareBarInner: { maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "center",
     gap: 14, flexWrap: "wrap" },
-  compareCount: { fontFamily: mono, fontSize: 11, letterSpacing: "0.08em",
+  compareCount: { fontFamily: mono, fontSize: 11, letterSpacing: "0.03em",
     textTransform: "uppercase", color: INK_FAINT, flexShrink: 0 },
   compareChips: { display: "flex", gap: 7, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 },
   compareChip: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--detail-bg)",
     border: `1px solid ${LINE}`, borderRadius: 0, padding: "5px 11px", cursor: "pointer",
-    fontSize: 12.5, color: INK, fontFamily: serif },
+    fontSize: 12.5, color: INK, fontFamily: display },
   compareActions: { display: "flex", gap: 9, flexShrink: 0, alignItems: "center" },
   compareClear: { background: "transparent", border: "none", cursor: "pointer",
-    fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
+    fontFamily: mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase",
     color: INK_FAINT, padding: "8px 6px" },
   compareGo: { background: CLAY, color: "var(--on-clay)", border: "none", borderRadius: 0,
     padding: "9px 18px", cursor: "pointer", fontFamily: mono, fontSize: 11.5,
-    letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 },
+    letterSpacing: "0.03em", textTransform: "uppercase", fontWeight: 600 },
   compareGoOff: { opacity: 0.42, cursor: "not-allowed" },
   thInner: { display: "inline-flex", alignItems: "center", gap: 5 },
   // Attribution for the Intelligence column, sitting under its header label.
-  thSub: { display: "block", fontFamily: mono, fontSize: 9, letterSpacing: "0.06em",
+  thSub: { display: "block", fontFamily: mono, fontSize: 9, letterSpacing: "0.02em",
     textTransform: "none", color: INK_FAINT, fontWeight: 400, marginTop: 2, cursor: "help" },
   arrow: { fontFamily: mono, fontSize: 11 },
   tr: { transition: "background 0.1s" },
@@ -1661,9 +1661,9 @@ export const S = {
     overflow: "auto", cursor: "auto", boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
   readerBar: { display: "flex", alignItems: "flex-start", justifyContent: "space-between",
     gap: 18, marginBottom: 22, paddingBottom: 18, borderBottom: `1px solid ${LINE}` },
-  readerEyebrow: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em",
+  readerEyebrow: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.03em",
     textTransform: "uppercase", color: INK_FAINT, marginBottom: 6 },
-  readerTitle: { fontFamily: serif, fontSize: 27, fontWeight: 500, margin: 0,
+  readerTitle: { fontFamily: display, fontSize: 27, fontWeight: 500, margin: 0,
     color: INK, letterSpacing: "-0.01em", lineHeight: 1.15 },
   readerSection: { marginBottom: 26 },
   readerBody: { margin: "0 0 0", fontSize: 14.5, lineHeight: 1.8, color: INK,
@@ -1675,7 +1675,7 @@ export const S = {
   readerStageName: { fontSize: 15, fontWeight: 650, color: INK },
   curriculum: { marginTop: 11, padding: "11px 14px", background: "var(--detail-bg)",
     border: `1px solid ${LINE_SOFT}`, borderRadius: 0, borderLeft: `2px solid ${CLAY}` },
-  curriculumLabel: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
+  curriculumLabel: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.03em",
     textTransform: "uppercase", color: CLAY, marginBottom: 5 },
   curriculumText: { margin: 0, fontSize: 13, lineHeight: 1.7, color: INK_SOFT, maxWidth: "66ch" },
   readerFoot: { display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center",
@@ -1685,7 +1685,7 @@ export const S = {
     maxWidth: "min(1100px, 96vw)", maxHeight: "94vh", overflow: "auto", cursor: "auto",
     boxShadow: "0 18px 50px rgba(0,0,0,0.35)" },
   lightboxBar: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 10 },
-  lightboxTitle: { fontFamily: mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: INK_SOFT },
+  lightboxTitle: { fontFamily: mono, fontSize: 12, letterSpacing: "0.03em", textTransform: "uppercase", color: INK_SOFT },
   lightboxClose: { background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
     width: 28, height: 28, cursor: "pointer", color: INK_SOFT, fontSize: 13, lineHeight: 1, flexShrink: 0 },
   lightboxImg: { display: "block", maxWidth: "100%", height: "auto", borderRadius: 0 },
@@ -1694,7 +1694,7 @@ export const S = {
   detailCols: { display: "flex", flexWrap: "wrap", gap: 30, alignItems: "flex-start" },
   detailArchCol: { flex: "1 1 280px", minWidth: 260, maxWidth: 460 },
   detailTrainCol: { flex: "2 1 480px", minWidth: 300 },
-  detailLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase",
+  detailLabel: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.03em", textTransform: "uppercase",
     fontWeight: 700, display: "block", marginBottom: 10 },
   detailText: { margin: 0, fontSize: 14, lineHeight: 1.78, color: INK, letterSpacing: "0.002em" },
   // Architecture notes as separate statements rather than one block of prose.
@@ -1713,14 +1713,14 @@ export const S = {
   moreBtn: { marginTop: 12, display: "inline-flex", alignItems: "center", gap: 7,
     background: "transparent", border: `1px solid ${LINE}`, borderRadius: 0,
     padding: "7px 15px", cursor: "pointer", fontFamily: mono, fontSize: 10.5,
-    letterSpacing: "0.1em", textTransform: "uppercase", color: INK_SOFT },
+    letterSpacing: "0.03em", textTransform: "uppercase", color: INK_SOFT },
   attnHover: { borderBottom: `1px dotted ${INK_FAINT}`, cursor: "help" },
   tooltip: { position: "fixed", zIndex: 50, maxWidth: 300, background: INK,
     border: "none", borderRadius: 0, padding: "10px 12px",
     fontSize: 12.5, lineHeight: 1.5, color: "var(--paper)", pointerEvents: "none",
     boxShadow: "0 6px 20px rgba(20,18,14,0.18)" },
   linkRow: { display: "flex", gap: 9, alignItems: "baseline", marginTop: 8, fontSize: 12.5, lineHeight: 1.5 },
-  linkTag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+  linkTag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
     color: INK_FAINT, flexShrink: 0, paddingTop: 1, minWidth: 44 },
   linkList: { display: "flex", flexDirection: "column", gap: 4 },
   link: { color: CLAY, textDecoration: "none", borderBottom: `1px solid ${CLAY_SOFT}` },
@@ -1746,16 +1746,16 @@ export const S = {
   provenance: { margin: "0 0 14px", padding: "12px 15px", borderRadius: 0,
     background: "var(--tok-est-bg)", border: `1px solid var(--tok-est-line)`,
     borderLeft: `3px solid var(--tok-est-fg)` },
-  provenanceTag: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.12em",
+  provenanceTag: { display: "block", fontFamily: mono, fontSize: 9.5, letterSpacing: "0.03em",
     textTransform: "uppercase", color: "var(--tok-est-fg)", marginBottom: 6, fontWeight: 700 },
   provenanceText: { margin: 0, fontSize: 12.5, lineHeight: 1.7, color: INK_SOFT, maxWidth: "68ch" },
   pipeArrow: { display: "flex", alignItems: "center", color: CLAY, fontSize: 16, fontWeight: 700 },
   synthesis: { marginTop: 40 },
-  synthHead: { fontFamily: serif, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },
+  synthHead: { fontFamily: display, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },
   synthGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 },
   synthCard: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 0, padding: "20px 20px 22px" },
   synthNum: { fontFamily: mono, fontSize: 13, fontWeight: 700, color: CLAY, marginBottom: 10 },
-  synthTitle: { fontFamily: serif, fontSize: 17, fontWeight: 500, margin: "0 0 9px", color: INK },
+  synthTitle: { fontFamily: display, fontSize: 17, fontWeight: 500, margin: "0 0 9px", color: INK },
   synthBody: { margin: 0, fontSize: 13, lineHeight: 1.65, color: INK_SOFT },
   copyright: { marginTop: 6, paddingTop: 12, borderTop: `1px solid ${LINE_SOFT}`,
     fontFamily: mono, fontSize: 11.5, color: INK_FAINT, letterSpacing: "0.02em" },

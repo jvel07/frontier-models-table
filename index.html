@@ -23,115 +23,145 @@
       /* Theme tokens. The component's style objects reference these via var(),
          so switching data-theme on <html> restyles the whole table at once.
 
-         The palette follows the printed technical report rather than the dashboard.
-         Two rules do most of the work, both borrowed from Tufte:
+         The palette is the industrial-terminal register: flat neutral greys, no
+         warmth in the chrome, one electric blue doing all the pointing, and a
+         signal green reserved for "this exists and you can have it". Dark is the
+         home key — #1A1A1A page with panels recessed to #111 rather than raised,
+         text at #D9D9D9 rather than white — and light is the same system turned
+         over, not a different one.
 
-         1. Off-white and off-black, never #fff on #000. Paper is #FFFEF6, ink is
-            #14120E, and the pairing is what a page under a lamp actually looks like.
-         2. Colour is data. The chrome — controls, rules, labels, surfaces — is
-            greyscale, and every remaining hue means something: architecture family,
-            model class, whether a token count was disclosed or estimated. A reader
-            who notices a colour here should be able to assume it is telling them
-            something, which is not true of a palette that also tints the furniture.
+         Two rules survive from the previous theme because they are what makes a
+         reference table readable rather than decorative:
 
-         The single spot colour, --clay, is the ink red of a proof correction. It
-         marks the active control and nothing decorative. */
+         1. Colour is data. The chrome — controls, rules, labels, surfaces — is
+            greyscale, and every remaining hue means something: architecture
+            family, model class, whether a token count was disclosed or estimated.
+            A reader who notices a colour here can assume it is telling them
+            something, which is not true of a palette that also tints furniture.
+         2. The single spot colour, --clay, marks the active control and nothing
+            decorative. It is now #03049C on light and a lifted #6E70FF on dark,
+            where the deep blue would disappear into the page.
+
+         The five architecture hues are not chosen by eye. They are checked with
+         the palette validator in the dataviz skill and pass all five tests —
+         lightness band, chroma floor, CVD separation, normal-vision floor and
+         contrast against the surface — in both modes, which the warm palette they
+         replaced did not: its worst pair collapsed to ΔE 1.8 for deuteranopes. */
       :root {
-        --paper: #FFFEF6;
-        --card: #FFFEF6;
-        --ink: #14120E;
-        --ink-soft: #4C4740;
-        --ink-faint: #7D776C;
-        --line: #C7C0AD;
-        --line-soft: #E4DECD;
-        --clay: #8E2B12;
-        --clay-soft: #EFE1D9;
+        --paper: #EDEDED;
+        --card: #FFFFFF;
+        --ink: #111111;
+        --ink-soft: #4A4A4A;
+        --ink-faint: #666666;
+        --line: #D2D2D2;
+        --line-soft: #E4E4E4;
+        --clay: #03049C;
+        --clay-soft: #E3E3F7;
 
         /* Zebra striping is off: alternating fills compete with the data for
            attention, and the row rules already carry the eye across. */
         --row-alt: transparent;
-        --row-open: #F5F0DF;
-        --detail-bg: #F8F4E7;
-        --dim: #9A948A;
-        --on-clay: #FFFEF6;
-        --open-fg: #2F6B4F;
-        --fallback: #64748b;
+        --row-open: #F0F0FA;
+        --detail-bg: #F6F6F8;
+        --dim: #9A9A9A;
+        --on-clay: #FFFFFF;
+        --open-fg: #0B7A34;
+        --fallback: #6E6E6E;
 
-        --tok-ok-fg: #3F7A6A;
-        --tok-ok-bg: #E6F0EB;
-        --tok-ok-line: #CFE3DA;
-        --tok-est-fg: #9A6A2E;
-        --tok-est-bg: #F4EBD9;
-        --tok-est-line: #E5D4B0;
+        --tok-ok-fg: #0F6B4C;
+        --tok-ok-bg: #E8F2EC;
+        --tok-ok-line: #CFE3D8;
+        --tok-est-fg: #7E5E12;
+        --tok-est-bg: #F4EEDC;
+        --tok-est-line: #E2D5B0;
 
-        --type-frontier-fg: #1F6F8B;  --type-frontier-dot: #2A8BAA;
-        --type-mid-fg: #6D5BA8;       --type-mid-dot: #8B79C9;
-        --type-slm-fg: #3F7A5A;       --type-slm-dot: #4E9A6F;
+        --type-frontier-fg: #1272A8;  --type-frontier-dot: #1272A8;
+        --type-mid-fg: #6B33C4;       --type-mid-dot: #6B33C4;
+        --type-slm-fg: #007350;       --type-slm-dot: #007350;
 
-        --arch-dense: #A8761E;
-        --arch-moe: #C0397F;
-        --arch-mamba: #2F8F7A;
-        --arch-kda: #7A4FA3;
-        --arch-deltanet: #2477A8;
-        --arch-reported: #9A6A5E;
-        --arch-undisclosed: #7A7770;
+        --arch-dense: #9A6A0F;
+        --arch-moe: #E24B9C;
+        --arch-mamba: #007350;
+        --arch-kda: #6B33C4;
+        --arch-deltanet: #1272A8;
+        --arch-reported: #8C6A62;
+        --arch-undisclosed: #6E6E6E;
 
-        --intel-hi: #C9633F;
-        --intel-mid: #2A8BAA;
-        --intel-lo: #A8A39A;
+        /* The score bars carry magnitude, so they are one hue light-to-dark
+           rather than three unrelated colours pretending to be a scale. */
+        --intel-hi: #03049C;
+        --intel-mid: #5A5CD0;
+        --intel-lo: #BFBFC8;
 
-        --shadow: 0 1px 2px rgba(43, 42, 39, 0.04);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
-      /* The same page under a lamp instead of daylight: one surface, no raised
-         cards, warm ink on near-black rather than grey on grey. */
+      /* The home key: near-black page, panels recessed rather than raised, and
+         nothing at full white — #D9D9D9 on #1A1A1A is what a screen in a dark
+         room actually looks like, where #FFF on #000 vibrates. */
       :root[data-theme="dark"] {
-        --paper: #13120E;
-        --card: #13120E;
-        --ink: #EDE7D7;
-        --ink-soft: #A8A192;
-        --ink-faint: #7C7568;
-        --line: #3D382C;
-        --line-soft: #262219;
-        --clay: #D2694A;
-        --clay-soft: #40291F;
+        --paper: #1A1A1A;
+        --card: #111111;
+        --ink: #D9D9D9;
+        --ink-soft: #B0B0B0;
+        --ink-faint: #858585;
+        --line: #2E2E2E;
+        --line-soft: #202020;
+        --clay: #6E70FF;
+        --clay-soft: #16173D;
 
         --row-alt: transparent;
-        --row-open: #241E14;
-        --detail-bg: #1A170F;
-        --dim: #5C5952;
-        --on-clay: #13120E;
-        --open-fg: #6BAF87;
-        --fallback: #94A3B8;
+        --row-open: #15151E;
+        --detail-bg: #0D0D0D;
+        --dim: #5A5A5A;
+        /* Near-black on the accent, not white: the lifted blue is bright enough
+           that white text on it lands at 3.9:1, under the 4.5:1 small-text bar. */
+        --on-clay: #0B0B14;
+        --open-fg: #3BE07A;
+        --fallback: #8A8A8A;
 
-        --tok-ok-fg: #7FC4AC;
-        --tok-ok-bg: #1B2E29;
-        --tok-ok-line: #2C463F;
-        --tok-est-fg: #D4A45C;
-        --tok-est-bg: #2E2718;
-        --tok-est-line: #473C25;
+        --tok-ok-fg: #4FD08C;
+        --tok-ok-bg: #10231A;
+        --tok-ok-line: #1D3A2A;
+        --tok-est-fg: #D9A441;
+        --tok-est-bg: #241E10;
+        --tok-est-line: #3B321C;
 
-        --type-frontier-fg: #5FB4D4;  --type-frontier-dot: #45A8CC;
-        --type-mid-fg: #A797E0;       --type-mid-dot: #9A8AD4;
-        --type-slm-fg: #6BAF87;       --type-slm-dot: #62B88A;
+        --type-frontier-fg: #1FA0DE;  --type-frontier-dot: #1FA0DE;
+        --type-mid-fg: #9457E0;       --type-mid-dot: #9457E0;
+        --type-slm-fg: #3BE07A;       --type-slm-dot: #3BE07A;
 
-        --arch-dense: #D2A343;
-        --arch-moe: #E86BAB;
-        --arch-mamba: #4FC0A6;
-        --arch-kda: #A87FD4;
-        --arch-deltanet: #55A9D8;
-        --arch-reported: #C2938A;
-        --arch-undisclosed: #A3A099;
+        --arch-dense: #BE8416;
+        --arch-moe: #F04E9E;
+        --arch-mamba: #0C8C74;
+        --arch-kda: #9457E0;
+        --arch-deltanet: #1FA0DE;
+        --arch-reported: #B08C84;
+        --arch-undisclosed: #8A8A8A;
 
-        --intel-hi: #E5895F;
-        --intel-mid: #45A8CC;
-        --intel-lo: #5C5952;
+        --intel-hi: #7C7EFF;
+        --intel-mid: #4E52D8;
+        --intel-lo: #3E3E4A;
 
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
       }
 
       html { -webkit-text-size-adjust: 100%; }
       body { margin: 0; background: var(--paper); }
+
+      /* A scanline, at the threshold of visible. The reference theme wears a heavy
+         one; this table is read for numbers, and any texture strong enough to see
+         on a solid field is strong enough to moiré against 15 columns of ruled
+         rows. Dark only — on the light page the same overlay reads as dirt. */
+      :root[data-theme="dark"] body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        background: repeating-linear-gradient(
+          0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+      }
     </style>
     <script>
       // Set the theme before first paint so there is no light-to-dark flash.

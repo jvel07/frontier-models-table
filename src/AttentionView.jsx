@@ -1,6 +1,6 @@
 import React from "react";
 import SiteNav from "./SiteNav.jsx";
-import { MODELS, ATTENTION_INFO, S, mono, serif } from "./FrontierModelsTable.jsx";
+import { MODELS, ATTENTION_INFO, S, mono, display } from "./FrontierModelsTable.jsx";
 
 /**
  * The attention menu — one page explaining every attention mechanism the atlas
@@ -468,7 +468,7 @@ const A = {
   problemRow: { display: "flex", flexWrap: "wrap", gap: 30, justifyContent: "center",
     padding: "26px 0 34px", borderBottom: `1px solid ${LINE}`, marginBottom: 8 },
   family: { marginTop: 44 },
-  familyTitle: { fontFamily: serif, fontSize: "clamp(21px, 2.6vw, 28px)", fontWeight: 500,
+  familyTitle: { fontFamily: display, fontSize: "clamp(21px, 2.6vw, 28px)", fontWeight: 500,
     color: INK, margin: "0 0 6px", letterSpacing: "-0.01em" },
   familyBlurb: { color: SOFT, fontSize: 14.5, lineHeight: 1.6, maxWidth: 640, margin: "0 0 22px" },
   card: { display: "flex", gap: 30, alignItems: "flex-start", flexWrap: "wrap",

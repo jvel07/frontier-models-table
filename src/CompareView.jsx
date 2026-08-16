@@ -3,7 +3,7 @@ import { ProviderMark } from "./providerIcons.jsx";
 import {
   MODELS, SPECS, REPORTS, HF_LINKS, DIAGRAMS, ARCH_COLORS, TYPE_COLORS,
   ATTENTION_INFO, DIAGRAM_BASE, LOCAL_DIAGRAM_BASE, DIAGRAM_CREDIT,
-  S, mono, serif, fmtTokens, totalTokens, positionalPapers,
+  S, mono, display, fmtTokens, totalTokens, positionalPapers,
 } from "./FrontierModelsTable.jsx";
 
 /**
@@ -442,7 +442,7 @@ const SC = {
   back: { display: "inline-flex", alignItems: "center", gap: 9,
     background: "transparent", border: `1px solid var(--line)`, borderRadius: 999,
     padding: "7px 16px 7px 9px", cursor: "pointer", fontFamily: mono, fontSize: 11,
-    letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)" },
+    letterSpacing: "0.03em", textTransform: "uppercase", color: "var(--ink-soft)" },
   backLogo: { width: 22, height: "auto", display: "block", flexShrink: 0 },
   count: { fontFamily: mono, fontSize: 11.5, color: "var(--ink-faint)" },
   legendSwatch: { display: "inline-block", width: 11, height: 11, borderRadius: 3,
@@ -457,10 +457,10 @@ const SC = {
   th: { textAlign: "left", padding: "16px 16px 14px", borderBottom: `1px solid var(--line)`,
     verticalAlign: "top", minWidth: 210 },
   thAxis: { minWidth: 190, width: 190 },
-  modelName: { fontFamily: serif, fontSize: 19, fontWeight: 500, color: "var(--ink)",
+  modelName: { fontFamily: display, fontSize: 19, fontWeight: 500, color: "var(--ink)",
     marginBottom: 8, lineHeight: 1.2 },
   modelMeta: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" },
-  groupRow: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.14em",
+  groupRow: { fontFamily: mono, fontSize: 10.5, letterSpacing: "0.04em",
     textTransform: "uppercase", color: "var(--clay)", padding: "18px 16px 7px",
     background: "var(--detail-bg)", borderTop: `1px solid var(--line)` },
   axisCell: { textAlign: "left", fontWeight: 500, color: "var(--ink-soft)",
@@ -481,7 +481,7 @@ const SC = {
     borderBottom: `1px solid var(--line-soft)` },
   pipeCols: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 },
   pipeCol: { minWidth: 0 },
-  pipeHead: { fontFamily: mono, fontSize: 11, letterSpacing: "0.08em",
+  pipeHead: { fontFamily: mono, fontSize: 11, letterSpacing: "0.03em",
     textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: 10,
     paddingBottom: 8, borderBottom: `1px solid var(--line)` },
   pipeStage: { background: "var(--card)", border: `1px solid var(--line)`, borderRadius: 10,

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ProviderMark } from "./providerIcons.jsx";
 import SiteNav from "./SiteNav.jsx";
-import { MODELS, SPECS, REPORTS, HF_LINKS, S, mono, serif } from "./FrontierModelsTable.jsx";
+import { MODELS, SPECS, REPORTS, HF_LINKS, S, mono, display } from "./FrontierModelsTable.jsx";
 import {
   disclosure, openness, byProvider, DISCLOSURE_FIELDS, OPEN_VERBS,
 } from "./metrics.js";
@@ -401,7 +401,7 @@ const O = {
   statRow: { display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 26 },
   stat: { flex: "1 1 150px", border: "1px solid var(--line)", borderRadius: 10,
     background: "var(--card)", padding: "14px 16px" },
-  statNum: { fontFamily: serif, fontSize: 30, lineHeight: 1.1, color: "var(--ink)" },
+  statNum: { fontFamily: display, fontSize: 30, lineHeight: 1.1, color: "var(--ink)" },
   statLabel: { fontFamily: mono, fontSize: 10.5, color: "var(--ink-faint)", marginTop: 6,
     letterSpacing: "0.04em" },
   panel: { marginTop: 34 },
@@ -414,10 +414,10 @@ const O = {
   svg: { display: "block", width: "100%", minWidth: 560, height: "auto" },
   cap: { fontSize: 11.5, color: "var(--ink-faint)", margin: "10px 4px 2px", lineHeight: 1.55 },
   tipBox: { maxWidth: 260, padding: "11px 13px" },
-  tipName: { fontFamily: serif, fontSize: 15, marginBottom: 2 },
+  tipName: { fontFamily: display, fontSize: 15, marginBottom: 2 },
   tipMeta: { fontFamily: mono, fontSize: 10.5, opacity: 0.72, marginBottom: 7 },
   tipLine: { fontFamily: mono, fontSize: 10.5, lineHeight: 1.7 },
-  h2: { fontFamily: serif, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
+  h2: { fontFamily: display, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
     color: "var(--ink)", margin: "0 0 6px" },
   blurb: { color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.6, maxWidth: 680,
     margin: "0 0 18px" },
@@ -439,13 +439,13 @@ const O = {
     border: "1px solid var(--line)", borderRadius: 10, background: "var(--card)" },
   table: { borderCollapse: "collapse", fontSize: 13, width: "100%" },
   th: { position: "sticky", top: 0, zIndex: 2, background: "var(--card)", textAlign: "left",
-    padding: "10px 10px", fontFamily: mono, fontSize: 10, letterSpacing: "0.1em",
+    padding: "10px 10px", fontFamily: mono, fontSize: 10, letterSpacing: "0.03em",
     textTransform: "uppercase", color: "var(--ink-soft)",
     borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" },
   thName: { minWidth: 190 },
   thTick: { width: 26, padding: "10px 3px" },
   vert: { display: "inline-block", writingMode: "vertical-rl", transform: "rotate(180deg)",
-    fontSize: 9.5, letterSpacing: "0.06em", maxHeight: 108 },
+    fontSize: 9.5, letterSpacing: "0.02em", maxHeight: 108 },
   tr: { borderBottom: "1px solid var(--line-soft)" },
   td: { padding: "8px 10px", color: "var(--ink)", whiteSpace: "nowrap" },
   tdName: { display: "flex", alignItems: "center", gap: 7 },
@@ -457,11 +457,11 @@ const O = {
   no: { color: "var(--dim)", fontSize: 13 },
   legendGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 24 },
-  legendHead: { fontFamily: mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+  legendHead: { fontFamily: mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase",
     color: "var(--ink-soft)", marginBottom: 10 },
   list: { margin: 0, paddingLeft: 18, color: "var(--ink)", fontSize: 13.5, lineHeight: 1.75 },
   li: { marginBottom: 2 },
   groupTag: { fontFamily: mono, fontSize: 9.5, color: "var(--ink-faint)",
-    textTransform: "uppercase", letterSpacing: "0.06em", marginRight: 6 },
+    textTransform: "uppercase", letterSpacing: "0.02em", marginRight: 6 },
   fine: { color: "var(--ink-faint)", fontSize: 12.5, lineHeight: 1.6, marginTop: 12 },
 };

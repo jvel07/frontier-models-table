@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import SiteNav from "./SiteNav.jsx";
-import { MODELS, SPECS, S, mono, serif } from "./FrontierModelsTable.jsx";
+import { MODELS, SPECS, S, mono, display } from "./FrontierModelsTable.jsx";
 import { parseCount, tokensPerParam, trainingFlops, fmtFlops, fmtTokensShort } from "./metrics.js";
 
 /**
@@ -293,7 +293,7 @@ export default function TrendsView() {
 
 const C = {
   panel: { marginTop: 36 },
-  h2: { fontFamily: serif, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
+  h2: { fontFamily: display, fontSize: "clamp(20px, 2.5vw, 27px)", fontWeight: 500,
     color: "var(--ink)", margin: "0 0 6px" },
   blurb: { color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.62, maxWidth: 700,
     margin: "0 0 16px" },
