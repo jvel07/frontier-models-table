@@ -7,7 +7,7 @@
  "citation": {
   "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-16},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 71,
+ "count": 72,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -1561,6 +1561,82 @@
      "run": true
     },
     "licenseClass": "permissive"
+   }
+  },
+  {
+   "name": "Motif 3 Beta",
+   "provider": "Motif Technologies",
+   "released": "2026/07",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "~314B",
+   "active": "~13B",
+   "attn": "GDLA (Grouped Differential Latent Attn)",
+   "modality": "Text",
+   "context": 262144,
+   "maxOut": null,
+   "license": "Motif non-commercial",
+   "open": true,
+   "intel": 45,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": null,
+   "training": null,
+   "note": "A preview checkpoint, and the card says so in its first line — an intermediate release of Motif-3 with the final weights to follow. They have since followed: Motif-Technologies/Motif-3 appeared on Hugging Face on 14 August 2026 under MIT, so this row records a checkpoint that has already been superseded and its figures may not have survived the move. Motif describes the design as entirely in-house rather than a re-parameterised open-source stack. 53 layers, the first two dense and the rest sparse, with 384 routed experts firing 8 per token beside 1 shared — ≈314B total at ≈13B active, both given as approximations by the card and not narrowed here. Attention is the lab's own Grouped Differential Latent Attention. The config additionally declares a one-layer multi-token-prediction head for self-speculative decoding, a poly_norm activation and a 128-token sliding window interleaved on a period of four. Nothing is published about how this checkpoint was trained: the technical report describes the final model, so the pipeline rows stay empty rather than borrowing it. Weights download without an access request, but the licence allows personal, educational and non-commercial research use only — the restriction the final MIT release lifted. Artificial Analysis scores it 45; the card itself claims 44.",
+   "spec": {
+    "vocab": "220,160",
+    "layers": 53,
+    "hidden": "4,096",
+    "heads": "80 Q (64 signal / 16 noise) / 16 KV",
+    "experts": "384 routed · 8 active · 1 shared",
+    "layerMix": "1 full attention : 3 sliding-window, interleaved (period 4); first 2 layers dense",
+    "window": "128",
+    "posEmb": "RoPE θ=10K; MLA head split 64 RoPE / 128 NoPE dims; a yarn ×64 block is declared but apply_yarn_scaling is false",
+    "ffn": "12,288 dense · 1,280 per expert",
+    "activation": "poly_norm",
+    "norm": "RMSNorm (ε=1e-5)",
+    "headDim": 192,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/Motif-Technologies/Motif-3-Beta",
+   "report": "https://huggingface.co/Motif-Technologies/Motif-3-Beta",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 314000000000,
+    "activeParams": 13000000000,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": 651264,
+    "kvCacheFormula": "2 * layers * kvHeads * headDim * 2 bytes; head_dim as published in config.json",
+    "weightBytesFp16": 628000000000,
+    "disclosureScore": 9,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "other"
    }
   },
   {
