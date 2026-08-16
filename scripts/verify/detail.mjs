@@ -13,6 +13,9 @@ const t = (label, cond, extra = "") => { cond ? pass++ : fail++; console.log(`${
 await page.goto(URL, { waitUntil: "networkidle" });
 await page.waitForSelector("table tbody tr");
 const dataRows = () => page.locator("table tbody tr").filter({ has: page.locator("td:not([colspan])") });
+// The unfiltered count, measured once. Everything below compares against this
+// rather than a literal, so adding a model does not fail the suite.
+const TOTAL = await dataRows().count();
 
 console.log("=== #2 TITLE ===");
 t('page <title> is "The Model Atlas"', (await page.title()) === "The Model Atlas", `got "${await page.title()}"`);
@@ -129,7 +132,7 @@ t("searching an attention mechanism finds models", mamba.length > 0, mamba.join(
 t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(7)")
   .allTextContents()).every((s) => /mamba/i.test(s)));
 t("the live count matches the rows shown",
-  (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/71`);
+  (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/${TOTAL}`);
 
 await page.locator("[data-search]").fill("zzzznope");
 await page.waitForTimeout(250);
@@ -137,7 +140,7 @@ t("no matches shows an empty state, not a bare header",
   (await page.locator("[data-empty]").count()) === 1 && !(await page.locator("#atlas-table").isVisible()));
 await page.locator("[data-empty] button").click();
 await page.waitForTimeout(250);
-t("clearing from the empty state restores every row", (await dataRows().count()) === 71);
+t("clearing from the empty state restores every row", (await dataRows().count()) === TOTAL);
 
 // "/" is a global shortcut, so it must not fire while the caret is already in a field.
 await page.locator("body").click({ position: { x: 5, y: 5 } });
@@ -238,7 +241,7 @@ await page.waitForTimeout(300);
 console.log("\n=== REGRESSION ===");
 await page.locator("[data-search]").fill("");
 await page.waitForTimeout(200);
-t("all 71 models present", (await dataRows().count()) === 71);
+t(`all ${TOTAL} models present`, (await dataRows().count()) === TOTAL);
 
 await page.setViewportSize({ width: 380, height: 800 });
 await page.waitForTimeout(400);

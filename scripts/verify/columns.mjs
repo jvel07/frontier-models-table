@@ -35,7 +35,9 @@ function fmtTokens(n) {
   return String(n);
 }
 
-if (rows.length !== 71) { console.log(`FAIL row count: ${rows.length} (expected 71)`); fail++; }
+// Derived from the data, not a literal: a hardcoded count turns every model
+// addition into a failing suite, which trains people to edit the test.
+if (rows.length !== MODELS.length) { console.log(`FAIL row count: ${rows.length} (expected ${MODELS.length})`); fail++; }
 
 for (const row of rows) {
   const cells = await row.locator("td").allTextContents();
