@@ -234,6 +234,10 @@
         .atlas-row:hover .atlas-char { transform: none; }
       }
 
+      /* Bullets for the column tips, drawn rather than listed: a real list marker
+         indents unpredictably across browsers at this size. */
+      .atlas-tip-point::before { content: "–"; position: absolute; left: 0; opacity: 0.55; }
+
       /* Only the leader glows. Neon on every bar is wallpaper; on one bar per column
          it is information — that row holds the highest score in the table. */
       .atlas-meter-lead > span { box-shadow: 0 0 6px var(--meter-lead), 0 0 2px var(--meter-lead); }

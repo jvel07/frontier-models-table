@@ -756,17 +756,47 @@ const LEADERS = Object.fromEntries(["intel", "codingAgent", "agentic"].map((k) =
 const COLUMNS = [
   { key: "name", label: "Model", numeric: false },
   { key: "intel", label: "Intelligence", numeric: true, sub: "Artificial Analysis",
-    tip: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations (GDPval-AA v2, τ²-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience, AA-LCR). Leaderboard snapshot 15 August 2026. “—” = not on the AA leaderboard." },
+    tip: { lead: "Artificial Analysis Intelligence Index — nine evaluations combined into one 0-100 score.",
+      points: [
+        "GDPval-AA v2 · 𝜏³-Banking · Terminal-Bench v2.1 · SciCode",
+        "Humanity’s Last Exam · GPQA Diamond · CritPt · AA-Omniscience · AA-LCR",
+        "Leaderboard snapshot 15 August 2026, taken at v4.1",
+        "Where AA lists several reasoning-effort variants, the highest-scoring one is shown",
+        "“—” = not on the AA leaderboard",
+      ] } },
   { key: "codingAgent", label: "Coding agent", numeric: true, sub: "AA · best harness",
-    tip: "Artificial Analysis Coding Agent Index v1.3 — an equal-weighted composite of DeepSWE (113 software-engineering tasks, Datacurve), Terminal-Bench v2 (84 agentic terminal tasks, Laude Institute) and SWE-Atlas-QnA (124 technical Q&A tasks, Scale AI), each scored pass@1 averaged over three attempts. It measures a coding agent driving a model, not a model: the same model scores differently through different harnesses, so the harness is named under the figure. Where AA publishes several pairings for one model, the highest-scoring one is shown. This replaced the Coding Index column, which AA withdrew from its site. “—” = AA publishes no pairing for this model." },
+    tip: { lead: "Artificial Analysis Coding Agent Index v1.3 — three benchmarks, equally weighted, pass@1 over three attempts.",
+      points: [
+        "DeepSWE — 113 software-engineering tasks (Datacurve)",
+        "Terminal-Bench v2 — 84 agentic terminal tasks (Laude Institute)",
+        "SWE-Atlas-QnA — 124 technical Q&A tasks (Scale AI)",
+        "Scores an agent driving a model, not the model — the harness is named under each figure",
+        "GLM-5.2 is 43 through Claude Code; the same model scores differently elsewhere",
+        "Where AA publishes several pairings, the highest is shown",
+        "Replaced the Coding Index, which AA has withdrawn from its site",
+        "“—” = AA publishes no pairing for this model",
+      ] } },
   { key: "agentic", label: "Agentic", numeric: true, sub: "Artificial Analysis",
-    tip: "Artificial Analysis Agentic Index — the equal-weighted average of two evaluations of long-horizon, tool-using work: GDPval-AA v2 (real tasks across 44 occupations, run in an agentic loop with shell and browser access, scored by blind pairwise Elo) and τ³-Banking (multi-step tool calls against a large unstructured knowledge base). Scored 0-100 on the same footing as the Intelligence Index. Both evaluations are also among the nine inside the Intelligence Index, so this is a re-cut of part of that score rather than an independent axis. Leaderboard snapshot 16 August 2026. “—” = AA does not score this model on the agentic index." },
+    tip: { lead: "Artificial Analysis Agentic Index — two evaluations of long-horizon, tool-using work, equally weighted.",
+      points: [
+        "GDPval-AA v2 — real tasks across 44 occupations, run in an agentic loop with shell and browser, scored by blind pairwise Elo",
+        "𝜏³-Banking — multi-step tool calls against a large unstructured knowledge base",
+        "Both also sit inside the Intelligence Index, so this is that score re-cut for tool use, not a second opinion",
+        "Leaderboard snapshot 16 August 2026",
+        "“—” = AA does not score this model here",
+      ] } },
   // What the model is, right after what it scores: architecture, size, attention
   // and context are the four fields someone comparing designs actually reads
   // together. Provenance — when, who, what class — follows them.
   { key: "arch", label: "Architecture", numeric: false },
   { key: "params", label: "Params", numeric: false, sub: "total / active",
-    tip: "Total parameters and the number that actually run for a given token. On a dense model the two are equal, so only the total is shown; on a mixture of experts the active figure is what sets speed and cost, and it is coloured to make the gap visible. Sorting this column sorts by the total." },
+    tip: { lead: "Total parameters, and how many of them actually run for a given token.",
+      points: [
+        "Dense models show one figure — the two are equal",
+        "On a mixture of experts the active figure is what sets speed and cost",
+        "Active is coloured so the gap is visible down the column",
+        "Sorting this column sorts by the total",
+      ] } },
   { key: "attn", label: "Attention", numeric: false },
   { key: "context", label: "Context", numeric: true },
   { key: "released", label: "Released", numeric: true },
@@ -1532,9 +1562,16 @@ export default function FrontierModelsTable({ focus } = {}) {
       </div>
       {tip && (
         <div style={{ ...S.tooltip,
-          left: Math.min(tip.x + 14, (typeof window !== "undefined" ? window.innerWidth : 1200) - 320),
+          left: Math.min(tip.x + 14, (typeof window !== "undefined" ? window.innerWidth : 1200) - 360),
           top: tip.y + 16 }}>
-          {tip.text}
+          {typeof tip.text === "string" ? tip.text : (
+            <>
+              <div style={S.tipLead}>{tip.text.lead}</div>
+              <ul style={S.tipList}>
+                {tip.text.points.map((pt, i) => <li key={i} className="atlas-tip-point" style={S.tipPoint}>{pt}</li>)}
+              </ul>
+            </>
+          )}
         </div>
       )}
 
@@ -1936,10 +1973,17 @@ export const S = {
     padding: "7px 15px", cursor: "pointer", fontFamily: mono, fontSize: 10.5,
     letterSpacing: "0.03em", textTransform: "uppercase", color: INK_SOFT },
   attnHover: { borderBottom: `1px dotted ${INK_FAINT}`, cursor: "help" },
-  tooltip: { position: "fixed", zIndex: 50, maxWidth: 300, background: INK,
-    border: "none", borderRadius: 0, padding: "10px 12px",
+  tooltip: { position: "fixed", zIndex: 50, maxWidth: 340, background: INK,
+    border: "none", borderRadius: 0, padding: "11px 13px 12px",
     fontSize: 12.5, lineHeight: 1.5, color: "var(--paper)", pointerEvents: "none",
     boxShadow: "0 6px 20px rgba(20,18,14,0.18)" },
+  // A column tip is a definition, not an essay: one line saying what the number is,
+  // then the parts as separate points. The wall of prose it replaced said the same
+  // things in the same order and nobody could find any of them.
+  tipLead: { fontSize: 12.5, lineHeight: 1.45, marginBottom: 7 },
+  tipList: { margin: 0, padding: 0, listStyle: "none" },
+  tipPoint: { position: "relative", paddingLeft: 12, marginTop: 4, fontSize: 11.5,
+    lineHeight: 1.45, opacity: 0.86 },
   linkRow: { display: "flex", gap: 9, alignItems: "baseline", marginTop: 8, fontSize: 12.5, lineHeight: 1.5 },
   linkTag: { fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
     color: INK_FAINT, flexShrink: 0, paddingTop: 1, minWidth: 44 },
