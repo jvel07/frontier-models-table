@@ -116,6 +116,51 @@ function Latent({ caption }) {
   );
 }
 
+/**
+ * Differential attention's asymmetry: many signal heads against few noise heads, the
+ * second subtracted from the first, both reading one shared latent.
+ */
+function DiffHeads({ sig = 8, noise = 2, caption }) {
+  const w = 268, headY = 18, latentY = 88, r = 6.5, gap = 26;
+  const span = w - 28 - gap;
+  const sigW = (span * sig) / (sig + noise);
+  const sx = (i) => 14 + (i + 0.5) * (sigW / sig);
+  const nx = (i) => 14 + sigW + gap + (i + 0.5) * ((span - sigW) / noise);
+  return (
+    <figure style={F.fig}>
+      <svg viewBox={`0 0 ${w} 118`} width="100%" style={{ maxWidth: 300 }} role="img" aria-label={caption}>
+        {Array.from({ length: sig }, (_, i) => (
+          <line key={`ls${i}`} x1={sx(i)} y1={headY + r} x2={w / 2} y2={latentY - 10}
+            stroke={LINE} strokeWidth="1.3" />
+        ))}
+        {Array.from({ length: noise }, (_, i) => (
+          <line key={`ln${i}`} x1={nx(i)} y1={headY + r} x2={w / 2} y2={latentY - 10}
+            stroke={LINE} strokeWidth="1.3" strokeDasharray="2 2" />
+        ))}
+        {Array.from({ length: sig }, (_, i) => (
+          <circle key={`s${i}`} cx={sx(i)} cy={headY} r={r} fill={CLAY} opacity="0.9" />
+        ))}
+        {Array.from({ length: noise }, (_, i) => (
+          <circle key={`n${i}`} cx={nx(i)} cy={headY} r={r} fill="var(--line)" stroke={FAINT} strokeWidth="1" />
+        ))}
+        <text x={14 + sigW / 2} y={headY + 30} textAnchor="middle" fontSize="9" fill={FAINT} fontFamily={mono}>
+          signal ×64
+        </text>
+        <text x={14 + sigW + gap + (span - sigW) / 2} y={headY + 30} textAnchor="middle" fontSize="9"
+          fill={FAINT} fontFamily={mono}>
+          − noise ×16
+        </text>
+        <rect x={w / 2 - 40} y={latentY - 10} width="80" height="20" rx="4" fill={CLAY} opacity="0.32"
+          stroke={FAINT} strokeWidth="1" />
+        <text x={w / 2} y={latentY + 4} textAnchor="middle" fontSize="9" fill={INK} fontFamily={mono}>
+          one KV latent
+        </text>
+      </svg>
+      <figcaption style={F.cap}>{caption}</figcaption>
+    </figure>
+  );
+}
+
 /** A cache that grows with the sequence, against a state that does not. */
 function StateVsCache({ caption }) {
   const t = [0, 1, 2, 3, 4, 5];
@@ -221,6 +266,16 @@ const EXPLAIN = {
     ],
     cost: "You trade memory for arithmetic — the expansion is real work done on every step. And position cannot survive the squeeze, so a small slice of each head is left uncompressed to carry it, which is why MLA configs report a split like 64 RoPE dims and 128 NoPE dims.",
     fig: <Latent caption="Keys and values compressed to a latent, cached, then rebuilt on demand." />,
+  },
+
+  "GDLA (Grouped Differential Latent Attn)": {
+    family: "share",
+    how: [
+      "Motif 3 keeps MLA's compressed latent and stacks a second idea on top of it. Differential attention cancels noise by running two attention maps and subtracting one from the other — but done symmetrically that spends half the head budget estimating what to ignore, which is a lot of capacity to give to a correction term.",
+      "So Motif splits the heads unevenly: 64 query heads on the signal path against 16 on the noise path, the signal heads repeated four to one so the subtraction still lines up head for head. What the noise path attended to is taken back off what the signal path found, scaled by a coefficient the model computes per token rather than fixed in advance. Both paths read the same low-rank KV latent, so the second path costs nothing in cache — only the arithmetic.",
+    ],
+    cost: "The noise heads never read for their own sake. They exist to be subtracted, and on a layer where the signal was already clean the subtraction takes away something real. The split is also frozen at training time: 64 against 16 is a standing bet about how much of attention is noise, and nothing at inference gets to revise it.",
+    fig: <DiffHeads caption="An uneven split: many signal heads, a few noise heads to subtract, one shared latent." />,
   },
 
   "Sliding-window + global": {
