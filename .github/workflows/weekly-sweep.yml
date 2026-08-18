@@ -88,6 +88,10 @@ jobs:
           # --output-format json so the run reports what it cost. The first billed
           # run cost $5 for one model and nobody could see why until afterwards;
           # a number in the log is what makes the next tuning pass evidence-based.
+          # A failed agent run is exactly when that number matters most, so the
+          # exit code is captured instead of aborting the step: the JSON holds the
+          # cost and the error either way, and the step re-exits with it below.
+          set +e
           claude -p "$(cat .github/sweep-prompt.md)
 
           Findings from the automated source check (may be empty):
@@ -99,9 +103,22 @@ jobs:
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch,WebSearch" \
             --max-turns 30 \
             --output-format json > sweep-result.json
+          CLAUDE_EXIT=$?
+          set -e
 
           jq -r '.result // "(no summary)"' sweep-result.json
           echo "::notice title=Sweep cost::$(jq -r '"model \(env.SWEEP_MODEL) · turns \(.num_turns // "?") · $\(.total_cost_usd // "?") · \((.duration_ms // 0) / 1000 | floor)s"' sweep-result.json)"
+          exit "$CLAUDE_EXIT"
+
+      # The agent's JSON is the only record of what a failed run did and cost;
+      # keep it even when the step above exits non-zero.
+      - name: Upload the sweep result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweep-result
+          path: sweep-result.json
+          if-no-files-found: ignore
 
       # Outside the agent loop on purpose. The browser suites print hundreds of
       # lines; read back into the conversation they are billed on every later turn,
