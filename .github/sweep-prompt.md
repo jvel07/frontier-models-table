@@ -15,6 +15,44 @@ technical report. Open the `config.json`. Prefer reading the primary source over
 searching for someone's summary of it, and when you do fall back to search, say so
 explicitly in the pull request.
 
+## 0. Work cheaply — this runs on metered API billing
+
+The first billed run of this sweep cost $5 to add one model. Almost none of that
+was research; it was the same large file sitting in context turn after turn, and
+the full browser suite being run and read inside the loop. Both are avoidable.
+
+**Never open `src/FrontierModelsTable.jsx` whole.** It is ~57,000 tokens, and once
+it is in the conversation you pay for it again on every later turn. Instead:
+
+```bash
+node scripts/scaffold-model.mjs "Kimi K2.6"   # ~850 tokens: every map's line
+                                              # number, plus one real entry to copy
+grep -n '"GLM-5.2"' src/FrontierModelsTable.jsx
+sed -n '331,345p' src/FrontierModelsTable.jsx  # read a range, never the file
+```
+
+Edit by anchoring on a short unique string near the insertion point. The maps are
+keyed by exact model name, so a new model needs an entry in each of MODELS, SPECS,
+REPORTS and HF_LINKS — the scaffold prints where each one starts.
+
+**Do not run `npm run verify`.** It drives a browser through ten suites; the output
+is long, and reading it back costs more than it tells you. Run the structural check
+instead — it takes seconds, needs no browser, and catches the mistakes that actually
+happen here (a name in one map and not another, an `attn` value with no card):
+
+```bash
+node scripts/verify/maps.mjs
+```
+
+CI runs the full suite as its own step after you finish, and the branch is not
+pushed if it fails. That is the safety net; you do not need to be it.
+
+**Fetch each URL once.** Start with `config.json` and the model card — between them
+they fill most of a row. Open the technical report only when a specific field cannot
+be filled without it, and never re-fetch a page you have already read.
+
+**Batch tool calls.** Independent reads and greps go in one message, not five.
+
 ## 1. Work the findings
 
 The automated source check runs daily and files what it sees. Each finding is a lead,
@@ -64,9 +102,10 @@ Match the existing shape exactly: `name`, `provider`, `released` (YYYY/MM), `typ
 
 ## 4. Verify
 
-Run `npm run verify` before committing. When the model count changes, the row-count
-assertions in `scripts/verify/columns.mjs` and `scripts/verify/detail.mjs` need
-bumping to match.
+Run `node scripts/verify/maps.mjs` before committing — not `npm run verify`, which
+CI runs after you (see section 0). The row-count assertions derive their expected
+total from the data now, so adding a model needs no test edit — if a suite fails on
+a count, that is a real mismatch, not arithmetic to update.
 
 Two `detail` failures about diagram hotlinks are expected whenever
 `sebastianraschka.com` is unreachable, because the component falls back to the local

@@ -22,6 +22,12 @@ on:
         description: "Optional: a specific model or lab to look at this run"
         required: false
         type: string
+      model:
+        description: "Model for the run. sonnet is the default and is ~40% cheaper per token; escalate deliberately."
+        required: false
+        default: sonnet
+        type: choice
+        options: [sonnet, opus]
 
 permissions:
   contents: write
@@ -70,35 +76,57 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           FOCUS: ${{ inputs.focus }}
+          SWEEP_MODEL: ${{ inputs.model || 'sonnet' }}
         run: |
           set -euo pipefail
           BRANCH="sweep/$(date -u +%Y-%m-%d)"
           git config user.name  "model-atlas-bot"
           git config user.email "noreply@anthropic.com"
           git checkout -b "$BRANCH"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
 
+          # --output-format json so the run reports what it cost. The first billed
+          # run cost $5 for one model and nobody could see why until afterwards;
+          # a number in the log is what makes the next tuning pass evidence-based.
           claude -p "$(cat .github/sweep-prompt.md)
 
           Findings from the automated source check (may be empty):
           $(cat findings.json)
 
           Extra focus for this run, if any: ${FOCUS:-none}" \
+            --model "$SWEEP_MODEL" \
             --permission-mode acceptEdits \
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch,WebSearch" \
-            --max-turns 80
+            --max-turns 30 \
+            --output-format json > sweep-result.json
 
+          jq -r '.result // "(no summary)"' sweep-result.json
+          echo "::notice title=Sweep cost::$(jq -r '"model \(env.SWEEP_MODEL) · turns \(.num_turns // "?") · $\(.total_cost_usd // "?") · \((.duration_ms // 0) / 1000 | floor)s"' sweep-result.json)"
+
+      # Outside the agent loop on purpose. The browser suites print hundreds of
+      # lines; read back into the conversation they are billed on every later turn,
+      # and the agent waits through them at model prices. Here they cost runner
+      # minutes instead, and a failure stops the branch from being pushed at all.
+      - name: Verify
+        run: npm run verify
+
+      - name: Open the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
           if git diff --quiet && git diff --cached --quiet; then
             echo "Nothing changed — no pull request. An empty week is a fine outcome."
             exit 0
           fi
-
           git add -A
           git commit -m "Weekly sweep: $(date -u +%Y-%m-%d)"
           git push -u origin "$BRANCH"
+          # Needs Settings -> Actions -> "Allow GitHub Actions to create and approve
+          # pull requests". Without it the push still lands and the branch is opened
+          # by hand; the run should not fail for it.
           gh pr create \
             --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
             --body-file .github/sweep-pr-body.md \
             --label source-check \
-            || gh pr create --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
-                 --body "Automated sweep. See the diff and the commit message." \
-                 --label source-check
+            || echo "::warning title=No PR::Branch $BRANCH pushed; Actions cannot open PRs in this repo."
