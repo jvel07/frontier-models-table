@@ -239,6 +239,8 @@ function SinkGrid({ n = 14, w = 4, caption, size = 13 }) {
 const band = (w) => (i, j) => (i - j < w ? "on" : "dim");
 const everyNth = (n, w) => (i, j) => (i - j < w || j % n === 0 ? "on" : "dim");
 const alt = (n) => Array.from({ length: n }, (_, i) => ((i + 1) % 6 === 0 ? 1 : 0));
+/** n layers where every kth is the exact one — for stacks with a stated ratio. */
+const ratio = (n, k) => Array.from({ length: n }, (_, i) => ((i + 1) % k === 0 ? 1 : 0));
 
 /* --------------------------------------------------------------- content -- */
 
@@ -366,6 +368,17 @@ const EXPLAIN = {
     ],
     cost: "Writing corrections into a bounded memory means old detail is genuinely overwritten. What survives is whatever the gate judged worth keeping, and that judgement is learned, not guaranteed.",
     fig: <StateVsCache caption="Bounded memory, updated by correction rather than accumulation." />,
+  },
+
+  "Hybrid linear + full": {
+    family: "remember",
+    how: [
+      "The named linear layers — Gated DeltaNet, KDA, Mamba-2 — each argue for a particular way of writing to a fixed-size memory. Strip the branding and the same bargain sits underneath all of them, and some labs describe their stack in exactly those plain terms: most layers cost linear time and carry a constant-size state, a minority are ordinary softmax attention, and the ratio between them is the design.",
+      "Solar Open 2 states it as three linear layers to every exact one, twelve times over 48 layers. The linear layers carry the bulk of the sequence cheaply; the softmax layers are the model's only route back to a specific token far behind it, so where they sit in the stack matters as much as how many there are.",
+    ],
+    cost: "Naming the shape without naming the mechanism hides the part that decides quality. Two models can both be three-to-one hybrids and forget quite differently, because what the linear layer does on write is the whole question.",
+    fig: <LayerStack layers={ratio(24, 4)} legend="3 linear · 1 full, repeating"
+      caption="Three cheap layers per exact one, repeated through the stack." />,
   },
 
   "KDA + full attn (69:24 layers)": {
