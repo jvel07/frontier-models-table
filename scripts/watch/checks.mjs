@@ -197,7 +197,7 @@ export async function checkSpecs(maps) {
 const ORGS = [
   "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "meta-models", "google", "nvidia",
   "mistralai", "microsoft", "CohereLabs", "MiniMaxAI", "sarvamai", "HuggingFaceTB",
-  "allenai", "openai", "ibm-granite",
+  "allenai", "openai", "ibm-granite", "upstage",
 ];
 
 export async function watchReleases(maps, sinceDays = 45) {
@@ -221,8 +221,17 @@ export async function watchReleases(maps, sinceDays = 45) {
       if (!id || known.has(id.toLowerCase())) continue;
       const created = Date.parse(m.createdAt || m.lastModified || "");
       if (!created || created < cutoff) continue;
-      // Skip the long tail of quantisations and finetunes of things we already have.
-      if (/-(gguf|awq|gptq|mlx|int4|int8|fp8|bnb|onnx)\b/i.test(id)) continue;
+      // The atlas tracks frontier LLMs; everything else is another site's job.
+      // Without this the check reported embeddings, ASR, vision, DNA and music
+      // models beside the LLMs — 2026-08-20 filed 35 leads, a handful of them
+      // language models. pipeline_tag is set by the lab, so it is the one
+      // filter that does not guess from the name.
+      if (m.pipeline_tag !== "text-generation") continue;
+      // Skip the long tail of quantisations, repackaged builds and finetunes of
+      // things we already have: -NVFP4/-DSpark/-BF16 builds ship as separate
+      // repos beside the model itself, and the model is the finding, not its
+      // fifth container format.
+      if (/-(gguf|awq|gptq|mlx|int4|int8|fp8|nvfp4|nvfp8|bnb|onnx|dspark|dflash|bf16|fp16|eagle)\b|-executorch/i.test(id)) continue;
       if (/base|instruct-v\d|-lora|-adapter/i.test(id) && known.has(id.split("-")[0].toLowerCase())) continue;
       findings.push({ subject: id, url: `https://huggingface.co/${id}`,
         detail: `published ${new Date(created).toISOString().slice(0, 10)}, ${m.downloads ?? 0} downloads — not in the atlas` });
