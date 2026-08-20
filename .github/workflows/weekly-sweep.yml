@@ -111,13 +111,17 @@ jobs:
           exit "$CLAUDE_EXIT"
 
       # The agent's JSON is the only record of what a failed run did and cost;
-      # keep it even when the step above exits non-zero.
+      # keep it even when the step above exits non-zero. The transcript is the
+      # turn-by-turn record — two runs hit the turn cap with ~70k tokens of
+      # context per turn and the totals alone could not say why.
       - name: Upload the sweep result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sweep-result
-          path: sweep-result.json
+          path: |
+            sweep-result.json
+            /home/runner/.claude/projects/
           if-no-files-found: ignore
 
       # Outside the agent loop on purpose. The browser suites print hundreds of
