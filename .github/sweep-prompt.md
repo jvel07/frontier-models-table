@@ -47,9 +47,17 @@ node scripts/verify/maps.mjs
 CI runs the full suite as its own step after you finish, and the branch is not
 pushed if it fails. That is the safety net; you do not need to be it.
 
-**Fetch each URL once.** Start with `config.json` and the model card — between them
-they fill most of a row. Open the technical report only when a specific field cannot
-be filled without it, and never re-fetch a page you have already read.
+**Research with one tool call, not a dozen fetches.** `scripts/fetch-model.mjs`
+pulls the three sources that fill most of a row and prints only the facts:
+
+```bash
+node scripts/fetch-model.mjs "Solar Open 2" --hf upstage/Solar-Open2-250B
+# ~1,500 tokens: HF release date, license and gating; the full config.json;
+# the Artificial Analysis indexes, subscores, parameter and context figures
+```
+
+Fetch a page yourself only for a field the script could not get — the Coding Agent
+Index is the known gap — and never re-fetch a page you have already read.
 
 **Batch tool calls.** Independent reads and greps go in one message, not five.
 
