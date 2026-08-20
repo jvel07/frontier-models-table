@@ -101,7 +101,7 @@ jobs:
             --model "$SWEEP_MODEL" \
             --permission-mode acceptEdits \
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch,WebSearch" \
-            --max-turns 30 \
+            --max-turns 60 \
             --output-format json > sweep-result.json
           CLAUDE_EXIT=$?
           set -e

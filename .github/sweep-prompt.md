@@ -61,6 +61,11 @@ Index is the known gap — and never re-fetch a page you have already read.
 
 **Batch tool calls.** Independent reads and greps go in one message, not five.
 
+**Edit early.** Once `fetch-model.mjs` has run, write the four map entries — the
+diagram mirror and any new attention card come *after* the row exists, not before.
+Three capped runs in a row spent every turn on reconnaissance and were killed before
+their first edit; a run that edits nothing costs the same and produces nothing.
+
 ## 1. Work the findings
 
 The automated source check runs daily and files what it sees. Each finding is a lead,
