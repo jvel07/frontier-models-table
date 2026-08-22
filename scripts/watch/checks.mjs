@@ -395,8 +395,12 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
       const m = w.match(new RegExp(`"${k}":(-?[0-9.]+|null)`));
       return m && m[1] !== "null" ? +m[1] : null;
     };
-    const rec = { slug: head[1], label: head[2], intel: num("intelligenceIndex"), agentic: num("agenticIndex") };
-    if (rec.intel == null && rec.agentic == null) continue;
+    // mmmuPro is a 0-1 accuracy where the two indexes are 0-100 points; the column
+    // stores it as a percentage, so compare it as one.
+    const mmmu = num("mmmuPro");
+    const rec = { slug: head[1], label: head[2], intel: num("intelligenceIndex"),
+      agentic: num("agenticIndex"), vision: mmmu == null ? null : mmmu * 100 };
+    if (rec.intel == null && rec.agentic == null && rec.vision == null) continue;
     const prev = records.get(rec.slug);
     if (!prev || (rec.intel ?? -1) > (prev.intel ?? -1)) records.set(rec.slug, rec);
   }
@@ -436,7 +440,8 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
     if (!ours) continue;
     const url = `https://artificialanalysis.ai/models/${entry.slug}`;
     for (const [field, mine, theirs] of [["intelligence index", ours.intel, entry.intel],
-                                         ["agentic index", ours.agentic, entry.agentic]]) {
+                                         ["agentic index", ours.agentic, entry.agentic],
+                                         ["vision score", ours.vision, entry.vision]]) {
       if (theirs == null) continue;
       if (mine == null) {
         findings.push({ subject: `${ours.name} — ${field} blank here`, url,

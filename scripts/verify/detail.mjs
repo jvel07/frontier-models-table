@@ -128,8 +128,9 @@ await page.locator("[data-search]").fill("mamba");
 await page.waitForTimeout(250);
 const mamba = await page.locator("table tbody tr[data-model]").evaluateAll((els) => els.map((e) => e.dataset.model));
 t("searching an attention mechanism finds models", mamba.length > 0, mamba.join(","));
-// Attention is the 7th column since the architecture group moved up behind the scores.
-t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(7)")
+// Attention is the 8th column: Model, the four Artificial Analysis scores, then
+// architecture and params ahead of it.
+t("every hit really uses it", (await page.locator("table tbody tr[data-model] td:nth-child(8)")
   .allTextContents()).every((s) => /mamba/i.test(s)));
 t("the live count matches the rows shown",
   (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/${TOTAL}`);

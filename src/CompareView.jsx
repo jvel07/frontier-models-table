@@ -109,6 +109,9 @@ const AXES = [
   { group: "Identity", label: "Agentic (AA)", pick: (m) => (m.agentic == null ? null : String(m.agentic)),
     hint: "Artificial Analysis Agentic Index — GDPval-AA v2 and 𝜏³-Banking averaged, scored 0-100. Long-horizon tool use rather than single answers. Both evaluations also sit inside the Intelligence Index, so this is that score re-cut, not an independent measurement." },
 
+  { group: "Identity", label: "Vision (AA)", pick: (m) => (m.vision == null ? null : `${m.vision}%`),
+    hint: "MMMU-Pro as published by Artificial Analysis — college-level questions across 30 subjects that cannot be answered without reading the image. A single benchmark rather than an index, and the only vision figure AA reports per model; none of the three scores above includes one." },
+
   { group: "Scale", label: "Total params", pick: (m) => (m.params === "—" ? null : m.params),
     hint: "Every weight in the model. Sets how much memory it takes to hold." },
   { group: "Scale", label: "Active params", pick: (m) => (m.active === "—" ? null : m.active),

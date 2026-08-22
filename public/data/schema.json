@@ -18,6 +18,7 @@
   "intel": "Artificial Analysis Intelligence Index. Third-party.",
   "codingAgent": "Artificial Analysis Coding Agent Index v1.3. Third-party. Scores an agent harness driving the model, not the model alone, so it is only meaningful together with codingAgentVia.",
   "codingAgentVia": "The agent harness that produced codingAgent — the highest-scoring pairing AA publishes for this model.",
+  "vision": "MMMU-Pro percentage as published by Artificial Analysis. Third-party, and a single benchmark rather than an index — none of intel, codingAgent or agentic includes a vision evaluation, so a null here is common on models that lead those.",
   "agentic": "Artificial Analysis Agentic Index. Third-party. Shares two of its component evaluations with the Intelligence Index, so the two are not independent.",
   "training": "Array of stages: {label, tokens, detail, curriculum}. null = none published.",
   "trainingSource": "Set when the pipeline shown belongs to another model; those tokens are never counted as disclosed.",

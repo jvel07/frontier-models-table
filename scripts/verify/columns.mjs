@@ -47,8 +47,8 @@ for (const row of rows) {
   if (!m) { console.log(`FAIL unknown model rendered: "${name}"`); fail++; continue; }
 
   // Indices are positional, so they all shift when a column moves. Order is Model,
-  // the three Artificial Analysis scores, then what the model is — architecture,
-  // params, attention, context — then provenance. Attention (index 6) has no source
+  // the four Artificial Analysis scores, then what the model is — architecture,
+  // params, attention, context — then provenance. Attention (index 7) has no source
   // field to diff against.
   const checks = [
     ["intel", cells[1].trim(), m.intel == null ? "—" : String(m.intel)],
@@ -58,30 +58,39 @@ for (const row of rows) {
     ["codingAgent", cells[2].trim().replace(/\s+/g, " "),
       m.codingAgent == null ? "—" : `${m.codingAgent} via ${m.codingAgentVia}`],
     ["agentic", cells[3].trim(), m.agentic == null ? "—" : String(m.agentic)],
-    ["arch", cells[4].trim(), m.arch],
+    // Vision is a percentage where the three columns before it are index points.
+    // Asserting the unit is the point: dropping the % would make it read as a
+    // fourth index, which is exactly what this column is not.
+    ["vision", cells[4].trim(), m.vision == null ? "—" : `${m.vision}%`],
+    ["arch", cells[5].trim(), m.arch],
     // Total and active share a cell. Checking the joined string is what stops the
     // two halves being silently swapped, which neither figure alone would catch.
-    ["params", cells[5].trim().replace(/\s+/g, " "),
+    ["params", cells[6].trim().replace(/\s+/g, " "),
       m.active === "—" || m.active === m.params ? m.params : `${m.params} / ${m.active}`],
-    ["context", cells[7].trim(), fmtTokens(m.context)],
-    ["released", cells[8].trim(), m.released],
-    ["provider", cells[9].trim(), m.provider],
-    ["type", cells[10].trim(), m.type],
-    ["modality", cells[11].trim(), m.modality],
-    ["maxOut", cells[12].trim(), fmtTokens(m.maxOut)],
-    ["license", cells[13].trim(), m.license],
+    ["context", cells[8].trim(), fmtTokens(m.context)],
+    ["released", cells[9].trim(), m.released],
+    ["provider", cells[10].trim(), m.provider],
+    ["type", cells[11].trim(), m.type],
+    ["modality", cells[12].trim(), m.modality],
+    ["maxOut", cells[13].trim(), fmtTokens(m.maxOut)],
+    ["license", cells[14].trim(), m.license],
   ];
   // released must never look like a score, and vice versa — the exact bug reported.
   // With three adjacent score columns this also catches any two being swapped into
   // each other's slot, which no per-cell diff above would notice on its own.
-  if (!/^\d{4}\/\d{2}$/.test(cells[8].trim())) {
-    console.log(`FAIL "${name}": Released column ("${cells[8].trim()}") is not a YYYY/MM date`); fail++;
+  if (!/^\d{4}\/\d{2}$/.test(cells[9].trim())) {
+    console.log(`FAIL "${name}": Released column ("${cells[9].trim()}") is not a YYYY/MM date`); fail++;
   }
   for (const [label, idx] of [["Intelligence", 1], ["Agentic", 3]]) {
     const v = cells[idx].trim();
     if (v !== "—" && !/^\d+$/.test(v)) {
       console.log(`FAIL "${name}": ${label} column ("${v}") is not a bare number`); fail++;
     }
+  }
+  // Vision carries its unit, so it is checked for the shape the others must not have.
+  const vis = cells[4].trim();
+  if (vis !== "—" && !/^\d+%$/.test(vis)) {
+    console.log(`FAIL "${name}": Vision column ("${vis}") is not a percentage`); fail++;
   }
   for (const [field, got, want] of checks) {
     if (got !== want) {

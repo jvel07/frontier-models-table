@@ -56,19 +56,19 @@ export const MODELS = [
     attn: "Undisclosed", modality: "Text + image + audio", context: 262144, maxOut: null, license: "Proprietary", open: false, intel: 44, codingAgent: null, codingAgentVia: null, agentic: null, training: null,
     note: "The first model out of Meta Superintelligence Labs, shipped 8 April 2026, and the first Meta flagship that is not a Llama. It is also the first one Meta kept closed — no weights, no Hugging Face repo, API and Meta AI only — which breaks the open-weight line that ran from Llama 1 through Llama 4. Meta describes it as natively multimodal, with vision trained into the model rather than attached to a finished text model, and frames it as the first rung of a scaling ladder rather than a finished frontier system. Parameter count, architecture, attention and training are all undisclosed, so the rows below stay empty by design." },
   { name: "Opus 5", provider: "Anthropic", released: "2026/07", type: "Frontier", arch: "Undisclosed", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 63, codingAgent: 67, codingAgentVia: "Claude Code", agentic: 59, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 63, codingAgent: 67, codingAgentVia: "Claude Code", agentic: 59, vision: 85, training: null,
     note: "Anthropic's new Opus-tier flagship, shipped 24 July 2026, succeeding Opus 4.8. Adds an 'xhigh' reasoning-effort mode and a Fast mode (~2.5x speed at 2x price). Positioned just below the Mythos-class Fable 5 \u2014 reported near-Fable intelligence at roughly half the cost. Architecture, parameters and training remain undisclosed, as with the rest of the Claude line. Artificial Analysis framed it as 'Fable 5 level intelligence at a lower cost per task'; the leaderboard now carries its own rows per reasoning effort, and the figures here are the max-effort variant." },
   { name: "Sonnet 5", provider: "Anthropic", released: "2026/06", type: "Mid", arch: "Undisclosed", params: "\u2014", active: "\u2014",
     attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 55, codingAgent: null, codingAgentVia: null, agentic: 50, training: null,
     note: "Sonnet tier crossed to 5 on 30 June 2026, becoming Anthropic's default high-volume workhorse. Roughly 63% on SWE-bench Pro against Opus 5's 79%, at about 0.6x the price. No architecture or training disclosure." },
   { name: "GPT-5.6 Sol", provider: "OpenAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 61, codingAgent: 67, codingAgentVia: "Codex", agentic: 58, training: null,
+    attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 61, codingAgent: 67, codingAgentVia: "Codex", agentic: 58, vision: 83, training: null,
     note: "Top variant of the GPT-5.6 family (9 July 2026), which ships three fixed tiers: Luna, Terra, Sol. Artificial Analysis reports Sol at roughly Fable 5's intelligence for about a third of the cost, and leading its Coding Agent Index at ~80. Token-efficient: ~15k tokens per Index task vs GPT-5.5's 16k. Architecture undisclosed." },
   { name: "GPT-5.6 Terra", provider: "OpenAI", released: "2026/07", type: "Frontier", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 57, codingAgent: 62, codingAgentVia: "Codex", agentic: 50, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 57, codingAgent: 62, codingAgentVia: "Codex", agentic: 50, vision: 81, training: null,
     note: "Middle tier of the GPT-5.6 family \u2014 OpenAI's intended production default. Reported to land just above Claude Fable 5 on the Artificial Analysis Coding Agent Index while sitting below Sol. No separate Intelligence Index figure published." },
   { name: "GPT-5.6 Luna", provider: "OpenAI", released: "2026/07", type: "Mid", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 52, codingAgent: 59, codingAgentVia: "Codex", agentic: 47, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 128000, license: "Proprietary", open: false, intel: 52, codingAgent: 59, codingAgentVia: "Codex", agentic: 47, vision: 79, training: null,
     note: "Cheapest, highest-volume tier of the GPT-5.6 family. Reported to outperform Claude Opus 4.8 on the Coding Agent Index despite the lower tier. Along with Sol it sits on Artificial Analysis's intelligence-vs-cost Pareto frontier (Terra does not)." },
   { name: "Grok 4.6", provider: "xAI", released: "2026/08", type: "Frontier", arch: "Undisclosed", params: "\u2014", active: "\u2014",
     attn: "Undisclosed", modality: "Text + image", context: 500000, maxOut: null, license: "Proprietary", open: false, intel: 61, codingAgent: null, codingAgentVia: null, agentic: 59, training: null,
@@ -89,7 +89,7 @@ export const MODELS = [
     attn: "Gated DeltaNet + gated attn", modality: "Text", context: 262144, maxOut: null, license: "Qwen3.8-Max License", open: true, intel: 58, codingAgent: null, codingAgentVia: null, agentic: 57, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba names pre-training and post-training as the two stages and publishes no token budget for either, so none is shown rather than borrowing the previous generation's. The model is trained with multi-token prediction over multiple steps." }, { label: "Post-training", tokens: null, detail: "Reasoning depth is exposed at inference as a reasoning_effort setting, and reasoning context carries across turns via preserve_thinking." }],
     note: "The open-weights model under Qwen3.8 Max, and the first time a Qwen-Max-class model has shipped with downloadable weights. 2.4T total, 95B active: 92 layers arranged as 23 repeats of three Gated DeltaNet blocks to one gated-attention block, every one of them feeding a 512-expert MoE that fires 10 routed experts plus a shared one. The licence is Alibaba's own Qwen3.8-Max terms rather than Apache 2.0, unlike the rest of the open Qwen line. 262K native context, which Alibaba says extends to 1.01M. Text only — the vision input belongs to the hosted Max, not to these weights." },
   { name: "Kimi K3", provider: "Moonshot", released: "2026/07", type: "Frontier", arch: "Sparse MoE", params: "2.8T", active: "104.2B",
-    attn: "KDA + full attn (69:24 layers)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 60, codingAgent: 61, codingAgentVia: "Kimi Code CLI", agentic: 54,
+    attn: "KDA + full attn (69:24 layers)", modality: "Text + image + video", context: 1048576, maxOut: 131072, license: "Kimi K3 License", open: true, intel: 60, codingAgent: 61, codingAgentVia: "Kimi Code CLI", agentic: 54, vision: 81,
     training: [
       { label: "Pre-training", tokens: null, detail: "Natively multimodal: text and vision jointly optimised from step one rather than grafting a ViT onto a finished LLM, with visual and textual tokens interleaved under one next-token objective. Per-Head Muon optimiser with K2's weight clipping, Quantile Balancing for MoE load balance, cosine LR with 1% warmup, weight decay 0.1. No token budget disclosed.",
         curriculum: "Four text domains — Web Text, Code, Mathematics and Knowledge — plus a large vision corpus. Each domain passes rule-based heuristics, classifier-based quality scoring and deduplication, with per-domain sampling rates fixed by ablation studies on smaller proxy models. Knowledge and mathematics are rephrased using K2's recipe: style- and perspective-diverse prompting, chunk-wise autoregressive generation, and fidelity verification against the source document. The vision corpus follows K2.5's taxonomy — captions, interleaved image–text documents, OCR, perception, video and visual coding — with coordinate supervision given in both absolute and normalised [0,1] form for resolution-robust localisation, and heavily scaled programmatic data pairing code with its rendered output across SVG, 3D assets, webpages, games and CAD schematics." },
@@ -112,7 +112,7 @@ export const MODELS = [
     attn: "Hybrid linear + full", modality: "Text", context: 1000000, maxOut: null, license: "Upstage Solar License", open: true, intel: 37, codingAgent: null, codingAgentVia: null, agentic: 28, training: null,
     note: "Korea's sovereign open-weight frontier model, released 22 July 2026 and aimed squarely at agentic enterprise work. Unusually sparse for its size: 250B total against 15B active, from 320 routed experts plus one shared, with nine firing per token. The attention stack interleaves three linear-attention layers to every softmax layer, twelve times over 48 layers, which is how a model this size carries a 1M window without quadratic cost. The licence is open weights with conditions rather than a standard permissive grant — derivatives must keep a \"Solar\" prefix in their name and display \"Built with Solar\" — so it is downloadable and modifiable, but not unconditionally. Artificial Analysis has since rated it, at 37 on intelligence and 28 on agentic, under the label \"Solar Open2 250B\"; no coding-agent score has been published, so that column stays blank." },
   { name: "Inkling", provider: "Thinking Machines", released: "2026/07", type: "Frontier", arch: "Sparse MoE", params: "975B", active: "41B",
-    attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: null, license: "Apache 2.0", open: true, intel: 42, codingAgent: null, codingAgentVia: null, agentic: 34, training: null,
+    attn: "Undisclosed", modality: "Text + image + audio", context: 1000000, maxOut: null, license: "Apache 2.0", open: true, intel: 42, codingAgent: null, codingAgentVia: null, agentic: 34, vision: 74, training: null,
     note: "First open-weights model from Thinking Machines Lab (Mira Murati's startup), released 15 July 2026. 975B total / 41B active MoE, Apache 2.0. Accepts text, image and audio but emits text only. Explicitly designed as a base for fine-tuning rather than a benchmark winner \u2014 it ships an 'effort dial' (0.2\u20130.99) instead of fixed tiers. Trails GLM-5.2 and Kimi on terminal-agent coding; SimpleQA Verified of 43.9% lags the closed flagships badly, so pair it with RAG for factual work. An Inkling-Small preview also exists." },
   { name: "Motif 3", provider: "Motif Technologies", released: "2026/08", type: "Frontier", arch: "Sparse MoE", params: "314B", active: "13.2B",
     attn: "GDLA (Grouped Differential Latent Attn)", modality: "Text", context: 262144, maxOut: null, license: "MIT", open: true, intel: 47, codingAgent: null, codingAgentVia: null, agentic: 38,
@@ -142,7 +142,7 @@ export const MODELS = [
     attn: "Undisclosed", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 48, codingAgent: 38, codingAgentVia: "Claude Code", agentic: 42, training: null,
     note: "Mid-flagship tier. Same undisclosed-architecture posture as the rest of the Claude family; added a 1M-token window this generation. Optimized for latency/cost balance against Opus." },
   { name: "Haiku 4.5", provider: "Anthropic", released: "2025/10", type: "Mid", arch: "Undisclosed", params: "—", active: "—",
-    attn: "Undisclosed", modality: "Text + image", context: 200000, maxOut: 64000, license: "Proprietary", open: false, intel: 30, codingAgent: null, codingAgentVia: null, agentic: 16, training: null,
+    attn: "Undisclosed", modality: "Text + image", context: 200000, maxOut: 64000, license: "Proprietary", open: false, intel: 30, codingAgent: null, codingAgentVia: null, agentic: 16, vision: 59, training: null,
     note: "Smallest, fastest Claude tier. 200K window (not 1M) is the main structural difference from its larger siblings. Architecture unpublished." },
   { name: "GPT-5.5", provider: "OpenAI", released: "2026/04", type: "Frontier", arch: "MoE (reported)", params: "—", active: "—",
     attn: "Undisclosed", modality: "Text + image + audio", context: 922000, maxOut: 128000, license: "Proprietary", open: false, intel: 56, codingAgent: 61, codingAgentVia: "Codex", agentic: 47, training: null,
@@ -154,7 +154,7 @@ export const MODELS = [
     attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 48, codingAgent: 30, codingAgentVia: "Gemini CLI", agentic: 23, training: null,
     note: "Sparse MoE per Google's earlier Gemini disclosures; exact counts unpublished. The most fully multimodal flagship (native video). Largest hosted context at 2M, with tiered pricing above 200K. Same lineage as the open Gemma models but at far larger scale." },
   { name: "Gemini 3.7 Flash", provider: "Google", released: "2026/08", type: "Mid", arch: "MoE (reported)", params: "—", active: "—",
-    attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 56, codingAgent: 57, codingAgentVia: "Opencode", agentic: 45, training: null,
+    attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 56, codingAgent: 57, codingAgentVia: "Opencode", agentic: 45, vision: 86, training: null,
     note: "Released 13 August 2026 and pitched at coding and agent work at the Flash price rather than the Pro one. Its model card states the model is based on Gemini 3.6 Flash and refers the reader to that card for architecture, which in turn refers to 3.5 Flash — so the architecture and attention rows here are carried across that chain of Google's own statements rather than assumed from the family name, and both remain reported rather than confirmed. Knowledge cutoff March 2026, with some domains held back to January 2025." },
   { name: "Gemini 3.6 Flash", provider: "Google", released: "2026/07", type: "Mid", arch: "MoE (reported)", params: "—", active: "—",
     attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 52, codingAgent: 46, codingAgentVia: "Opencode", agentic: 41, training: null,
@@ -163,7 +163,7 @@ export const MODELS = [
     attn: "Sparse + long-context", modality: "Text + image + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 52, codingAgent: null, codingAgentVia: null, agentic: 40, training: null,
     note: "Speed-optimized Gemini tier. 1M context, very high throughput. Shares the family's sparse architecture at smaller effective compute." },
   { name: "Gemini 3.5 Flash-Lite", provider: "Google", released: "2026/07", type: "Mid", arch: "MoE (reported)", params: "\u2014", active: "\u2014",
-    attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 37, codingAgent: null, codingAgentVia: null, agentic: 27, training: null,
+    attn: "Sparse + long-context", modality: "Text + image + video + audio", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 37, codingAgent: null, codingAgentVia: null, agentic: 27, vision: 79, training: null,
     note: "The cheapest and fastest tier of the 3.5 generation, aimed at high-volume, latency-bound work \u2014 translation, classification \u2014 and, Google adds, at agentic workflows, which its predecessor's card did not claim. Natively multimodal on input: text, images, audio and video, 1M in, 64K out, text only coming back. Its model card discloses no architecture of its own, saying the model is based on Gemini 3.1 Flash-Lite, whose card in turn points at Gemini 3 Pro; the architecture and attention rows here follow that chain of Google's own statements, as with the other Flash rows, and stay reported rather than confirmed. Nothing is published about size, and the training data and hardware sections defer up the same chain, so the pipeline rows stay empty rather than borrowing Gemini 3 Pro's. Artificial Analysis rates it 37 with an agentic index of 27, the lowest pair of any Gemini row here, which is the trade the tier is named for." },
   { name: "Grok 4.3", provider: "xAI", released: "2026/04", type: "Frontier", arch: "MoE (reported)", params: "—", active: "—",
     attn: "Sparse + long-context", modality: "Text + image", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 38, codingAgent: null, codingAgentVia: null, agentic: 24, training: null,
@@ -189,7 +189,7 @@ export const MODELS = [
     attn: "Gated DeltaNet + gated attn", modality: "Text + image", context: 1000000, maxOut: 65536, license: "Proprietary (API)", open: false, intel: 39, codingAgent: 36, codingAgentVia: "Claude Code", agentic: 21, training: [{ label: "Pre-training", tokens: null, detail: "Undisclosed; same Qwen3.7 generation backbone as Max with multimodal input." }, { label: "Post-training", tokens: null, detail: "RL alignment; vision-capable endpoint of the 3.7 line (Vision Arena #16)." }],
     note: "The multimodal sibling of Qwen3.7 Max — adds vision input. API-only preview as of May 2026; architecture reported to mirror Max. No open weights yet." },
   { name: "MiniMax M3", provider: "MiniMax", released: "2026/06", type: "Frontier", arch: "Sparse MoE", params: "428B", active: "—",
-    attn: "MSA sparse attention", modality: "Text + image + video", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 45, codingAgent: null, codingAgentVia: null, agentic: 36, training: null,
+    attn: "MSA sparse attention", modality: "Text + image + video", context: 1000000, maxOut: 64000, license: "Proprietary", open: false, intel: 45, codingAgent: null, codingAgentVia: null, agentic: 36, vision: 79, training: null,
     note: "Uses MiniMax Sparse Attention (MSA) for its 1M window. Multimodal across text/image/video. Pricing doubles past 512K input tokens." },
   { name: "Llama 4 Scout", provider: "Meta", released: "2025/04", type: "Mid", arch: "Sparse MoE", params: "109B", active: "17B",
     attn: "iRoPE (interleaved RoPE/NoPE)", modality: "Text + image", context: 10000000, maxOut: 32000, license: "Llama 4 Community", open: true, intel: 10, codingAgent: null, codingAgentVia: null, agentic: 1, training: [{ label: "Pre-training", tokens: "~40T", detail: "Multimodal (text+image+video) via early fusion; 256K pretraining context; cutoff Aug 2024." }, { label: "Mid-training", tokens: null, detail: "Long-context extension with specialized datasets + iRoPE tricks unlocking the 10M window." }, { label: "Post-training", tokens: null, detail: "SFT, then RL; distillation from larger Llama 4 Behemoth teacher reported." }],
@@ -227,7 +227,7 @@ export const MODELS = [
 
   // ---- Small language models (SLMs) ----
   { name: "Muse Glimmer", provider: "Meta", released: "2026/08", type: "SLM", arch: "Dense", params: "30B", active: "30B",
-    attn: "Sliding-window + global", modality: "Text + image", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 35, codingAgent: null, codingAgentVia: null, agentic: 23, training: null,
+    attn: "Sliding-window + global", modality: "Text + image", context: 131072, maxOut: null, license: "Apache 2.0", open: true, intel: 35, codingAgent: null, codingAgentVia: null, agentic: 23, vision: 74, training: null,
     note: "Meta's return to open weights, 10 August 2026, and the first Muse model with a licence that permits anything: Apache 2.0, after three closed Muse Spark releases. Built to run locally rather than to top a leaderboard — a dense 30B including its vision tower, quantised to roughly 4 bits so the language model, the KV cache, the perception encoder and a speculative drafter all fit inside a 24GB card. Attention repeats three sliding-window layers to one global, at a 2,048-token window. Weights ship in several formats from the same repository: BF16 for research, GGUF for llama.cpp, and ExecuTorch builds for on-device use. Not yet rated by Artificial Analysis. The layer and head figures widely reported for it are not recorded here, because no one has read them off the config.json for this atlas yet." },
   { name: "Gemma 4 (31B)", provider: "Google", released: "2026/04", type: "SLM", arch: "Dense", params: "30.7B", active: "30.7B",
     attn: "Sliding-window + global", modality: "Text + image + video", context: 256000, maxOut: 8192, license: "Apache 2.0", open: true, intel: 30, codingAgent: null, codingAgentVia: null, agentic: 14, training: [{ label: "Pre-training", tokens: null, detail: "Gemma 4's own token budget isn't published. For reference, Gemma 3's report used 14T tokens for the 27B model on a knowledge-distillation recipe." }, { label: "Post-training", tokens: null, detail: "Distillation + instruction tuning + RLHF; function calling and JSON output built in." }],
@@ -257,7 +257,7 @@ export const MODELS = [
     attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 8192, license: "Apache 2.0", open: true, intel: 5, codingAgent: null, codingAgentVia: null, agentic: null, training: [{ label: "Pre-training", tokens: null, detail: "Alibaba published no Qwen3.5 technical report. The only official source is the Qwen3.5 blog (\"Towards Native Multimodal Agents\", Feb 2026), which names the training stages but discloses no token budget for any of them — so no figure is shown here rather than borrowing the previous generation's." }, { label: "Post-training", tokens: null, detail: "SFT + RL; thinking/non-thinking modes." }],
     note: "Smallest Qwen3.5 for sub-4GB devices. Its model card spells out the block structure explicitly: 6 × (3 × Gated DeltaNet→FFN, 1 × gated attention→FFN) — the same hybrid as the rest of the family, not a plain dense GQA model." },
   { name: "Qwen3.8 (27B)", provider: "Alibaba", released: "2026/08", type: "SLM", arch: "Dense", params: "27B", active: "27B",
-    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: null, license: "Apache 2.0", open: true, intel: 52, codingAgent: null, codingAgentVia: null, agentic: 51, training: [{ label: "Pre-training", tokens: null, detail: "Pre-training and post-training are named as the two stages with no token budget for either. 64 layers as 16 repeats of three Gated DeltaNet blocks to one gated-attention block, trained with multi-token prediction." }, { label: "Post-training", tokens: null, detail: "Thinking on by default and disableable per request, with reasoning depth set by reasoning_effort and reasoning context preserved across turns." }],
+    attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: null, license: "Apache 2.0", open: true, intel: 52, codingAgent: null, codingAgentVia: null, agentic: 51, vision: 76, training: [{ label: "Pre-training", tokens: null, detail: "Pre-training and post-training are named as the two stages with no token budget for either. 64 layers as 16 repeats of three Gated DeltaNet blocks to one gated-attention block, trained with multi-token prediction." }, { label: "Post-training", tokens: null, detail: "Thinking on by default and disableable per request, with reasoning depth set by reasoning_effort and reasoning context preserved across turns." }],
     note: "The dense 27B of the Qwen3.8 generation, published 5 August 2026 three days before the 2.4T. Same layer shape as the Qwen3.6 and 3.5 27Bs before it — 64 layers, 5,120 wide, a 3:1 linear-to-full attention ratio — so what moved is the training rather than the architecture. Ships with a vision encoder for images and hour-scale video, and under Apache 2.0, which the 2.4T sibling is not. Artificial Analysis has since rated it at 52 for intelligence and 51 for agentic, six points under the 2.4T on the first; that row is the xhigh reasoning-effort variant, which is the setting recorded here. No coding-agent score has been published, so that column stays blank." },
   { name: "Qwen3.6 (27B)", provider: "Alibaba", released: "2026/04", type: "SLM", arch: "Dense", params: "27B", active: "27B",
     attn: "Gated DeltaNet + gated attn", modality: "Text + image + video", context: 262144, maxOut: 65536, license: "Apache 2.0", open: true, intel: 38, codingAgent: null, codingAgentVia: null, agentic: 28, training: [{ label: "Pre-training", tokens: null, detail: "Qwen3.6 dense generation; token count unpublished. 64-layer hybrid: 16 repeats of (3x Gated DeltaNet→FFN, 1x gated attention→FFN), trained with multi-token prediction." }, { label: "Long-context", tokens: null, detail: "262K native, extensible to ~1M via YaRN." }, { label: "Post-training", tokens: null, detail: "SFT + RL; adds Thinking Preservation that carries reasoning context across turns." }],
@@ -689,14 +689,14 @@ export const ARCH_PAPERS = {
 
 
 /**
- * Column presets. The table carries fifteen columns because the data warrants it,
+ * Column presets. The table carries sixteen columns because the data warrants it,
  * but almost nobody needs all of them at once: someone sizing a deployment wants
  * different columns from someone choosing a training recipe. "All" stays the default
  * so the full table is still what you land on.
  */
 export const PRESETS = {
   All: null,
-  Serving: ["name", "intel", "codingAgent", "agentic", "params", "context", "maxOut", "license"],
+  Serving: ["name", "intel", "codingAgent", "agentic", "vision", "params", "context", "maxOut", "license"],
   Training: ["name", "arch", "params", "attn", "released", "provider"],
   Architecture: ["name", "arch", "params", "attn", "context", "modality"],
 };
@@ -764,8 +764,12 @@ function SplitName({ text, query }) {
  * number through its own CLI. A reader who sees the figure has to see whose
  * scaffolding produced it, or the column is quietly attributing one company's
  * agent engineering to another company's model.
+ *
+ * `unit` exists for the same reason. Three of these columns are index points on a
+ * 0-100 scale and the fourth is a percentage on a single benchmark; printing them
+ * identically would invite a reader to treat MMMU-Pro as a fourth index.
  */
-function ScoreCell({ value, via, lead }) {
+function ScoreCell({ value, via, lead, unit = "" }) {
   return (
     <td style={{ ...S.td }}>
       {value == null ? (
@@ -784,7 +788,7 @@ function ScoreCell({ value, via, lead }) {
                 backgroundColor: lead ? "var(--meter-lead)"
                   : value >= 55 ? "var(--intel-hi)" : value >= 40 ? "var(--intel-mid)" : "var(--intel-lo)" }} />
             </span>
-            <span style={{ ...S.intelVal, ...(lead ? S.intelValLead : null) }}>{value}</span>
+            <span style={{ ...S.intelVal, ...(lead ? S.intelValLead : null) }}>{value}{unit}</span>
           </span>
           {/* The space is a text node, not decoration: the tag is display:block, so
               without it the cell's textContent — what a copy-paste or a scraper gets
@@ -797,13 +801,13 @@ function ScoreCell({ value, via, lead }) {
 }
 
 /**
- * The highest score in each of the three Artificial Analysis columns.
+ * The highest score in each of the four Artificial Analysis columns.
  *
  * Computed from the whole table rather than from whatever the current filter shows,
  * so "lead" means the best in the atlas and does not change when someone ticks
  * "Open weights". Ties are all marked — two models really are level.
  */
-const LEADERS = Object.fromEntries(["intel", "codingAgent", "agentic"].map((k) =>
+const LEADERS = Object.fromEntries(["intel", "codingAgent", "agentic", "vision"].map((k) =>
   [k, Math.max(...MODELS.map((m) => (m[k] == null ? -1 : m[k])))]));
 
 const COLUMNS = [
@@ -841,6 +845,15 @@ const COLUMNS = [
   // What the model is, right after what it scores: architecture, size, attention
   // and context are the four fields someone comparing designs actually reads
   // together. Provenance — when, who, what class — follows them.
+  { key: "vision", label: "Vision", numeric: true, sub: "AA · MMMU-Pro",
+    tip: { lead: "MMMU-Pro, as published by Artificial Analysis — the one vision benchmark it reports per model.",
+      points: [
+        "College-level questions across 30 subjects, each needing a diagram, chart or photo to answer",
+        "A single benchmark, not an index — the other three columns each combine several",
+        "None of those three includes a vision evaluation, so a model can lead them and be blank here",
+        "Shown as a percentage; the highest-scoring reasoning-effort variant is used, as elsewhere",
+        "“—” = AA publishes no MMMU-Pro score for this model, which text-only models never have",
+      ] } },
   { key: "arch", label: "Architecture", numeric: false },
   { key: "params", label: "Params", numeric: false, sub: "total / active",
     tip: { lead: "Total parameters, and how many of them actually run for a given token.",
@@ -1102,7 +1115,7 @@ export default function FrontierModelsTable({ focus } = {}) {
         const toNum = (s) => { const [y, m] = String(s).split("/").map(Number); return y * 12 + (m - 1); };
         av = toNum(a.released); bv = toNum(b.released);
       }
-      else if (sortKey === "intel" || sortKey === "codingAgent" || sortKey === "agentic") {
+      else if (sortKey === "intel" || sortKey === "codingAgent" || sortKey === "agentic" || sortKey === "vision") {
         av = a[sortKey] == null ? -1 : a[sortKey];
         bv = b[sortKey] == null ? -1 : b[sortKey];
       }
@@ -1339,6 +1352,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                       <ScoreCell value={m.codingAgent} via={m.codingAgentVia}
                         lead={m.codingAgent === LEADERS.codingAgent} />
                       <ScoreCell value={m.agentic} lead={m.agentic === LEADERS.agentic} />
+                      <ScoreCell value={m.vision} lead={m.vision === LEADERS.vision} unit="%" />
                       <td style={S.td}>
                         <span style={{ ...S.archTag, color: ac }}>{m.arch}</span>
                       </td>
@@ -1571,6 +1585,7 @@ export default function FrontierModelsTable({ focus } = {}) {
           <span>Intelligence — the Artificial Analysis Intelligence Index, a composite of nine evaluations. Where AA lists a model at several reasoning efforts, the highest-scoring one is shown.</span>
           <span>Coding agent — the Artificial Analysis Coding Agent Index, which scores a coding agent driving a model rather than the model on its own. The harness is named under every figure, because the same model scores very differently through a different one.</span>
           <span>Agentic — the Artificial Analysis Agentic Index, the average of GDPval-AA v2 and 𝜏³-Banking. Both also count toward Intelligence, so it is that score re-cut for long-horizon tool use, not a second opinion.</span>
+          <span>Vision — MMMU-Pro as published by Artificial Analysis, the one vision benchmark it reports per model. It is a single benchmark rather than an index, and none of the three columns above includes a vision evaluation, so a model can lead them and still be blank here.</span>
           <span style={S.copyright}>© 2026 José Vicente Egas López</span>
         </footer>
       </div>
