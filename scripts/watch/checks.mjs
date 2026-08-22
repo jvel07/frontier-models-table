@@ -377,9 +377,18 @@ export async function checkFrontierBoard(maps) {
   }
 
   const byName = new Map(maps.MODELS.map((m) => [boardKey(m.name), m]));
+  // AA pins the size into the label of an open-weights model — "Solar Open2 250B"
+  // against this table's "Solar Open 2". Dropping a trailing size is tried only
+  // after the exact key misses, and only lands on a row that carries no size of
+  // its own, so "Qwen3.8 27B" can never fall through to a differently-sized row.
+  // The size has to come off the label while it is still a word. Stripping it from
+  // the flattened key instead makes "solaropen2250b" lose the model's own trailing
+  // 2 along with the 250B, and "Solar Open" matches nothing.
+  const match = (label) => byName.get(boardKey(label))
+    ?? byName.get(boardKey(label.replace(/\s+\d+(\.\d+)?\s*[bmt]\s*$/i, "")));
   const findings = [];
   for (const entry of board.values()) {
-    const ours = byName.get(boardKey(entry.label));
+    const ours = match(entry.label);
     if (!ours) {
       findings.push({ subject: entry.label, url: `https://artificialanalysis.ai${entry.url}`,
         detail: `ranked${entry.intel != null ? ` at ${entry.intel.toFixed(1)}` : ""} on the Artificial Analysis board, and no row here matches that name — either a release the atlas has not covered, or one it carries under a different name` });
