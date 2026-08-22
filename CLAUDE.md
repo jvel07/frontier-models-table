@@ -91,6 +91,15 @@ Three of the checks are worth knowing about:
   the ranked board is the frontier by AA's own reckoning, anything below it is the
   weekly run's business — while score reconciliation runs daily for every row.
 
+  The Coding Agent Index is read too, from the homepage, and reported differently
+  on purpose: that page carries the per-evaluation rewards the index is computed
+  from, not the index. So the check reports the *row* — "AA runs Opus 5 under
+  Claude Code and this table records nothing" — and a person reads the figure off
+  the leaderboard. Working the weighted mean out here would put this project's
+  arithmetic in a column that holds AA's published numbers. It currently finds
+  nothing, which is the useful part: every blank coding-agent cell is blank because
+  AA has not rated that pairing, not because nobody looked.
+
   Matching AA's labels to these rows is most of the work, and each rule in
   `boardKey`/`tokenSet` is there because of a specific wrong answer: `(max)` and
   `(with fallback)` are efforts to drop but `(27B)` is a size to keep; `+` must

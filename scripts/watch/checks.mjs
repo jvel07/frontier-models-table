@@ -354,6 +354,7 @@ function commonPrefix(ids) {
  * else here would have reported a clean run the week Gemini shipped.
  */
 const AA_BOARD = "https://artificialanalysis.ai/models";
+const AA_HOME = "https://artificialanalysis.ai/";
 
 /** How far an AA score may drift before it is worth re-reading the row. */
 const INTEL_TOLERANCE = 2;
@@ -446,7 +447,51 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
       }
     }
   }
-  return { findings, checked: records.size, skipped: 0 };
+
+  const coding = await checkCodingAgents(match);
+  return { findings: [...findings, ...coding.findings],
+    checked: records.size + coding.checked, skipped: coding.skipped };
+}
+
+/**
+ * The third AA column, which lives on a different page and in a different shape.
+ *
+ * The Coding Agent Index pairs a harness with a model — "Claude Code - Opus 5
+ * (xhigh)" — and the page carries the per-evaluation rewards it is computed from
+ * rather than the number itself. So this reports the *row*, never a value: working
+ * the weighted mean out here and writing it into `codingAgent` would put this
+ * project's arithmetic in a column that holds AA's published figures, which is the
+ * one thing the derived/sourced split exists to prevent.
+ *
+ * As of 22 August 2026 it finds nothing, and that is the useful part: every blank
+ * coding-agent cell in the table is blank because AA has not rated that pairing,
+ * not because nobody looked. This is what will say so when that stops being true.
+ */
+async function checkCodingAgents(match) {
+  const res = await get(AA_HOME);
+  if (INCONCLUSIVE.has(res.status) || !res.ok) return { findings: [], checked: 0, skipped: 1 };
+  const body = res.body.replace(/\\"/g, '"');
+  const start = body.indexOf('"title":"Coding Agent Index"');
+  if (start < 0) return { findings: [], checked: 0, skipped: 1 };
+  const region = body.slice(start, start + 200000);
+
+  const gaps = new Map();
+  const labels = new Set([...region.matchAll(/"displayLabel":"([^"]+)"/g)].map((m) => m[1]));
+  for (const label of labels) {
+    const [harness, ...rest] = label.split(" - ");
+    const ours = match(rest.join(" - "));
+    if (!ours || ours.codingAgent != null) continue;
+    // One model appears once per reasoning effort, all under the same harness;
+    // the set is what a reviewer needs, not the repetition.
+    gaps.set(ours.name, (gaps.get(ours.name) || new Set()).add(harness));
+  }
+
+  const findings = [...gaps].slice(0, 10).map(([name, harnesses]) => ({
+    subject: `${name} — coding-agent index blank here`,
+    url: "https://artificialanalysis.ai/#coding-agents",
+    detail: `AA runs it under ${[...harnesses].join(" and ")} and this row records nothing. The page publishes the per-evaluation rewards rather than the index, so read the figure off the leaderboard rather than computing it, and set codingAgentVia to the harness it came from.`,
+  }));
+  return { findings, checked: labels.size, skipped: 0 };
 }
 
 /**
