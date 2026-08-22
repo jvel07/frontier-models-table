@@ -1567,64 +1567,10 @@ export default function FrontierModelsTable({ focus } = {}) {
           </table>
         </div>
 
-        <section style={S.synthesis}>
-          <h2 style={S.synthHead}>What they share, where they split</h2>
-          <div style={S.synthGrid}>
-            <div style={S.synthCard}>
-              <div style={S.synthNum}>01</div>
-              <h3 style={S.synthTitle}>Common ground</h3>
-              <p style={S.synthBody}>
-                All are decoder-only transformers trained on next-token prediction, all use some grouped or
-                compressed form of attention to cut the quadratic cost of long sequences, and nearly all the 2026
-                flagships now ship 1M+ token windows. Tool use and a "thinking" mode have become baseline rather
-                than differentiators.
-              </p>
-            </div>
-            <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "var(--arch-moe)" }}>02</div>
-              <h3 style={S.synthTitle}>Dense vs MoE</h3>
-              <p style={S.synthBody}>
-                The sharpest structural split. Dense models (Gemma 4 31B, the Phi and Llama-3.2 SLMs, Command A)
-                fire every parameter per token — simpler and predictable, but compute scales with size. MoE models
-                route each token to a few experts, so a 1.6T model like DeepSeek V4 Pro only spends 49B per token.
-                Within MoE the design still varies: Llama 4 uses few large experts (16), Gemma 4 uses many small
-                ones (128).
-              </p>
-            </div>
-            <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "var(--type-frontier-dot)" }}>03</div>
-              <h3 style={S.synthTitle}>The attention arms race</h3>
-              <p style={S.synthBody}>
-                Long context is won at the attention layer. DeepSeek interleaves compressed-sparse and chunked
-                attention; Llama 4 Scout's interleaved RoPE/NoPE reaches 10M tokens; Gemma alternates
-                sliding-window with global layers; Qwen mixes linear and full attention. NVIDIA's Nemotron 3 goes
-                further, splicing in Mamba-2 state-space layers whose memory scales linearly rather than
-                quadratically. The closed flagships almost certainly do similar things but publish nothing.
-              </p>
-            </div>
-            <div style={S.synthCard}>
-              <div style={{ ...S.synthNum, color: "var(--open-fg)" }}>04</div>
-              <h3 style={S.synthTitle}>"Small" is now about active params</h3>
-              <p style={S.synthBody}>
-                The SLM line has blurred. Mistral Small 4 carries 119B total weights but activates only 6.5B, giving
-                it SLM-class inference cost with large-model knowledge. Meanwhile truly tiny dense models
-                (FunctionGemma 270M, Llama 3.2 1B) target phones and IoT. Open weights and permissive licensing
-                (Apache 2.0, MIT) cluster heavily at this end.
-              </p>
-            </div>
-          </div>
-        </section>
-
         <footer style={{ ...S.footer, paddingBottom: selected.length > 0 ? 96 : undefined }}>
-          <span>Training stages and token counts are from each model's technical report or model card; "disclosed" totals sum only the stages with published numbers, so true totals are higher. Closed flagships publish no training breakdown.</span>
-          <span>Intelligence = Artificial Analysis Intelligence Index, leaderboard snapshot 15 August 2026 (artificialanalysis.ai), taken at v4.1 and labelled v4.1.1 by AA as of 16 August. It combines 9 evaluations: GDPval-AA v2, 𝜏³-Banking, Terminal-Bench v2.1, SciCode, Humanity's Last Exam, GPQA Diamond, CritPt, AA-Omniscience and AA-LCR. Where AA lists several reasoning-effort variants, the highest-scoring variant is shown, per index rather than per model: AA scores some variants on one index and not another, so a model's three figures can come from different effort settings. Agentic and Coding agent were read on 16 August 2026, one day later than Intelligence; "—" = not on the AA leaderboard.</span>
-          <span>Coding agent = Artificial Analysis Coding Agent Index v1.3, read 16 August 2026: an equal-weighted composite of DeepSWE (113 software-engineering tasks, Datacurve), Terminal-Bench v2 (84 agentic terminal tasks, Laude Institute) and SWE-Atlas-QnA (124 technical Q&A tasks, Scale AI), each scored pass@1 averaged over three attempts per task. Read it as a measure of a pair, not of a model. AA evaluates a coding agent driving a model — Claude Code, Codex, Cursor CLI, Opencode, Gemini CLI, Grok Build, Kimi Code CLI, tbh — and the same model scores very differently depending on which harness is holding it: GLM-5.2 is 43 through Claude Code, against 69 on the model-only index that used to sit in this column. The harness is therefore named under every figure. Where AA publishes several pairings for one model, the highest-scoring pairing is shown, which is usually but not always the lab's own agent. 22 of the 71 models here have a published pairing; "—" means AA has not evaluated any agent on that model.</span>
-          <span>This column replaced a Coding column carrying AA's Coding Index — Terminal-Bench v2.1 and SciCode combined, scoring the model on its own. Artificial Analysis has since withdrawn that index from its site: it has no page, no leaderboard column and no entry among the capability indices, though the underlying field is still populated behind the leaderboard. A figure a reader cannot go and check is not one this atlas should carry, so it was dropped rather than left in place with a caveat. Both of its component benchmarks are still published individually by AA, and both now count toward the Intelligence Index instead.</span>
-          <span>Agentic = Artificial Analysis Agentic Index, leaderboard snapshot 16 August 2026: the equal-weighted average of GDPval-AA v2 (real tasks across 44 occupations and 9 industries, run in an agentic loop with shell access and web browsing, scored by blind pairwise Elo) and 𝜏³-Banking (multi-step tool calls over a large unstructured knowledge base). It is not independent of the Intelligence column — both evaluations are among the nine that make up Intelligence Index v4.1 — so treat it as that score re-cut for long-horizon tool use, not as a second opinion. AA scores 160 of its 608 leaderboard entries on this index, which is why 25 models here show "—" while carrying an Intelligence figure.</span>
-          <span>Detailed architecture specs for open-weight models — layer counts, attention head grouping, expert counts, vocabulary size, sliding-window size and positional-encoding scheme — are read directly from each model's own config.json on Hugging Face. Positional schemes come from rope_theta, partial_rotary_factor and per-layer rope_parameters; a model is only described as using NoPE where its technical report says so, never merely because its config omits rope_theta.</span>
-          <span>Architecture diagrams are hot-linked from Sebastian Raschka's LLM Architecture Gallery (sebastianraschka.com/llm-architecture-gallery) with credit, and the intelligence column is Artificial Analysis's index. Everything else here — the model notes, training pipelines and spec fields — is compiled by us from primary technical reports, model cards and config files.</span>
-          <span>Closed-flagship architecture fields say "Undisclosed" or "reported" — vendors publish few internals; do not treat reported MoE labels as confirmed counts.</span>
-          <span>Context = max input window. Compiled from public provider docs, model cards and third-party analyses, July 2026; figures shift frequently.</span>
+          <span>Intelligence — the Artificial Analysis Intelligence Index, a composite of nine evaluations. Where AA lists a model at several reasoning efforts, the highest-scoring one is shown.</span>
+          <span>Coding agent — the Artificial Analysis Coding Agent Index, which scores a coding agent driving a model rather than the model on its own. The harness is named under every figure, because the same model scores very differently through a different one.</span>
+          <span>Agentic — the Artificial Analysis Agentic Index, the average of GDPval-AA v2 and 𝜏³-Banking. Both also count toward Intelligence, so it is that score re-cut for long-horizon tool use, not a second opinion.</span>
           <span style={S.copyright}>© 2026 José Vicente Egas López</span>
         </footer>
       </div>
@@ -2083,13 +2029,6 @@ export const S = {
     textTransform: "uppercase", color: "var(--tok-est-fg)", marginBottom: 6, fontWeight: 700 },
   provenanceText: { margin: 0, fontSize: 12.5, lineHeight: 1.7, color: INK_SOFT, maxWidth: "68ch" },
   pipeArrow: { display: "flex", alignItems: "center", color: CLAY, fontSize: 16, fontWeight: 700 },
-  synthesis: { marginTop: 40 },
-  synthHead: { fontFamily: display, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", margin: "0 0 18px", color: INK },
-  synthGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 },
-  synthCard: { background: CARD, border: `1px solid ${LINE}`, borderRadius: 0, padding: "20px 20px 22px" },
-  synthNum: { fontFamily: mono, fontSize: 13, fontWeight: 700, color: CLAY, marginBottom: 10 },
-  synthTitle: { fontFamily: display, fontSize: 17, fontWeight: 500, margin: "0 0 9px", color: INK },
-  synthBody: { margin: 0, fontSize: 13, lineHeight: 1.65, color: INK_SOFT },
   copyright: { marginTop: 6, paddingTop: 12, borderTop: `1px solid ${LINE_SOFT}`,
     fontFamily: mono, fontSize: 11.5, color: INK_FAINT, letterSpacing: "0.02em" },
   footer: { marginTop: 30, display: "flex", flexDirection: "column", gap: 5,

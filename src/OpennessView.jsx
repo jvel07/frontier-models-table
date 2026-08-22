@@ -223,22 +223,19 @@ export default function OpennessView() {
         <header style={{ marginBottom: 26 }}>
           <div style={S.eyebrow}>Openness</div>
           <h1 style={{ ...S.title, fontSize: "clamp(30px, 5vw, 56px)" }}>
-            Open weights is not the same as open about it
+            Weights and documentation
           </h1>
-          <p style={S.sub}>
-            The industry letter <a href={LETTER.url} target="_blank" rel="noopener noreferrer"
-              style={O.inlineLink}>{LETTER.title}</a> ({LETTER.date}) defines an open-weight
-            model as one anyone can <em>download, inspect, modify and run on their own
-            infrastructure</em>. That is a test about the availability of weights, and it is
-            the horizontal axis below.
-          </p>
-          <p style={{ ...S.sub, marginTop: 14 }}>
-            It says nothing about whether the lab told you how the model was built — which is
-            the axis this atlas can score, because every one of the twelve fields below is one
-            we already had to either source or leave blank. The two come apart constantly:
-            {" "}{tally.open + tally.restricted} of {MODELS.length} models here publish weights,
-            but only {fullyDoc} document all twelve fields, and {noDoc} disclose three or fewer.
-          </p>
+          <ul style={O.points}>
+            <li style={O.point}>Can you get the weights? The industry letter{" "}
+              <a href={LETTER.url} target="_blank" rel="noopener noreferrer"
+                style={O.inlineLink}>{LETTER.title}</a> ({LETTER.date}) asks whether anyone can
+              download, inspect, modify and run the model. That is the horizontal axis.</li>
+            <li style={O.point}>Did the lab say how it was built? Twelve fields, each one the
+              atlas already had to source or leave blank. That is the vertical axis.</li>
+            <li style={O.point}>The two come apart: {tally.open + tally.restricted} of {MODELS.length}{" "}
+              models publish weights, {fullyDoc} document all twelve fields, and {noDoc} disclose
+              three or fewer.</li>
+          </ul>
         </header>
 
         <div style={O.statRow}>
@@ -255,12 +252,10 @@ export default function OpennessView() {
         </div>
 
         <section style={O.panel}>
-          <h2 style={O.h2}>The two axes, plotted</h2>
+          <h2 style={O.h2}>Both axes, plotted</h2>
           <p style={O.blurb}>
-            Each dot is a model — hover one to see which. Left to right is the letter's test;
-            bottom to top is how much of its construction is on the record, counted in fields
-            rather than rounded to percentages. The top-right corner is the only place a model
-            is both usable and understandable.
+            Each dot is a model — hover one to see which. Weights across, fields documented up.
+            Top right is where a model is both usable and explained.
           </p>
           <Quadrant points={scored} />
         </section>
@@ -268,9 +263,8 @@ export default function OpennessView() {
         <section style={O.panel}>
           <h2 style={O.h2}>By lab</h2>
           <p style={O.blurb}>
-            Averaged across every model a lab has in the atlas. This is a measure of what they
-            published, not of quality — and not of intent: a lab with one heavily documented
-            open model scores above one with five partly documented ones.
+            Averaged over every model a lab has here. It measures what was published, not
+            quality: one well-documented model outscores five partly documented ones.
           </p>
           <div style={O.labs}>
             {labs.map((l) => (
@@ -396,6 +390,9 @@ export default function OpennessView() {
 }
 
 const O = {
+  points: { margin: "10px 0 0", paddingLeft: 18, maxWidth: 760,
+    color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.65 },
+  point: { marginBottom: 6 },
   inlineLink: { color: "var(--clay)", textDecoration: "none",
     borderBottom: "1px solid var(--clay-soft)" },
   statRow: { display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 26 },

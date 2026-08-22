@@ -84,14 +84,12 @@ export default function PapersView() {
         <header style={{ marginBottom: 26 }}>
           <div style={S.eyebrow}>Bibliography</div>
           <h1 style={{ ...S.title, fontSize: "clamp(30px, 5vw, 56px)" }}>Papers</h1>
-          <p style={S.sub}>
-            Every paper this atlas cites, against the models that use its work. A model
-            appears beside a paper for one of four reasons: it is that model's own technical
-            report, or the paper introduced the attention mechanism, the architecture, or the
-            positional scheme the model is recorded as using. Rows are ordered by how many
-            models rest on them, which is a rough map of what the current generation is
-            actually built out of.
-          </p>
+          <ul style={P.points}>
+            <li style={P.point}>Every paper the atlas cites, against the models that use it.</li>
+            <li style={P.point}>A model is listed under a paper when it is that model's technical report,
+              or the paper introduced its attention, architecture or positional scheme.</li>
+            <li style={P.point}>Ordered by how many models rest on each paper.</li>
+          </ul>
         </header>
 
         <div style={P.controls}>
@@ -184,6 +182,9 @@ export default function PapersView() {
 }
 
 const P = {
+  points: { margin: "10px 0 0", paddingLeft: 18, maxWidth: 720,
+    color: "var(--ink-soft)", fontSize: 14.5, lineHeight: 1.65 },
+  point: { marginBottom: 4 },
   controls: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 },
   wrap: { overflow: "auto", maxHeight: "clamp(380px, 74vh, 1000px)",
     border: "1px solid var(--line)", borderRadius: 10, background: "var(--card)" },
