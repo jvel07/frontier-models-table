@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-20",
+ "version": "2026-08-22",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-20},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-22},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 74,
+ "count": 76,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -1426,21 +1426,21 @@
    "params": "743B",
    "active": "40B",
    "attn": "DSA + MLA (IndexShare)",
-   "modality": "Text + image",
+   "modality": "Text",
    "context": 1000000,
    "maxOut": 128000,
    "license": "Undisclosed",
    "open": false,
-   "intel": null,
+   "intel": 60,
    "codingAgent": null,
    "codingAgentVia": null,
-   "agentic": null,
+   "agentic": 59,
    "training": null,
    "trainingSource": "Z.ai describes 5.3 as GLM-5.2's base carried forward through a longer post-training run — harder agent environments, fuller trajectories, stronger verification — rather than a new pre-training run. No token budget is published for either stage, so none is shown.",
-   "note": "Shipped 14 August 2026, six weeks after 5.2, and deliberately not a new architecture: Z.ai's own framing is that the base is unchanged and the gains come from scaling post-training for long-horizon coding and agentic work. The attention stack and expert layout recorded here are therefore 5.2's. Weights had not appeared under zai-org when this row was written — Z.ai has signalled a release but the repository does not yet exist, so this stays closed and the licence blank rather than assuming 5.2's MIT terms carry over. Not yet rated by Artificial Analysis.",
+   "note": "Shipped 14 August 2026, six weeks after 5.2, and deliberately not a new architecture: Z.ai's own framing is that the base is unchanged and the gains come from scaling post-training for long-horizon coding and agentic work. The attention stack and expert layout recorded here are therefore 5.2's. Weights had not appeared under zai-org when this row was written and still had not on 22 August; Artificial Analysis links a Hugging Face repository for it that does not resolve, so this stays closed and the licence blank rather than assuming 5.2's MIT terms carry over. Z.ai's documentation adds that input is text-only, that the window is 1M against a 128K maximum output, and that reasoning can no longer be switched off — the efforts are low, high and max, and a request that disables thinking is rejected. What it does describe of the post-training is environment scaling: reinforcement learning against synthesised long-horizon task environments, with verifiers generated without sight of the reference solution and checked against oracle, no-op and unsolved states before their reward is trusted, keeping 5.2's SAO-with-compaction. Z.ai reports Terminal-Bench 3.0 moving from 4.6 to 28.3 and DeepSWE v1.1 from 46.2 to 66.9 on that basis. Artificial Analysis has since rated it: 60 on intelligence and 59 on agentic, from the max-effort rows.",
    "spec": null,
    "huggingface": null,
-   "report": null,
+   "report": "https://docs.z.ai/guides/llm/glm-5.3",
    "derived": {
     "_note": "Computed from the fields above, not published by the lab.",
     "totalParams": 743000000000,
@@ -1454,7 +1454,7 @@
     "kvCacheBytesPerTokenFp16": null,
     "kvCacheFormula": null,
     "weightBytesFp16": 1486000000000,
-    "disclosureScore": 5,
+    "disclosureScore": 6,
     "disclosureTotal": 12,
     "disclosureFields": {
      "arch": true,
@@ -1468,7 +1468,7 @@
      "pipeline": false,
      "tokens": false,
      "curriculum": false,
-     "report": false
+     "report": true
     },
     "opennessTier": "closed",
     "opennessVerbs": {
@@ -1689,6 +1689,94 @@
    }
   },
   {
+   "name": "Motif 3",
+   "provider": "Motif Technologies",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "314B",
+   "active": "13.2B",
+   "attn": "GDLA (Grouped Differential Latent Attn)",
+   "modality": "Text",
+   "context": 262144,
+   "maxOut": null,
+   "license": "MIT",
+   "open": true,
+   "intel": 47,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": 38,
+   "training": [
+    {
+     "label": "Pre-training",
+     "tokens": "~12.5T",
+     "detail": "The technical report gives one budget for the whole of pre-training and does not break it into stages. Training ran at up to a 256K context using window-aware context parallelism, with MXFP8 used selectively for compute and for collective communication, fused kernels to hold memory down, and expert-balancing and numerical-stabilisation measures the report credits for keeping a 384-expert router stable at this scale. The multi-token-prediction head is trained here as an auxiliary objective before being reused for self-speculative decoding at inference. The mHC post-mapping multiplier is annealed from 2 to 1 across pre-training, which the lab describes as limiting how far activation outliers accumulate.",
+     "curriculum": "Web documents, STEM, code, mathematics and multilingual text, plus corpora the lab gathered for specific domains; Korean, reasoning-heavy material, legal and financial text are called out as deliberately over-weighted relative to a general crawl. No per-domain sampling rates are published, so none are recorded here."
+    },
+    {
+     "label": "Post-training",
+     "tokens": null,
+     "detail": "Supervised fine-tuning on general data first, then a set of specialists: six teachers trained with reinforcement learning, plus a seventh for software engineering. Those teachers are folded back into one model by multi-teacher on-policy distillation, so the released weights are a single student rather than a router over experts-by-domain. No token counts are given for any post-training stage."
+    }
+   ],
+   "note": "The general-availability release of Motif 3, superseding the beta below, and the differences are worth reading as a pair: MIT rather than a non-commercial licence, a technical report rather than a model card, and figures the lab now states outright — 314B total, 13.2B active — where the beta only approximated them. The architecture is unchanged and remains entirely in-house: 53 layers with the first two dense, 384 routed experts firing 8 per token beside 1 shared, and Grouped Differential Latent Attention, which puts the asymmetric signal and noise heads of differential attention on top of a latent compressed KV cache and adds a query-dependent output gate. Residual connections are replaced by a doubly-stochastic mix over four parallel streams (mHC), the SiLU gate by a polynomial normalisation whose coefficients are learned per expert, and a one-layer MTP head ships in the weights for self-speculative decoding. Weights download without an access request. Artificial Analysis rates it 47 on intelligence and 38 on agentic, and has published no coding-agent score, so that column stays blank. No diagram here yet: the architecture gallery card covers the beta, and the two are not the same release.",
+   "spec": {
+    "vocab": "220,160",
+    "layers": 53,
+    "hidden": "4,096",
+    "heads": "80 Q (64 signal / 16 noise) / 16 KV",
+    "experts": "384 routed · 8 active · 1 shared",
+    "layerMix": "1 full attention : 3 sliding-window, interleaved (period 4); first 2 layers dense",
+    "window": "128",
+    "posEmb": "RoPE θ=10K; MLA head split 64 RoPE / 128 NoPE dims; a yarn ×64 block is declared but apply_yarn_scaling is false",
+    "ffn": "12,288 dense · 1,280 per expert",
+    "activation": "poly_norm",
+    "norm": "RMSNorm (ε=1e-5)",
+    "headDim": 192,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/Motif-Technologies/Motif-3",
+   "report": "https://arxiv.org/abs/2608.09119",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 314000000000,
+    "activeParams": 13200000000,
+    "disclosedTrainingTokens": 12500000000000,
+    "disclosedTokensAreApproximate": true,
+    "trainingFlops": 9.9e+23,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": 39.80891719745223,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": 651264,
+    "kvCacheFormula": "2 * layers * kvHeads * headDim * 2 bytes; head_dim as published in config.json",
+    "weightBytesFp16": 628000000000,
+    "disclosureScore": 12,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": true,
+     "tokens": true,
+     "curriculum": true,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
+   }
+  },
+  {
    "name": "Motif 3 Beta",
    "provider": "Motif Technologies",
    "released": "2026/07",
@@ -1707,7 +1795,7 @@
    "codingAgentVia": null,
    "agentic": null,
    "training": null,
-   "note": "A preview checkpoint, and the card says so in its first line — an intermediate release of Motif-3 with the final weights to follow. They have since followed: Motif-Technologies/Motif-3 appeared on Hugging Face on 14 August 2026 under MIT, so this row records a checkpoint that has already been superseded and its figures may not have survived the move. Motif describes the design as entirely in-house rather than a re-parameterised open-source stack. 53 layers, the first two dense and the rest sparse, with 384 routed experts firing 8 per token beside 1 shared — ≈314B total at ≈13B active, both given as approximations by the card and not narrowed here. Attention is the lab's own Grouped Differential Latent Attention. The config additionally declares a one-layer multi-token-prediction head for self-speculative decoding, a poly_norm activation and a 128-token sliding window interleaved on a period of four. Nothing is published about how this checkpoint was trained: the technical report describes the final model, so the pipeline rows stay empty rather than borrowing it. Weights download without an access request, but the licence allows personal, educational and non-commercial research use only — the restriction the final MIT release lifted. Artificial Analysis scores it 45; the card itself claims 44.",
+   "note": "A preview checkpoint, and the card says so in its first line — an intermediate release of Motif-3 with the final weights to follow. They have since followed, in August 2026 under MIT, and are the row above; this one records a checkpoint that has already been superseded, and its figures did not all survive the move. Motif describes the design as entirely in-house rather than a re-parameterised open-source stack. 53 layers, the first two dense and the rest sparse, with 384 routed experts firing 8 per token beside 1 shared — ≈314B total at ≈13B active, both given as approximations by the card and not narrowed here. Attention is the lab's own Grouped Differential Latent Attention. The config additionally declares a one-layer multi-token-prediction head for self-speculative decoding, a poly_norm activation and a 128-token sliding window interleaved on a period of four. Nothing is published about how this checkpoint was trained: the technical report describes the final model, so the pipeline rows stay empty rather than borrowing it. Weights download without an access request, but the licence allows personal, educational and non-commercial research use only — the restriction the final MIT release lifted. Artificial Analysis scores it 45; the card itself claims 44.",
    "spec": {
     "vocab": "220,160",
     "layers": 53,
@@ -2506,6 +2594,68 @@
    "spec": null,
    "huggingface": null,
    "report": "https://deepmind.google/models/gemini/",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": null,
+    "activeParams": null,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": null,
+    "weightBytesFp16": null,
+    "disclosureScore": 3,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": false,
+     "params": false,
+     "active": false,
+     "attn": true,
+     "config": false,
+     "pos": false,
+     "vocab": false,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "closed",
+    "opennessVerbs": {
+     "download": false,
+     "inspect": false,
+     "modify": false,
+     "run": false
+    },
+    "licenseClass": "proprietary"
+   }
+  },
+  {
+   "name": "Gemini 3.5 Flash-Lite",
+   "provider": "Google",
+   "released": "2026/07",
+   "type": "Mid",
+   "arch": "MoE (reported)",
+   "params": "—",
+   "active": "—",
+   "attn": "Sparse + long-context",
+   "modality": "Text + image + video + audio",
+   "context": 1000000,
+   "maxOut": 64000,
+   "license": "Proprietary",
+   "open": false,
+   "intel": 37,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": 27,
+   "training": null,
+   "note": "The cheapest and fastest tier of the 3.5 generation, aimed at high-volume, latency-bound work — translation, classification — and, Google adds, at agentic workflows, which its predecessor's card did not claim. Natively multimodal on input: text, images, audio and video, 1M in, 64K out, text only coming back. Its model card discloses no architecture of its own, saying the model is based on Gemini 3.1 Flash-Lite, whose card in turn points at Gemini 3 Pro; the architecture and attention rows here follow that chain of Google's own statements, as with the other Flash rows, and stay reported rather than confirmed. Nothing is published about size, and the training data and hardware sections defer up the same chain, so the pipeline rows stay empty rather than borrowing Gemini 3 Pro's. Artificial Analysis rates it 37 with an agentic index of 27, the lowest pair of any Gemini row here, which is the trade the tier is named for.",
+   "spec": null,
+   "huggingface": null,
+   "report": "https://deepmind.google/models/model-cards/gemini-3-5-flash-lite/",
    "derived": {
     "_note": "Computed from the fields above, not published by the lab.",
     "totalParams": null,
@@ -4501,7 +4651,7 @@
    "maxOut": null,
    "license": "Apache 2.0",
    "open": true,
-   "intel": null,
+   "intel": 52,
    "codingAgent": null,
    "codingAgentVia": null,
    "agentic": null,
@@ -4517,7 +4667,7 @@
      "detail": "Thinking on by default and disableable per request, with reasoning depth set by reasoning_effort and reasoning context preserved across turns."
     }
    ],
-   "note": "The dense 27B of the Qwen3.8 generation, published 5 August 2026 three days before the 2.4T. Same layer shape as the Qwen3.6 and 3.5 27Bs before it — 64 layers, 5,120 wide, a 3:1 linear-to-full attention ratio — so what moved is the training rather than the architecture. Ships with a vision encoder for images and hour-scale video, and under Apache 2.0, which the 2.4T sibling is not. Artificial Analysis has not rated it, so both index columns are blank.",
+   "note": "The dense 27B of the Qwen3.8 generation, published 5 August 2026 three days before the 2.4T. Same layer shape as the Qwen3.6 and 3.5 27Bs before it — 64 layers, 5,120 wide, a 3:1 linear-to-full attention ratio — so what moved is the training rather than the architecture. Ships with a vision encoder for images and hour-scale video, and under Apache 2.0, which the 2.4T sibling is not. Artificial Analysis has since rated it at 52, six points under the 2.4T; that row is the xhigh reasoning-effort variant, which is the setting recorded here. No coding-agent score has been published, so that column stays blank.",
    "spec": {
     "vocab": "248,320",
     "layers": 64,
