@@ -273,6 +273,12 @@ export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } 
       // fifth container format.
       if (REPACKAGED.test(id)) continue;
       if (/base|instruct-v\d|-lora|-adapter/i.test(id) && known.has(id.split("-")[0].toLowerCase())) continue;
+      // A dated snapshot of a repo the atlas already links is not a new model.
+      // DeepSeek ships `DeepSeek-V4-Pro-0813` beside `DeepSeek-V4-Pro`, and filing
+      // it every morning for the rest of the year is how a watcher gets muted. What
+      // matters about a refreshed checkpoint is whether its numbers moved, and the
+      // board check answers that from the score rather than from the repo name.
+      if (known.has(id.replace(/-\d{4}$/, "").toLowerCase())) continue;
       // Which run this belongs to: a frontier lab's flagship is the daily pass,
       // everything else is the weekly one. A quantised repo's parameter total counts
       // tensors, not weights, so it is meaningless — but those are already gone.
