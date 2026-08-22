@@ -1,5 +1,5 @@
 {
- "version": "2026-08-16",
+ "version": "2026-08-22",
  "note": "Fields under `derived` are computed by this project, not published by the lab. Everything else is recorded from a primary source; a null means no source stated it, never zero.",
  "fields": {
   "name": "Model name as the atlas records it. Primary key.",

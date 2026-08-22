@@ -190,58 +190,235 @@ export async function checkSpecs(maps) {
 }
 
 /**
+ * Where a lab sits, and where the line between the two tiers falls.
+ *
+ * The atlas already grades every row `Frontier`, `Mid` or `SLM`, and the two
+ * scheduled runs are that same axis: the daily run watches the handful of labs
+ * training at the frontier, the weekly one watches everyone else plus the small
+ * models the frontier labs ship on the side. Splitting them is what keeps the
+ * daily issue short enough to act on — one run over all eighteen orgs filed 35
+ * leads on 2026-08-20 and a list that long gets skimmed, not worked.
+ */
+const FRONTIER_ORGS = [
+  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "google", "openai", "xai-org",
+];
+
+const OTHER_ORGS = [
+  "nvidia", "mistralai", "microsoft", "CohereLabs", "MiniMaxAI", "sarvamai",
+  "HuggingFaceTB", "allenai", "ibm-granite", "upstage",
+];
+
+/**
+ * A frontier lab ships small models too — Gemma, Qwen's 27B, gpt-oss — and those
+ * belong in the weekly pass, not the daily one. Total parameters is the only scale
+ * signal Hugging Face publishes in a listing call, and 100B is where this table's
+ * own `Frontier` rows start: the smallest is DeepSeek V4 Flash at 284B, the largest
+ * `Mid` row is well under it.
+ *
+ * The threshold only ever *demotes*, never promotes. A 560B model from a lab outside
+ * the frontier list is still the weekly run's business, not the daily one's — the
+ * first cut of this gated on size alone and NVIDIA's 560B Nemotron teachers fell
+ * through both runs, watched by neither. A repo that publishes no parameter count is
+ * judged by its lab alone, because a missed frontier release costs more than a lead
+ * that turns out to be a 7B checkpoint.
+ */
+const FRONTIER_MIN_PARAMS = 100e9;
+
+/** Language models, including the natively multimodal ones. */
+const LM_PIPELINES = new Set(["text-generation", "image-text-to-text"]);
+
+/** Quantisations, repackaged builds and speculative-decoding drafts of a model. */
+const REPACKAGED = /-(gguf|awq|gptq|mlx|int4|int8|fp8|nvfp4|nvfp8|bnb|onnx|dspark|dflash|bf16|fp16|eagle)\b|-executorch|^(eagle3|dflash|dspark)_/i;
+
+/**
  * New releases from the labs already in the atlas. Hugging Face's model API is the
  * cheapest reliable signal: a lab that ships open weights lists them there long
  * before anyone writes it up.
+ *
+ * `expand[]=safetensors` returns the parameter count in the same listing request,
+ * which is what makes the tier split free — no per-repo follow-up call.
  */
-const ORGS = [
-  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "meta-models", "google", "nvidia",
-  "mistralai", "microsoft", "CohereLabs", "MiniMaxAI", "sarvamai", "HuggingFaceTB",
-  "allenai", "openai", "ibm-granite", "upstage",
-];
-
-export async function watchReleases(maps, sinceDays = 45) {
+export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } = {}) {
+  const orgs = tier === "frontier" ? FRONTIER_ORGS : [...FRONTIER_ORGS, ...OTHER_ORGS];
   const known = new Set(Object.values(maps.HF_LINKS).map((r) => r.toLowerCase()));
   const cutoff = Date.now() - sinceDays * 864e5;
-  const findings = [];
+  const hits = [];
   let checked = 0, skipped = 0;
   const seen = [];
 
-  for (const org of ORGS) {
+  for (const org of orgs) {
     const res = await get(
-      `https://huggingface.co/api/models?author=${encodeURIComponent(org)}&sort=createdAt&direction=-1&limit=25`,
+      `https://huggingface.co/api/models?author=${encodeURIComponent(org)}&sort=createdAt&direction=-1&limit=25`
+      + `&expand[]=safetensors&expand[]=pipeline_tag&expand[]=createdAt&expand[]=downloads`,
       { headers: { accept: "application/json" } });
     seen.push(res);
     if (INCONCLUSIVE.has(res.status) || !res.ok) { skipped++; continue; }
     checked++;
     let list;
     try { list = JSON.parse(res.body); } catch { continue; }
+    const frontierLab = FRONTIER_ORGS.includes(org);
     for (const m of list) {
       const id = String(m.modelId || m.id || "");
       if (!id || known.has(id.toLowerCase())) continue;
       const created = Date.parse(m.createdAt || m.lastModified || "");
       if (!created || created < cutoff) continue;
-      // The atlas tracks frontier LLMs; everything else is another site's job.
+      // The atlas tracks language models; everything else is another site's job.
       // Without this the check reported embeddings, ASR, vision, DNA and music
-      // models beside the LLMs — 2026-08-20 filed 35 leads, a handful of them
-      // language models. pipeline_tag is set by the lab, so it is the one
+      // models beside the LLMs. pipeline_tag is set by the lab, so it is the one
       // filter that does not guess from the name.
-      if (m.pipeline_tag !== "text-generation") continue;
+      if (!LM_PIPELINES.has(m.pipeline_tag)) continue;
       // Skip the long tail of quantisations, repackaged builds and finetunes of
       // things we already have: -NVFP4/-DSpark/-BF16 builds ship as separate
       // repos beside the model itself, and the model is the finding, not its
       // fifth container format.
-      if (/-(gguf|awq|gptq|mlx|int4|int8|fp8|nvfp4|nvfp8|bnb|onnx|dspark|dflash|bf16|fp16|eagle)\b|-executorch/i.test(id)) continue;
+      if (REPACKAGED.test(id)) continue;
       if (/base|instruct-v\d|-lora|-adapter/i.test(id) && known.has(id.split("-")[0].toLowerCase())) continue;
-      findings.push({ subject: id, url: `https://huggingface.co/${id}`,
-        detail: `published ${new Date(created).toISOString().slice(0, 10)}, ${m.downloads ?? 0} downloads — not in the atlas` });
+      // Which run this belongs to: a frontier lab's flagship is the daily pass,
+      // everything else is the weekly one. A quantised repo's parameter total counts
+      // tensors, not weights, so it is meaningless — but those are already gone.
+      const params = m.safetensors?.total ?? null;
+      const isFlagship = params == null || params >= FRONTIER_MIN_PARAMS;
+      if ((tier === "frontier") !== (frontierLab && isFlagship)) continue;
+      hits.push({ id, org, created, params, downloads: m.downloads ?? 0 });
     }
   }
+
   const blocked = systemic(seen);
   if (blocked) return { findings: [], checked: 0, skipped: seen.length, blocked };
-  findings.sort((a, b) => a.subject.localeCompare(b.subject));
-  return { findings: findings.slice(0, 40), checked, skipped };
+
+  const findings = collapseSiblings(hits).sort((a, b) => a.subject.localeCompare(b.subject));
+  return { findings: findings.slice(0, tier === "frontier" ? 15 : 30), checked, skipped };
 }
+
+/**
+ * One release, one finding.
+ *
+ * A single launch lands as a row of near-identical repos — the five
+ * `Nemotron-Labs-Teacher-{Chat,STEM,…}` variants published the same morning at the
+ * same 560B — and filing one lead each buries the four other things the run found.
+ * Siblings of a release share an exact parameter total and a publication day, which
+ * no two genuinely different models do, so that pair is the grouping key; the
+ * finding is named for what they have in common and names the rest.
+ */
+function collapseSiblings(hits) {
+  const groups = new Map();
+  for (const h of hits) {
+    const day = new Date(h.created).toISOString().slice(0, 10);
+    const key = `${h.org}|${h.params ?? "?"}|${day}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ ...h, day });
+  }
+
+  const out = [];
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.id.localeCompare(b.id));
+    const [first] = group;
+    const size = first.params ? `${(first.params / 1e9).toFixed(0)}B params` : "parameter count not published";
+    const downloads = group.reduce((n, g) => n + g.downloads, 0);
+    const rest = group.length > 1
+      ? ` — and ${group.length - 1} sibling repo(s) published the same day at the same size: ${group.slice(1).map((g) => g.id.split("/").pop()).join(", ")}`
+      : "";
+    out.push({
+      subject: group.length > 1 ? `${commonPrefix(group.map((g) => g.id))}*` : first.id,
+      url: `https://huggingface.co/${first.id}`,
+      detail: `published ${first.day}, ${size}, ${downloads} downloads — not in the atlas${rest}`,
+    });
+  }
+  return out;
+}
+
+/** The shared head of a group of repo ids, trimmed back to a separator. */
+function commonPrefix(ids) {
+  let i = 0;
+  while (i < ids[0].length && ids.every((id) => id[i] === ids[0][i])) i++;
+  return ids[0].slice(0, i).replace(/[-_ ]+$/, "") || ids[0];
+}
+
+/**
+ * The frontier leaderboard, against what the atlas carries.
+ *
+ * Hugging Face cannot see a closed model, and the labs the daily run cares about
+ * most — OpenAI, Anthropic, Google, xAI — release their flagships nowhere near it.
+ * Artificial Analysis publishes its own ranked board, embedded as JSON in the page,
+ * and the atlas already sources `intel` from exactly there, so one request answers
+ * both questions worth asking: which ranked frontier models are missing entirely,
+ * and which scores we recorded have since moved.
+ *
+ * The board is the *only* place a closed release shows up automatically. Everything
+ * else here would have reported a clean run the week Gemini shipped.
+ */
+const AA_BOARD = "https://artificialanalysis.ai/models";
+
+/** How far an AA score may drift before it is worth re-reading the row. */
+const INTEL_TOLERANCE = 2;
+
+export async function checkFrontierBoard(maps) {
+  const res = await get(AA_BOARD);
+  if (INCONCLUSIVE.has(res.status) || !res.ok) {
+    return { findings: [], checked: 0, skipped: 1,
+      blocked: `artificialanalysis.ai answered HTTP ${res.status}.` };
+  }
+
+  // AA server-renders its board into the page as JSON and repeats it per section,
+  // so entries are deduplicated on the detail URL rather than the label.
+  const board = new Map();
+  for (const m of res.body.matchAll(/\{"label":"([^"]+)","intelligenceIndex":([0-9.]+|null),"detailsUrl":"([^"]+)"\}/g)) {
+    board.set(m[3], { label: m[1], intel: m[2] === "null" ? null : +m[2], url: m[3] });
+  }
+  if (!board.size) {
+    return { findings: [], checked: 0, skipped: 1,
+      blocked: "the board is no longer embedded in the page in a shape this check can read." };
+  }
+
+  const byName = new Map(maps.MODELS.map((m) => [boardKey(m.name), m]));
+  const findings = [];
+  for (const entry of board.values()) {
+    const ours = byName.get(boardKey(entry.label));
+    if (!ours) {
+      findings.push({ subject: entry.label, url: `https://artificialanalysis.ai${entry.url}`,
+        detail: `ranked${entry.intel != null ? ` at ${entry.intel.toFixed(1)}` : ""} on the Artificial Analysis board, and no row here matches that name — either a release the atlas has not covered, or one it carries under a different name` });
+      continue;
+    }
+    if (entry.intel == null) continue;
+    // A row left unrated because AA had not tested it yet. `intel` may only come
+    // from AA, so the board appearing is the one event that can fill that blank.
+    if (ours.intel == null) {
+      findings.push({ subject: `${ours.name} (unrated here)`, url: `https://artificialanalysis.ai${entry.url}`,
+        detail: `the atlas records no intelligence index; the board now rates "${entry.label}" at ${entry.intel.toFixed(1)} — check the variant matches this row before recording it` });
+      continue;
+    }
+    if (Math.abs(entry.intel - ours.intel) >= INTEL_TOLERANCE) {
+      findings.push({ subject: `${ours.name} (intelligence index)`, url: `https://artificialanalysis.ai${entry.url}`,
+        detail: `atlas records ${ours.intel}, the board now shows ${entry.intel.toFixed(1)} for "${entry.label}" — AA re-tests, so confirm which run the row should quote` });
+    }
+  }
+  return { findings, checked: board.size, skipped: 0 };
+}
+
+/**
+ * A board label reduced to the part that identifies the model.
+ *
+ * The two sides write the same model differently and neither is wrong: AA prefixes
+ * the vendor ("Claude Opus 5"), suffixes the reasoning effort it measured ("(max)",
+ * "(with fallback)") and pins the snapshot it tested ("DeepSeek V4 Pro 0813"), while
+ * the atlas names the model. Matching is exact on what is left, never on a prefix:
+ * "GLM-5.3" starts with "GLM-5", and quietly resolving a new release to the old row
+ * is the one failure this check exists to prevent.
+ */
+const VENDOR_PREFIX = /^(claude|openai|google|meta|anthropic|alibaba|deepseek ai|zhipu|moonshot)\s+/i;
+/**
+ * A trailing parenthesis means one of two opposite things, and stripping both broke
+ * the check the first time: AA appends the reasoning effort it measured — "(max)",
+ * "(with fallback)" — while this table parenthesises a size, "Qwen3.8 (27B)". Drop
+ * the qualifier, keep the size, and the two sides meet at "qwen3827b".
+ */
+const dropQualifier = (s) =>
+  s.replace(/\s*\(([^)]*)\)\s*$/, (whole, inner) => (/\d\s*[bmt]\b/i.test(inner) ? whole : ""));
+const boardKey = (label) =>
+  dropQualifier(String(label))
+    .replace(VENDOR_PREFIX, "")
+    .replace(/\s+\d{4}$/, "")            // AA's snapshot stamp: "… V4 Pro 0813"
+    .toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * The architecture gallery's changelog feed.

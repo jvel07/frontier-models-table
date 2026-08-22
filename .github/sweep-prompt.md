@@ -1,4 +1,4 @@
-You are doing the weekly maintenance pass on the Model Atlas.
+You are doing a maintenance pass on the Model Atlas. Section 1 says which one.
 
 Read `CLAUDE.md` first and follow its rules exactly. The three that matter most here:
 **primary sources only**, **omit rather than infer**, and **never present one model's
@@ -66,10 +66,23 @@ diagram mirror and any new attention card come *after* the row exists, not befor
 Three capped runs in a row spent every turn on reconnaissance and were killed before
 their first edit; a run that edits nothing costs the same and produces nothing.
 
-## 1. Work the findings
+## 1. Know which list you are working
 
-The automated source check runs daily and files what it sees. Each finding is a lead,
-not an instruction:
+The source check runs on two schedules, and files each into its own reused issue:
+
+- **`source-check`** — daily, the frontier labs (OpenAI, Anthropic, Google, DeepSeek,
+  Alibaba, Moonshot, Zhipu, Meta, xAI), plus the link, citation and config-drift
+  checks over every row the atlas already carries.
+- **`source-check-small`** — weekly, everyone else: the mid-size labs, the SLM
+  specialists, and the small models the frontier labs ship beside their flagships.
+
+Work the list you were given and leave the other one alone. Both lists are worked by
+the same rules, but a finding fixed twice is a merge conflict, and the frontier list
+is usually already handled by hand before this runs.
+
+## 2. Work the findings
+
+Each finding is a lead, not an instruction:
 
 - **Dead or moved link** — find the new canonical URL and update `REPORTS` or
   `HF_LINKS`. If the resource is genuinely gone, remove the link rather than leaving
@@ -81,18 +94,32 @@ not an instruction:
 - **New fields available** — add them to `SPECS` only if you read the `config.json`
   yourself this run.
 - **Unlisted model** — research it and, if it belongs in the atlas, write a full entry.
+- **On the AA board, not in the atlas** — either a release nobody has covered here, or
+  one the atlas carries under a different name. Decide which before writing anything;
+  a second row for a model that is already here is worse than a missing one.
+- **Intelligence index moved / now rated** — AA re-tests, and its board rows are per
+  reasoning effort. Confirm the row you are updating quotes the same variant the
+  note says it does, then update it. Never take the score from a differently-named
+  variant without saying so in the note.
 
 If a check reported "could not check", that is an environment problem, not a finding.
 Ignore it.
 
-## 2. Look for what the checks cannot see
+## 3. Look for what the checks cannot see
 
-The watcher only knows about Hugging Face and link rot. Closed models never appear
-there. Check independently for notable releases in the last week or two from the labs
-already in the atlas, and from any new lab shipping a frontier model or a notable
-small one.
+Two things the watcher is structurally blind to:
 
-## 3. Writing an entry
+- **A closed model with no leaderboard row.** Hugging Face never sees one, and the
+  Artificial Analysis board only lists what AA has finished testing. A model
+  announced this week is invisible to both.
+- **Anything the lab has not published yet in a machine-readable place** — an
+  architecture detail that only appears in the technical report, a training figure
+  in a blog post.
+
+So check independently for notable releases in the last week or two from the labs
+already in the atlas, and from any new lab shipping a model in your tier.
+
+## 4. Writing an entry
 
 Match the existing shape exactly: `name`, `provider`, `released` (YYYY/MM), `type`,
 `arch`, `params`, `active`, `attn`, `modality`, `context`, `maxOut`, `license`,
@@ -113,7 +140,7 @@ Match the existing shape exactly: `name`, `provider`, `released` (YYYY/MM), `typ
   of open weights is not a repository.
 - Write the note yourself. Never adapt a lab's or another writer's phrasing.
 
-## 4. Verify
+## 5. Verify
 
 Run `node scripts/verify/maps.mjs` before committing — not `npm run verify`, which
 CI runs after you (see section 0). The row-count assertions derive their expected
@@ -126,7 +153,7 @@ mirror before the assertion reads the `src`. Do not try to "fix" them.
 
 If any other suite fails, fix the cause. Do not weaken an assertion to make it pass.
 
-## 5. Write the pull request
+## 6. Write the pull request
 
 Separate these three things explicitly, because a reviewer's time should go to the
 third:

@@ -1,29 +1,53 @@
 name: Watch sources
 
 # Runs the read-only source checks on a GitHub runner, which — unlike an agent
-# sandbox behind an egress policy — can actually reach Hugging Face, arXiv and the
-# labs' own sites. Findings land in a single reused issue rather than a new one per
-# day, so the watcher cannot bury the repository in noise.
+# sandbox behind an egress policy — can actually reach Hugging Face, arXiv,
+# Artificial Analysis and the labs' own sites. Findings land in a single reused
+# issue per tier rather than a new one per run, so the watcher cannot bury the
+# repository in noise.
+#
+# Two schedules, two scopes, one script:
+#
+#   daily   frontier  the labs training at the frontier, plus the integrity checks
+#                     over everything the atlas already carries. This is the pass
+#                     someone reads with their coffee, so it is kept short.
+#   weekly  small     mid-size and small-model labs, and the small models the
+#                     frontier labs ship alongside their flagships. A Gemma point
+#                     release matters, but it does not matter today.
+#
+# Splitting them is what makes the daily issue actionable: one undifferentiated run
+# over every tracked org filed 35 leads, most of them 2B vision checkpoints, and a
+# list that long gets skimmed rather than worked.
 #
 # Nothing here edits the atlas. Every data change still goes through a reviewed pull
 # request, which is the property that makes the site worth citing.
 
 on:
   schedule:
-    - cron: "23 6 * * *"
+    - cron: "23 6 * * *"     # daily, frontier
+    - cron: "23 7 * * 1"     # Mondays, everything else
   workflow_dispatch:
+    inputs:
+      tier:
+        description: "Which scope to check"
+        required: false
+        default: frontier
+        type: choice
+        options: [frontier, small]
 
 permissions:
   contents: read
   issues: write
 
 concurrency:
-  group: watch-sources
+  group: watch-sources-${{ github.event.schedule || inputs.tier }}
   cancel-in-progress: false
 
 jobs:
   watch:
     runs-on: ubuntu-latest
+    env:
+      TIER: ${{ github.event.schedule == '23 7 * * 1' && 'small' || inputs.tier || 'frontier' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,7 +60,7 @@ jobs:
         # normal outcome we want reported. Only a crash should fail the job.
         run: |
           set +e
-          node scripts/watch/run.mjs --out report.md
+          node scripts/watch/run.mjs --tier "$TIER" --out report.md
           code=$?
           set -e
           if [ ! -s report.md ]; then
@@ -47,18 +71,29 @@ jobs:
 
       - name: Open or update the findings issue
         uses: actions/github-script@v7
+        env:
+          FINDINGS: ${{ steps.checks.outputs.findings }}
         with:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('report.md', 'utf8');
-            const TITLE = 'Source check: links, citations, config drift, new releases';
+            // One issue per tier, reused. The label is the handle: the weekly sweep
+            // reads `source-check-small` to know what it is meant to research, and a
+            // session working the frontier list reads `source-check`.
+            const TIERS = {
+              frontier: { label: 'source-check',
+                          title: 'Source check: frontier releases, links, citations, config drift' },
+              small:    { label: 'source-check-small',
+                          title: 'Source check: mid-size and small model releases' },
+            };
+            const { label, title } = TIERS[process.env.TIER] || TIERS.frontier;
             const { owner, repo } = context.repo;
 
             const existing = (await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', labels: 'source-check', per_page: 10,
+              owner, repo, state: 'open', labels: label, per_page: 10,
             })).data[0];
 
-            const findings = '${{ steps.checks.outputs.findings }}' === '1';
+            const findings = process.env.FINDINGS === '1';
 
             if (!findings && !existing) {
               core.info('Nothing to report and no open issue. Done.');
@@ -84,7 +119,7 @@ jobs:
             }
 
             const created = await github.rest.issues.create({
-              owner, repo, title: TITLE, body, labels: ['source-check'],
+              owner, repo, title, body, labels: [label],
             });
             core.info(`Opened #${created.data.number}`);
 
@@ -92,6 +127,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: source-check-report
+          name: source-check-report-${{ env.TIER }}
           path: report.md
           if-no-files-found: ignore
