@@ -358,56 +358,95 @@ const AA_BOARD = "https://artificialanalysis.ai/models";
 /** How far an AA score may drift before it is worth re-reading the row. */
 const INTEL_TOLERANCE = 2;
 
-export async function checkFrontierBoard(maps) {
+export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
   const res = await get(AA_BOARD);
   if (INCONCLUSIVE.has(res.status) || !res.ok) {
     return { findings: [], checked: 0, skipped: 1,
       blocked: `artificialanalysis.ai answered HTTP ${res.status}.` };
   }
 
-  // AA server-renders its board into the page as JSON and repeats it per section,
-  // so entries are deduplicated on the detail URL rather than the label.
-  const board = new Map();
+  // Two things are embedded in this one page, and the check needs both.
+  //
+  // The ranked board is a short list of labels against their index — AA's own
+  // answer to "what is at the frontier", and the list the daily run reports as
+  // missing. Behind it sits a full record per model AA has tested, and that is
+  // where the scores actually live: the board carries twenty labels, the records
+  // carry every rating on the page. Reading only the board left scores AA had
+  // already published sitting in blank columns here.
+  const ranked = new Map();
   for (const m of res.body.matchAll(/\{"label":"([^"]+)","intelligenceIndex":([0-9.]+|null),"detailsUrl":"([^"]+)"\}/g)) {
-    board.set(m[3], { label: m[1], intel: m[2] === "null" ? null : +m[2], url: m[3] });
+    ranked.set(m[3], { label: m[1], intel: m[2] === "null" ? null : +m[2], url: m[3] });
   }
-  if (!board.size) {
+  if (!ranked.size) {
     return { findings: [], checked: 0, skipped: 1,
       blocked: "the board is no longer embedded in the page in a shape this check can read." };
   }
 
-  const byName = new Map(maps.MODELS.map((m) => [boardKey(m.name), m]));
-  // AA pins the size into the label of an open-weights model — "Solar Open2 250B"
-  // against this table's "Solar Open 2". Dropping a trailing size is tried only
-  // after the exact key misses, and only lands on a row that carries no size of
-  // its own, so "Qwen3.8 27B" can never fall through to a differently-sized row.
-  // The size has to come off the label while it is still a word. Stripping it from
-  // the flattened key instead makes "solaropen2250b" lose the model's own trailing
-  // 2 along with the 250B, and "Solar Open" matches nothing.
-  const match = (label) => byName.get(boardKey(label))
-    ?? byName.get(boardKey(label.replace(/\s+\d+(\.\d+)?\s*[bmt]\s*$/i, "")));
+  // Records are split on their opening id and read one at a time. AA lists a model
+  // once per reasoning effort, so the highest-scoring row for a slug wins — the
+  // max-effort variant is what this table records everywhere else.
+  const records = new Map();
+  for (const chunk of res.body.replace(/\\"/g, '"').split('{"id":"').slice(1)) {
+    const w = chunk.slice(0, 6000);
+    const head = w.match(/^[^"]*","slug":"([^"]+)","name":"([^"]+)"/);
+    if (!head) continue;
+    const num = (k) => {
+      const m = w.match(new RegExp(`"${k}":(-?[0-9.]+|null)`));
+      return m && m[1] !== "null" ? +m[1] : null;
+    };
+    const rec = { slug: head[1], label: head[2], intel: num("intelligenceIndex"), agentic: num("agenticIndex") };
+    if (rec.intel == null && rec.agentic == null) continue;
+    const prev = records.get(rec.slug);
+    if (!prev || (rec.intel ?? -1) > (prev.intel ?? -1)) records.set(rec.slug, rec);
+  }
+
+  const byKey = new Map(maps.MODELS.map((m) => [boardKey(m.name), m]));
+  const bySet = new Map();
+  for (const m of maps.MODELS) {
+    const k = tokenSet(m.name);
+    bySet.set(k, [...(bySet.get(k) || []), m]);
+  }
+  const match = (label) => boardMatch(byKey, bySet, label);
   const findings = [];
-  for (const entry of board.values()) {
+
+  // Which models are *missing* is a question about tier. The ranked board is the
+  // frontier by AA's own reckoning and belongs to the daily run; a scored record
+  // that never reaches that board is a mid-size or small model and belongs to the
+  // weekly one. Reporting both lists in both runs would file each finding twice.
+  const rankedSlugs = new Set([...ranked.values()].map((e) => e.url.split("/").pop()));
+  const missing = tier === "frontier"
+    ? [...ranked.values()].map((e) => ({ ...e, url: `https://artificialanalysis.ai${e.url}` }))
+    : [...records.values()].filter((r) => !rankedSlugs.has(r.slug))
+        .map((r) => ({ ...r, url: `https://artificialanalysis.ai/models/${r.slug}` }));
+
+  for (const entry of missing) {
+    if (match(entry.label)) continue;
+    findings.push({ subject: entry.label, url: entry.url,
+      detail: `rated${entry.intel != null ? ` at ${entry.intel.toFixed(1)}` : ""} by Artificial Analysis, and no row here matches that name — either a release the atlas has not covered, or one it carries under a different name` });
+  }
+
+  // Scores are reconciled in the daily run only. A blank column AA has since filled
+  // is maintenance of a row the table already has, which is daily work like the
+  // link and citation checks — not a question about which tier a model belongs to.
+  if (tier !== "frontier") return { findings, checked: records.size, skipped: 0 };
+
+  for (const entry of records.values()) {
     const ours = match(entry.label);
-    if (!ours) {
-      findings.push({ subject: entry.label, url: `https://artificialanalysis.ai${entry.url}`,
-        detail: `ranked${entry.intel != null ? ` at ${entry.intel.toFixed(1)}` : ""} on the Artificial Analysis board, and no row here matches that name — either a release the atlas has not covered, or one it carries under a different name` });
-      continue;
-    }
-    if (entry.intel == null) continue;
-    // A row left unrated because AA had not tested it yet. `intel` may only come
-    // from AA, so the board appearing is the one event that can fill that blank.
-    if (ours.intel == null) {
-      findings.push({ subject: `${ours.name} (unrated here)`, url: `https://artificialanalysis.ai${entry.url}`,
-        detail: `the atlas records no intelligence index; the board now rates "${entry.label}" at ${entry.intel.toFixed(1)} — check the variant matches this row before recording it` });
-      continue;
-    }
-    if (Math.abs(entry.intel - ours.intel) >= INTEL_TOLERANCE) {
-      findings.push({ subject: `${ours.name} (intelligence index)`, url: `https://artificialanalysis.ai${entry.url}`,
-        detail: `atlas records ${ours.intel}, the board now shows ${entry.intel.toFixed(1)} for "${entry.label}" — AA re-tests, so confirm which run the row should quote` });
+    if (!ours) continue;
+    const url = `https://artificialanalysis.ai/models/${entry.slug}`;
+    for (const [field, mine, theirs] of [["intelligence index", ours.intel, entry.intel],
+                                         ["agentic index", ours.agentic, entry.agentic]]) {
+      if (theirs == null) continue;
+      if (mine == null) {
+        findings.push({ subject: `${ours.name} — ${field} blank here`, url,
+          detail: `AA rates "${entry.label}" at ${theirs.toFixed(1)} and this row records nothing — check the variant matches before filling it in` });
+      } else if (Math.abs(theirs - mine) >= INTEL_TOLERANCE) {
+        findings.push({ subject: `${ours.name} — ${field}`, url,
+          detail: `atlas records ${mine}, AA now shows ${theirs.toFixed(1)} for "${entry.label}" — AA re-tests, so confirm which run the row should quote` });
+      }
     }
   }
-  return { findings, checked: board.size, skipped: 0 };
+  return { findings, checked: records.size, skipped: 0 };
 }
 
 /**
@@ -420,7 +459,16 @@ export async function checkFrontierBoard(maps) {
  * "GLM-5.3" starts with "GLM-5", and quietly resolving a new release to the old row
  * is the one failure this check exists to prevent.
  */
-const VENDOR_PREFIX = /^(claude|openai|google|meta|anthropic|alibaba|deepseek ai|zhipu|moonshot)\s+/i;
+const VENDOR_PREFIX = /^(claude|openai|google|meta|anthropic|alibaba|deepseek ai|zhipu|moonshot|upstage|nvidia|mistral|microsoft|cohere|ibm)\s+/i;
+
+/**
+ * A "+" is a model name, not punctuation. Cohere's Command A+ is a different and
+ * larger model than Command A, and flattening both to "commanda" reported the
+ * newer one's score as drift on the older one's row — a 7 that had become a 23.
+ * Spelling it out keeps the two apart and matches how this table already writes
+ * the same idea elsewhere ("Qwen3.6 Plus").
+ */
+const spellPlus = (s) => s.replace(/\+/g, " plus ");
 /**
  * A trailing parenthesis means one of two opposite things, and stripping both broke
  * the check the first time: AA appends the reasoning effort it measured — "(max)",
@@ -430,10 +478,45 @@ const VENDOR_PREFIX = /^(claude|openai|google|meta|anthropic|alibaba|deepseek ai
 const dropQualifier = (s) =>
   s.replace(/\s*\(([^)]*)\)\s*$/, (whole, inner) => (/\d\s*[bmt]\b/i.test(inner) ? whole : ""));
 const boardKey = (label) =>
-  dropQualifier(String(label))
+  spellPlus(dropQualifier(String(label)))
     .replace(VENDOR_PREFIX, "")
     .replace(/\s+\d{4}$/, "")            // AA's snapshot stamp: "… V4 Pro 0813"
     .toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * The same name, written in a different order or with the size spelled out.
+ *
+ * AA writes "Claude 4.5 Haiku" where this table writes "Haiku 4.5", and
+ * "Nemotron 3 Ultra 550B A55B (Reasoning)" for a row called "Nemotron 3 Ultra".
+ * Comparing the *set* of distinctive words catches both without the looseness of a
+ * prefix match: "GLM-5.3" and "GLM-5" still differ, because 5.3 is not 5.
+ *
+ * Sizes and the words AA uses for reasoning effort are dropped, which can make two
+ * rows share a set — "Qwen3.5 (9B)" and "Qwen3.5 (0.8B)" both reduce to {qwen3.5}.
+ * A set that is not unique in the table is therefore not a match at all; guessing
+ * which of two sizes a score belongs to is exactly the error worth avoiding.
+ */
+const EFFORT_WORDS = new Set(["reasoning", "thinking", "max", "high", "xhigh", "low", "medium",
+  "minimal", "standard", "with", "fallback", "preview", "instruct", "chat"]);
+const SIZE_TOKEN = /^\d+(\.\d+)?[bmt]$/i;
+
+const tokenSet = (label) => {
+  const words = spellPlus(String(label))
+    .replace(VENDOR_PREFIX, "")
+    .toLowerCase()
+    .split(/[^a-z0-9.]+/)
+    .filter((w) => w && !EFFORT_WORDS.has(w) && !SIZE_TOKEN.test(w) && !/^a\d+(\.\d+)?b$/.test(w));
+  return [...new Set(words)].sort().join("|");
+};
+
+/** An atlas row for an AA label, or null. Exact key, then size-trimmed, then words. */
+function boardMatch(byKey, bySet, label) {
+  const exact = byKey.get(boardKey(label))
+    ?? byKey.get(boardKey(label.replace(/\s+\d+(\.\d+)?\s*[bmt]\s*$/i, "")));
+  if (exact) return exact;
+  const set = bySet.get(tokenSet(label));
+  return set && set.length === 1 ? set[0] : null;
+}
 
 /**
  * The architecture gallery's changelog feed.

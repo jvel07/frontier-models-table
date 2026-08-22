@@ -4654,7 +4654,7 @@
    "intel": 52,
    "codingAgent": null,
    "codingAgentVia": null,
-   "agentic": null,
+   "agentic": 51,
    "training": [
     {
      "label": "Pre-training",
@@ -4667,7 +4667,7 @@
      "detail": "Thinking on by default and disableable per request, with reasoning depth set by reasoning_effort and reasoning context preserved across turns."
     }
    ],
-   "note": "The dense 27B of the Qwen3.8 generation, published 5 August 2026 three days before the 2.4T. Same layer shape as the Qwen3.6 and 3.5 27Bs before it — 64 layers, 5,120 wide, a 3:1 linear-to-full attention ratio — so what moved is the training rather than the architecture. Ships with a vision encoder for images and hour-scale video, and under Apache 2.0, which the 2.4T sibling is not. Artificial Analysis has since rated it at 52, six points under the 2.4T; that row is the xhigh reasoning-effort variant, which is the setting recorded here. No coding-agent score has been published, so that column stays blank.",
+   "note": "The dense 27B of the Qwen3.8 generation, published 5 August 2026 three days before the 2.4T. Same layer shape as the Qwen3.6 and 3.5 27Bs before it — 64 layers, 5,120 wide, a 3:1 linear-to-full attention ratio — so what moved is the training rather than the architecture. Ships with a vision encoder for images and hour-scale video, and under Apache 2.0, which the 2.4T sibling is not. Artificial Analysis has since rated it at 52 for intelligence and 51 for agentic, six points under the 2.4T on the first; that row is the xhigh reasoning-effort variant, which is the setting recorded here. No coding-agent score has been published, so that column stays blank.",
    "spec": {
     "vocab": "248,320",
     "layers": 64,

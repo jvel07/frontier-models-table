@@ -80,10 +80,26 @@ per token to read it.
 
 Three of the checks are worth knowing about:
 
-- **`board`** reads the Artificial Analysis leaderboard, and it is the only check that
-  can see a closed model at all. Hugging Face knows nothing about Gemini or Claude;
-  AA ranks them. One request answers both "which ranked models are missing" and
-  "which `intel` scores have gone stale", and `intel` is sourced from AA anyway.
+- **`board`** reads Artificial Analysis, and it is the only check that can see a
+  closed model at all — Hugging Face knows nothing about Gemini or Claude. One
+  request answers three questions: which rated models are missing, which recorded
+  scores have gone stale, and which `intel`/`agentic` columns are blank here for a
+  model AA has since rated. That last one is the easiest thing in the project to
+  miss, because nothing about the row looks wrong. The page embeds both a ranked
+  board of about twenty labels and a full record per model tested; read only the
+  board and published scores sit in blank columns. Missing models split by tier —
+  the ranked board is the frontier by AA's own reckoning, anything below it is the
+  weekly run's business — while score reconciliation runs daily for every row.
+
+  Matching AA's labels to these rows is most of the work, and each rule in
+  `boardKey`/`tokenSet` is there because of a specific wrong answer: `(max)` and
+  `(with fallback)` are efforts to drop but `(27B)` is a size to keep; `+` must
+  survive normalisation, or Cohere's Command A+ reports its score as drift on
+  Command A; "Claude 4.5 Haiku" and "Haiku 4.5" are one model, so distinctive words
+  are compared as a set — but only when exactly one row owns that set, since
+  "Qwen3.5 (9B)" and "Qwen3.5 (0.8B)" share it and guessing between them is the
+  error worth avoiding. Matching stays exact in spirit: "GLM-5.3" must never
+  resolve to "GLM-5".
 - **`releases`** asks Hugging Face for parameter counts in the same listing call
   (`expand[]=safetensors`), which is what makes the tier split free. It collapses the
   sibling repos of one launch into one finding — five `Nemotron-Labs-Teacher-*` repos
