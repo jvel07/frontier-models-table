@@ -55,11 +55,41 @@ proves the calculator refuses what it cannot derive).
 
 ## Keeping it current
 
-`.github/workflows/watch-sources.yml` runs `scripts/watch/run.mjs` daily on a GitHub
-runner and files what it finds in one reused issue. It runs there rather than in a
-session on purpose: agent sandboxes are usually behind an egress policy that blocks
-Hugging Face, arXiv and the labs' own sites, so a session cannot verify a single link
-while a runner can.
+`.github/workflows/watch-sources.yml` runs `scripts/watch/run.mjs` on a GitHub runner
+and files what it finds in one reused issue. It runs there rather than in a session on
+purpose: agent sandboxes are usually behind an egress policy that blocks Hugging Face,
+arXiv and the labs' own sites, so a session cannot verify a single link while a runner
+can.
+
+It runs **twice on two scopes**, because the two lists are read by different people at
+different speeds:
+
+| run | scope | issue |
+| --- | --- | --- |
+| daily, 06:23 UTC | frontier labs — OpenAI, Anthropic, Google, DeepSeek, Alibaba, Moonshot, Zhipu, Meta, xAI — plus links, citations and config drift over every row | `source-check` |
+| Mondays, 07:23 UTC | everyone else: mid-size labs, SLM specialists, and the small models the frontier labs ship beside their flagships | `source-check-small` |
+
+`node scripts/watch/run.mjs --tier small` runs the weekly scope by hand; `--tier
+frontier` is the default. The lab lists and the 100B line between a frontier lab's
+flagship and its small models live at the top of `checks.mjs`.
+
+The split is a cost control as much as an editorial one. One undifferentiated daily
+run over every tracked org filed 35 leads, most of them 2B vision checkpoints, and a
+list that long gets skimmed rather than worked — by a person or by an agent billed
+per token to read it.
+
+Three of the checks are worth knowing about:
+
+- **`board`** reads the Artificial Analysis leaderboard, and it is the only check that
+  can see a closed model at all. Hugging Face knows nothing about Gemini or Claude;
+  AA ranks them. One request answers both "which ranked models are missing" and
+  "which `intel` scores have gone stale", and `intel` is sourced from AA anyway.
+- **`releases`** asks Hugging Face for parameter counts in the same listing call
+  (`expand[]=safetensors`), which is what makes the tier split free. It collapses the
+  sibling repos of one launch into one finding — five `Nemotron-Labs-Teacher-*` repos
+  published the same morning at the same size are one release, not five leads.
+- **`gallery`** watches Sebastian Raschka's architecture gallery, and runs weekly: he
+  posts a card weeks after a launch, so it is never the day's news.
 
 The checks **only read**. Nothing automated edits model data, because the atlas is
 worth citing precisely because a person decided each field was sourced. The division
@@ -76,14 +106,16 @@ moment it ran behind a proxy, and a watcher that cries wolf gets muted.
 The default workflow needs no API billing. When the `source-check` issue shows
 something, open a Claude Code session and point it at `.github/sweep-prompt.md` —
 that file is the instruction set for the research pass, and a Claude subscription
-covers running it interactively.
+covers running it interactively. The frontier list is short and moves fast, so it is
+the one worth working by hand.
 
-`.github/workflows/weekly-sweep.yml` automates that same pass on a schedule, but it
-runs Claude Code headless on the runner and therefore needs an `ANTHROPIC_API_KEY`
-secret — console.anthropic.com pay-as-you-go, which a Pro or Max **subscription does
-not include**. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable
-is set to `true`, so it costs nothing to leave in place. The only thing it buys is
-not having to start the session yourself; the detection half already runs free.
+`.github/workflows/weekly-sweep.yml` automates that same pass against the *other*
+list, `source-check-small`, where a week's delay costs nothing. It runs Claude Code
+headless on the runner and therefore needs an `ANTHROPIC_API_KEY` secret —
+console.anthropic.com pay-as-you-go, which a Pro or Max **subscription does not
+include**. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable is
+set to `true`, so it costs nothing to leave in place. The only thing it buys is not
+having to start the session yourself; the detection half already runs free.
 
 ## Data rules
 

@@ -1,6 +1,13 @@
 name: Weekly sweep
 
-# The judgement half of keeping the atlas current.
+# The judgement half of keeping the atlas current, for the models nobody needs to
+# hear about the same day.
+#
+# The two halves of this project's maintenance split by tier, not by tooling. The
+# frontier list is short, moves fast, and is worked by hand in an interactive session
+# a subscription already covers. This job takes the other list — the mid-size models
+# and the SLMs that watch-sources.yml files weekly under `source-check-small` — where
+# the research is the same work but a week late costs nothing.
 #
 # watch-sources.yml finds what changed; this reads those findings, researches them,
 # and opens a pull request. It runs Claude Code headless on the runner rather than
@@ -62,9 +69,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The source-check issue is the agent's list of leads. Absent is fine —
-          # that just means the last automated run found nothing.
-          gh issue list --label source-check --state open --limit 1 \
+          # The weekly issue is this agent's list of leads, and only that one: the
+          # frontier issue is somebody's morning reading, and researching it here
+          # would bill for work that is usually already done by Monday.
+          gh issue list --label source-check-small --state open --limit 1 \
             --json number,title,body > findings.json || echo '[]' > findings.json
           echo "count=$(jq length findings.json)" >> "$GITHUB_OUTPUT"
 
@@ -94,7 +102,11 @@ jobs:
           set +e
           claude -p "$(cat .github/sweep-prompt.md)
 
-          Findings from the automated source check (may be empty):
+          Scope for this run: the mid-size models and SLMs below the frontier. The
+          frontier labs' flagships are worked by hand in a daily pass — if a finding
+          here is about one of them, leave it alone and say so.
+
+          Findings from the weekly source check (may be empty):
           $(cat findings.json)
 
           Extra focus for this run, if any: ${FOCUS:-none}" \
@@ -149,5 +161,5 @@ jobs:
           gh pr create \
             --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
             --body-file .github/sweep-pr-body.md \
-            --label source-check \
+            --label source-check-small \
             || echo "::warning title=No PR::Branch $BRANCH pushed; Actions cannot open PRs in this repo."
