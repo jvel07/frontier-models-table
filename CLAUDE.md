@@ -138,9 +138,7 @@ the one worth working by hand.
 list, `source-check-small`, where a week's delay costs nothing. It runs Claude Code
 headless on the runner and therefore needs an `ANTHROPIC_API_KEY` secret —
 console.anthropic.com pay-as-you-go, which a Pro or Max **subscription does not
-include**. It runs on `claude-opus-4-0`, the oldest Opus the API still serves —
-note that this is the tier's floor by age, not by price: every Opus bills at
-$5/$25 per MTok, where the Sonnet it replaced bills at $3/$15. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable is
+include**. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable is
 set to `true`, so it costs nothing to leave in place. The only thing it buys is not
 having to start the session yourself; the detection half already runs free.
 

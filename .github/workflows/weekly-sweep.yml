@@ -30,11 +30,11 @@ on:
         required: false
         type: string
       model:
-        description: "Model for the run. Every Opus tier is $5/$25 per MTok — a lower version is not a cheaper one."
+        description: "Model for the run. sonnet is the default and is ~40% cheaper per token; escalate deliberately."
         required: false
-        default: claude-opus-4-0
+        default: sonnet
         type: choice
-        options: [claude-opus-4-0, claude-opus-4-5, claude-opus-5, sonnet]
+        options: [sonnet, opus]
 
 permissions:
   contents: write
@@ -84,7 +84,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           FOCUS: ${{ inputs.focus }}
-          SWEEP_MODEL: ${{ inputs.model || 'claude-opus-4-0' }}
+          SWEEP_MODEL: ${{ inputs.model || 'sonnet' }}
         run: |
           set -euo pipefail
           BRANCH="sweep/$(date -u +%Y-%m-%d)"
@@ -93,18 +93,6 @@ jobs:
           git checkout -b "$BRANCH"
           echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
 
-          # The model is the oldest Opus the API still serves. Two things about
-          # that are worth knowing before reading a cost figure from this run.
-          #
-          # An older Opus is not a cheaper one. Opus 5, 4.8, 4.7 and 4.6 all bill
-          # at $5/$25 per MTok, and 4.0 is the tier's floor by age, not by price
-          # — Sonnet 5, which this job used to default to, is $3/$15. Whatever
-          # this run costs, it costs more per token than the old default did.
-          #
-          # 4.0 is deprecated with no published retirement date, and 4.1 above it
-          # retired on 2026-08-05, so this pin will 404 without much warning. When
-          # it does, the fix is the next rung up, not a new debugging session.
-          #
           # --output-format json so the run reports what it cost. The first billed
           # run cost $5 for one model and nobody could see why until afterwards;
           # a number in the log is what makes the next tuning pass evidence-based.
