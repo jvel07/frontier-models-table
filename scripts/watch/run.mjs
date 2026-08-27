@@ -19,7 +19,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { loadMaps, section } from "./lib.mjs";
-import { checkLinks, checkCitations, checkSpecs, watchReleases, checkGallery, checkFrontierBoard } from "./checks.mjs";
+import { checkLinks, checkCitations, checkSpecs, watchReleases, checkGallery, checkFrontierBoard, discoverHub } from "./checks.mjs";
 
 const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
@@ -50,6 +50,12 @@ const CHECKS = [
   { key: "releases", title: "Models on Hugging Face that are not in the atlas",
     fn: (maps) => watchReleases(maps, { tier }), tiers: ["frontier", "small"],
     empty: "No unrecognised releases from the labs we track." },
+  // Asks the hub directly rather than a list of labs, so a first release from a
+  // lab nobody has added yet can still be found. Runs in both tiers, split by
+  // size, because a new lab's first model can be either.
+  { key: "hub", title: "Notable releases from labs the atlas does not track",
+    fn: (maps) => discoverHub(maps, { tier }), tiers: ["frontier", "small"],
+    empty: "Nothing widely-liked on the hub is missing from the atlas." },
   // The gallery covers open-weight architectures of every size, and Raschka posts a
   // card weeks after a launch — nothing here is ever the day's news.
   { key: "gallery", title: "New cards in the LLM Architecture Gallery", fn: checkGallery, tiers: ["small"],

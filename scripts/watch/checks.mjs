@@ -205,8 +205,22 @@ const FRONTIER_ORGS = [
 
 const OTHER_ORGS = [
   "nvidia", "mistralai", "microsoft", "CohereLabs", "MiniMaxAI", "sarvamai",
-  "HuggingFaceTB", "allenai", "ibm-granite", "upstage",
+  "HuggingFaceTB", "allenai", "ibm-granite", "upstage", "inclusionAI",
+  "Motif-Technologies", "LiquidAI", "Kwaipilot", "ornith-ai", "dots-studio",
 ];
+
+/**
+ * Any lab the atlas already links weights for is watched, whether or not someone
+ * remembered to add it to the list above.
+ *
+ * Motif is why this exists. The table carried two Motif models for weeks while
+ * `Motif-Technologies` was in neither array, so the org that shipped them was
+ * never once polled — the GA release was caught by the leaderboard instead, and
+ * only because Artificial Analysis happened to rate it. A curated list silently
+ * stops covering the labs you actually track; deriving it from HF_LINKS cannot.
+ */
+const orgsFromAtlas = (maps) =>
+  [...new Set(Object.values(maps.HF_LINKS).map((r) => r.split("/")[0]))];
 
 /**
  * A frontier lab ships small models too — Gemma, Qwen's 27B, gpt-oss — and those
@@ -239,7 +253,12 @@ const REPACKAGED = /-(gguf|awq|gptq|mlx|int4|int8|fp8|nvfp4|nvfp8|bnb|onnx|dspar
  * which is what makes the tier split free — no per-repo follow-up call.
  */
 export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } = {}) {
-  const orgs = tier === "frontier" ? FRONTIER_ORGS : [...FRONTIER_ORGS, ...OTHER_ORGS];
+  const curated = tier === "frontier" ? FRONTIER_ORGS : [...FRONTIER_ORGS, ...OTHER_ORGS];
+  // Frontier stays exactly the named labs; the weekly pass also sweeps every org
+  // the atlas links, so a lab cannot be carried here and unwatched at once.
+  const orgs = tier === "frontier"
+    ? curated
+    : [...new Set([...curated, ...orgsFromAtlas(maps)].map((o) => o))];
   const known = new Set(Object.values(maps.HF_LINKS).map((r) => r.toLowerCase()));
   const cutoff = Date.now() - sinceDays * 864e5;
   const hits = [];
@@ -248,7 +267,7 @@ export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } 
 
   for (const org of orgs) {
     const res = await get(
-      `https://huggingface.co/api/models?author=${encodeURIComponent(org)}&sort=createdAt&direction=-1&limit=25`
+      `https://huggingface.co/api/models?author=${encodeURIComponent(org)}&sort=createdAt&direction=-1&limit=50`
       + `&expand[]=safetensors&expand[]=pipeline_tag&expand[]=createdAt&expand[]=downloads`,
       { headers: { accept: "application/json" } });
     seen.push(res);
@@ -282,7 +301,7 @@ export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } 
       // Which run this belongs to: a frontier lab's flagship is the daily pass,
       // everything else is the weekly one. A quantised repo's parameter total counts
       // tensors, not weights, so it is meaningless — but those are already gone.
-      const params = m.safetensors?.total ?? null;
+    const params = m.safetensors?.total ?? null;
       const isFlagship = params == null || params >= FRONTIER_MIN_PARAMS;
       if ((tier === "frontier") !== (frontierLab && isFlagship)) continue;
       hits.push({ id, org, created, params, downloads: m.downloads ?? 0 });
@@ -338,6 +357,119 @@ function commonPrefix(ids) {
   let i = 0;
   while (i < ids[0].length && ids.every((id) => id[i] === ids[0][i])) i++;
   return ids[0].slice(0, i).replace(/[-_ ]+$/, "") || ids[0];
+}
+
+/**
+ * The hub itself, with no list of labs at all.
+ *
+ * Every other release check starts from a list of orgs somebody wrote down, which
+ * means it can only ever find the labs already known. That is exactly backwards for
+ * the question "who shipped something we have not heard of": Ling, Ornith, Liquid
+ * AI, Kwaipilot and dots-studio were all invisible here on 2026-08-27 — not filtered
+ * out, never queried — while community re-uploads of models the atlas already had
+ * were the only thing the org sweep would have surfaced from those weeks.
+ *
+ * So this asks Hugging Face for the most-liked recent text models across the whole
+ * hub and subtracts what we already know. Likes rather than downloads because a
+ * download count is dominated by mirrors and CI; likes track what practitioners
+ * actually noticed.
+ */
+const HUB_MIN_LIKES = 60;
+
+export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = {}) {
+  const known = new Set(Object.values(maps.HF_LINKS).map((r) => r.toLowerCase()));
+  const cutoff = Date.now() - sinceDays * 864e5;
+  const seen = new Map();
+  const responses = [];
+
+  // Three orderings because each surfaces a different slice: a model can be widely
+  // liked, quietly downloaded at scale, or trending before either number catches up.
+  for (const sort of ["likes", "trendingScore", "downloads"]) {
+    const res = await get(
+      `https://huggingface.co/api/models?sort=${sort}&direction=-1&limit=100&filter=text-generation`
+      + `&expand[]=safetensors&expand[]=createdAt&expand[]=downloads&expand[]=likes&expand[]=pipeline_tag&expand[]=tags`,
+      { headers: { accept: "application/json" } });
+    responses.push(res);
+    if (INCONCLUSIVE.has(res.status) || !res.ok) continue;
+    let list;
+    try { list = JSON.parse(res.body); } catch { continue; }
+    for (const m of list) {
+      const created = Date.parse(m.createdAt || "");
+      if (created && created >= cutoff) seen.set(String(m.id), m);
+    }
+  }
+
+  const blocked = systemic(responses);
+  if (blocked) return { findings: [], checked: 0, skipped: responses.length, blocked };
+
+  const derivative = derivativeOf(maps);
+  const hits = [];
+  for (const m of seen.values()) {
+    const id = String(m.id);
+    if (known.has(id.toLowerCase())) continue;
+    if (REPACKAGED.test(id)) continue;
+    if ((m.likes ?? 0) < HUB_MIN_LIKES) continue;
+    // Somebody else's finetune, quantisation or distill of a model already here.
+    // On an unfiltered hub these outnumber real releases several to one.
+    if (derivative(id)) continue;
+    // The stronger signal, and the lab's own word for it: a base_model tag naming
+    // a repo in a different org. A lab listing its own base — Motif-3 on
+    // Motif-3-Base — is a real release and stays; empero-ai listing Qwen/Qwen3.5-9B
+    // is a distill of someone else's model and goes. This catches derivatives whose
+    // names resemble nothing in the table, with no suffix list to maintain.
+    const org = id.split("/")[0].toLowerCase();
+    const borrowed = (m.tags || [])
+      .filter((t) => t.startsWith("base_model:"))
+      .map((t) => t.replace(/^base_model:(finetune:|quantized:|adapter:|merge:)?/, ""))
+      .some((r) => r.includes("/") && r.split("/")[0].toLowerCase() !== org);
+    if (borrowed) continue;
+    const created = Date.parse(m.createdAt || "");
+    const params = m.safetensors?.total ?? null;
+    // Same tier rule as everywhere else, minus the lab half: nobody has decided
+    // yet whether an unknown lab is a frontier one, so size decides alone.
+    const isBig = params == null || params >= FRONTIER_MIN_PARAMS;
+    if ((tier === "frontier") !== isBig) continue;
+    hits.push({ id, likes: m.likes ?? 0, params, created, org });
+  }
+
+  hits.sort((a, b) => b.likes - a.likes);
+  // Whether the org is one we sweep changes what the finding means: an untracked
+  // lab is a gap in coverage, a tracked one that only turns up here means the org
+  // sweep saw it and something else — a tier rule, a filter — dropped it.
+  const tracked = new Set([...FRONTIER_ORGS, ...OTHER_ORGS, ...orgsFromAtlas(maps)]
+    .map((o) => o.toLowerCase()));
+  const findings = hits.slice(0, tier === "frontier" ? 10 : 20).map((h) => ({
+    subject: h.id,
+    url: `https://huggingface.co/${h.id}`,
+    detail: `published ${new Date(h.created).toISOString().slice(0, 10)}, `
+      + `${h.params ? `${(h.params / 1e9).toFixed(0)}B params` : "parameter count not published"}, `
+      + `${h.likes} likes — `
+      + (tracked.has(h.org)
+        ? `${h.org} is swept by the org check too, so this one is worth a second look at why that check did not raise it`
+        : `from a lab no org sweep here covers`),
+  }));
+  return { findings, checked: seen.size, skipped: 0 };
+}
+
+/**
+ * A test for "this is someone's repackaging of a model we already carry".
+ *
+ * The hub is full of `SomeUser/Qwen3.8-27B-OBLITERATED` and `z-lab/Qwen3.8-27B-DFlash2`
+ * — different org, recognisable model name. Matching the repo name against the atlas's
+ * own model names catches them without a list of suffixes to maintain, and without
+ * suppressing a genuine release from a lab whose name merely resembles one.
+ */
+function derivativeOf(maps) {
+  const flat = (x) => String(x).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const names = maps.MODELS
+    .map((m) => ({ name: m.name, key: flat(m.name) }))
+    .filter((n) => n.key.length >= 6)
+    .sort((a, b) => b.key.length - a.key.length);
+  return (id) => {
+    const repo = flat(id.split("/").pop());
+    const hit = names.find((n) => repo.includes(n.key));
+    return hit ? hit.name : null;
+  };
 }
 
 /**
