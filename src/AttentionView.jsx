@@ -392,6 +392,28 @@ const EXPLAIN = {
       caption="Roughly three linear layers per exact one, through 93 layers." />,
   },
 
+  "KDA + DSA (34:11 layers)": {
+    family: "remember",
+    how: [
+      "Every hybrid so far has paired a cheap layer with an expensive one. GLM-5.3-Flash pairs a cheap layer with a second cheap layer. Thirty-four of its forty-five are linear KDA, carrying a fixed-size state; the other eleven are DeepSeek Sparse Attention, which keeps the whole cache but reads only the 2,048 blocks its indexer picks out.",
+      "That changes what the ratio is for. When the exact layer is quadratic you place as few as you can bear; when it only reads a bounded slice you can afford one every fourth layer, and Z.ai does. The attention layers also carry no rotation at all \u2014 the config leaves all 256 head dimensions unrotated \u2014 so order reaches them through the linear layers' recurrence and the indexer's choices instead.",
+    ],
+    cost: "The indexer is now load-bearing twice over. Nothing in these forty-five layers ever reads the whole sequence exactly, so a token the top-k misses is not recoverable further up the stack.",
+    fig: <LayerStack layers={ratio(45, 4)} legend="34 KDA \u00b7 11 DSA"
+      caption="One sparse-exact layer every fourth, through 45 layers." />,
+  },
+
+  "Gated DeltaNet + QSA (36:12 layers)": {
+    family: "remember",
+    how: [
+      "The same 3:1 shape Qwen has used since Qwen3.5, with the exact quarter swapped out. Three Gated DeltaNet layers carry the constant-size state; the fourth was gated softmax attention and is now Qwen Sparse Attention.",
+      "The difference is the unit of selection. Token-level sparse attention scores every token and keeps the best; QSA scores micro-blocks and keeps 512 of them, or about 2,048 tokens. Fewer things to score means less latency at long context, which is the cost that actually bites once agent traces rather than documents are what fills the window.",
+    ],
+    cost: "Relevance is decided a block at a time. A single important token inside an otherwise dull block is judged by the company it keeps.",
+    fig: <LayerStack layers={ratio(48, 4)} legend="36 Gated DeltaNet \u00b7 12 QSA"
+      caption="Twelve repeats of three linear layers to one sparse." />,
+  },
+
   "iRoPE (interleaved RoPE/NoPE)": {
     family: "position",
     how: [

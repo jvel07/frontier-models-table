@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-22",
+ "version": "2026-08-27",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-22},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-27},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 76,
+ "count": 78,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -1168,6 +1168,94 @@
    }
   },
   {
+   "name": "Qwen3.8-Flash-Next",
+   "provider": "Alibaba",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "180B",
+   "active": "6B",
+   "attn": "Gated DeltaNet + QSA (36:12 layers)",
+   "modality": "Text + image",
+   "context": 262144,
+   "maxOut": null,
+   "license": "Qwen Community 1.0",
+   "open": true,
+   "intel": null,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": null,
+   "vision": null,
+   "training": [
+    {
+     "label": "Pre-training",
+     "tokens": null,
+     "detail": "No token budget is published. What Alibaba does describe is the optimiser split: Muon and AdamW each applied to the weight categories they suit, with batch-size warmup dropped so training starts at the target batch size. It credits refitted scaling laws for making that safe at a higher learning rate, and reports the effect as fewer optimiser steps to convergence rather than as a quality gain."
+    },
+    {
+     "label": "Post-training",
+     "tokens": null,
+     "detail": "Named as a stage with no detail, budget or method published."
+    }
+   ],
+   "note": "Alibaba labels this an experimental preview of the architecture meant to underpin Qwen4, so read every figure as provisional. Four things change at once. Attention pairs Gated DeltaNet with Qwen Sparse Attention, which selects micro-blocks rather than individual tokens on a budget of 512 blocks or 2048 tokens, in a 3:1 layout repeated twelve times over 48 layers. A gated residual replaces the plain one, mixing four branches through a rank-320 bottleneck under a data-dependent read gate. Parameters are scaled through an n-gram embedding of 20M bigram and trigram entries at layer two, which is why the total splits as 125B of model, 51B of that embedding and 4B of MTP head while only 6B fires per token. The MoE is unusually fine-grained even for Qwen: 512 experts, 10 routed plus 1 shared. Weights are the 262K-context preview under a community licence; the 1M-context Qwen3.8-Flash sold through Qwen Cloud is a different artefact and is not this row. Artificial Analysis has not rated it, so every index column is blank.",
+   "spec": {
+    "vocab": "248,320",
+    "layers": 48,
+    "hidden": "2,560",
+    "heads": "24 Q / 2 KV softmax; 16 QK / 48 V linear; QSA indexer MQA 4 Q + 1 shared K",
+    "experts": "512 routed · 10 active · 1 shared",
+    "layerMix": "3 Gated DeltaNet : 1 Qwen Sparse Attention, repeated 12 times over 48 layers",
+    "window": "QSA budget 512 blocks / 2,048 tokens",
+    "posEmb": "Partial RoPE (factor 0.25; 64 of 256 head dims rotated)",
+    "ffn": "640 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-6)",
+    "headDim": 256,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+   "report": "https://github.com/QwenLM/Qwen3.8-Flash-Next/blob/main/tech_report.pdf",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 180000000000,
+    "activeParams": 6000000000,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": "hybrid: linear layers carry a fixed state that does not grow per token",
+    "weightBytesFp16": 360000000000,
+    "disclosureScore": 10,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": true,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "restricted",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "community"
+   }
+  },
+  {
    "name": "Qwen3.8 Max",
    "provider": "Alibaba",
    "released": "2026/07",
@@ -1420,6 +1508,95 @@
      "run": true
     },
     "licenseClass": "conditional"
+   }
+  },
+  {
+   "name": "GLM-5.3-Flash",
+   "provider": "Zhipu",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "320B",
+   "active": "18B",
+   "attn": "KDA + DSA (34:11 layers)",
+   "modality": "Text + image",
+   "context": 1000000,
+   "maxOut": 128000,
+   "license": "MIT",
+   "open": true,
+   "intel": 57,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": 58,
+   "vision": null,
+   "training": [
+    {
+     "label": "Pre-training",
+     "tokens": "30T",
+     "detail": "A new base model rather than a re-post-trained one — the point of separation from GLM-5.3, which reuses 5.2's base. Z.ai describes the architecture and the training recipe as redesigned together around capability per unit of compute, and pairs them with manifold-constrained hyper-connections in place of the plain residual stream. The corpus is multimodal from the start rather than a text model with vision added afterwards.",
+     "curriculum": "Z.ai gives one figure for the whole corpus and calls it multimodal; it publishes no domain split, no per-modality share and no sampling rates, so none are recorded here."
+    },
+    {
+     "label": "Post-training",
+     "tokens": null,
+     "detail": "No token budget or stage breakdown published. The card reports the result rather than the recipe: ahead of GLM-5.2 across its benchmark set at roughly a tenth of the price, and close to Claude Opus 4.8 on coding and agentic work."
+    }
+   ],
+   "note": "The first natively multimodal model in the GLM-5 line, and the first in the series to interleave two kinds of attention: 34 of its 45 layers are linear KDA and the other 11 are DeepSeek Sparse Attention, one exact layer every fourth. That is what pays for a 1M window at 18B active out of 320B total. The attention layers carry no rotary component at all — qk_rope_head_dim is 0 in the config, with the full 256 dimensions unrotated — so position comes from the linear layers' recurrent state and the sparse layers' indexer rather than from RoPE. 288 routed experts fire 8 per token beside 1 shared, the first three layers are dense, and a one-layer MTP head ships in the weights. Reasoning effort is exposed as low, high and max, defaulting to max, which is the setting the published figures use and the one recorded here.",
+   "spec": {
+    "vocab": "154,880",
+    "layers": 45,
+    "hidden": "4,096",
+    "heads": "64 Q / 64 KV; DSA indexer 32 heads, top-k 2,048",
+    "experts": "288 routed · 8 active · 1 shared",
+    "layerMix": "3 linear (KDA) : 1 DeepSeek Sparse Attention, repeated; first 3 layers dense",
+    "window": "—",
+    "posEmb": "None on the attention layers: qk_rope_head_dim is 0, so all 256 head dims are unrotated; MLA latent 512, query latent 1,536",
+    "ffn": "12,288 dense · 2,048 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-5)",
+    "headDim": "256 (v 256)",
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/zai-org/GLM-5.3-Flash",
+   "report": "https://docs.z.ai/guides/llm/glm-5.3-flash",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 320000000000,
+    "activeParams": 18000000000,
+    "disclosedTrainingTokens": 30000000000000,
+    "disclosedTokensAreApproximate": false,
+    "trainingFlops": 3.24e+24,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": 93.75,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": "hybrid: linear layers carry a fixed state that does not grow per token",
+    "weightBytesFp16": 640000000000,
+    "disclosureScore": 12,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": true,
+     "tokens": true,
+     "curriculum": true,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
    }
   },
   {
