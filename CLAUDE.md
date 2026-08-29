@@ -134,8 +134,22 @@ that file is the instruction set for the research pass, and a Claude subscriptio
 covers running it interactively. The frontier list is short and moves fast, so it is
 the one worth working by hand.
 
-`.github/workflows/weekly-sweep.yml` automates that same pass against the *other*
-list, `source-check-small`, where a week's delay costs nothing. It runs Claude Code
+`.github/workflows/weekly-sweep.yml` runs two jobs off one file, and the split is
+the point:
+
+| when | scope | prompt | turn cap |
+| --- | --- | --- | --- |
+| daily, 08:40 UTC | the frontier list — scores, links and config drift **only** | `sweep-prompt-scores.md` | 25 |
+| Mondays, 09:00 UTC | the mid-size and small list — full research pass | `sweep-prompt.md` | 60 |
+
+The daily job cannot add a model, and that restriction is deliberate rather than
+cautious. Every full-research run attempted so far ended in `error_max_turns` —
+61 turns, $2.44, no edit — because open-ended research does not reliably fit in a
+turn budget. Reconciling a score against Artificial Analysis does. So the job that
+runs unattended every morning is the one whose work is mechanical and finishes,
+and adding a row stays with a person, where the judgement calls are: whether an
+architecture is the lab's own or inherited, whether a preview's figures will
+survive, whether the thing is a language model at all. It runs Claude Code
 headless on the runner and therefore needs an `ANTHROPIC_API_KEY` secret —
 console.anthropic.com pay-as-you-go, which a Pro or Max **subscription does not
 include**. It stays dormant unless the `ENABLE_WEEKLY_SWEEP` repository variable is

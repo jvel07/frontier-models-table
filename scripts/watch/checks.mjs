@@ -242,7 +242,18 @@ const FRONTIER_MIN_PARAMS = 100e9;
 const LM_PIPELINES = new Set(["text-generation", "image-text-to-text"]);
 
 /** Quantisations, repackaged builds and speculative-decoding drafts of a model. */
-const REPACKAGED = /-(gguf|awq|gptq|mlx|int4|int8|fp8|nvfp4|nvfp8|bnb|onnx|dspark|dflash|bf16|fp16|eagle)\b|-executorch|^(eagle3|dflash|dspark)_/i;
+const REPACKAGED = /-(gguf|awq|gptq|mlx|int2|int4|int8|fp4|fp8|fp16|bf16|mxfp4|mxfp8|nvfp4|nvfp8|w4a16|w8a8|[248]bit|bnb|onnx|dspark|dflash|eagle)\b|-executorch|^(eagle3|dflash|dspark)_/i;
+
+/**
+ * The other half of a release, rather than a different model.
+ *
+ * Labs ship `-base` beside the instruct model and `-fp4` beside the bf16 one. The
+ * old rule tried to spot these by splitting the id on its first hyphen, which for
+ * `inclusionAI/Ling-3.0-flash-base` yields `inclusionai/ling` and matches nothing.
+ * Stripping the suffix and asking whether what remains is a repo we already link
+ * is the test that actually works.
+ */
+const VARIANT_SUFFIX = /-(base|instruct|chat|thinking|reasoning|preview|fp4|fp8|mxfp4|nvfp4)$/i;
 
 /**
  * New releases from the labs already in the atlas. Hugging Face's model API is the
@@ -291,7 +302,11 @@ export async function watchReleases(maps, { tier = "frontier", sinceDays = 45 } 
       // repos beside the model itself, and the model is the finding, not its
       // fifth container format.
       if (REPACKAGED.test(id)) continue;
-      if (/base|instruct-v\d|-lora|-adapter/i.test(id) && known.has(id.split("-")[0].toLowerCase())) continue;
+      if (/-lora\b|-adapter\b/i.test(id)) continue;
+      // `X-base` where `X` is already linked here is that model's other half.
+      let stem = id;
+      while (VARIANT_SUFFIX.test(stem)) stem = stem.replace(VARIANT_SUFFIX, "");
+      if (stem !== id && known.has(stem.toLowerCase())) continue;
       // A dated snapshot of a repo the atlas already links is not a new model.
       // DeepSeek ships `DeepSeek-V4-Pro-0813` beside `DeepSeek-V4-Pro`, and filing
       // it every morning for the rest of the year is how a watcher gets muted. What

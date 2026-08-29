@@ -22,6 +22,10 @@ name: Weekly sweep
 
 on:
   schedule:
+    # Daily, after the 06:23 frontier watcher has filed its findings. Narrow job:
+    # reconcile scores, links and config drift only — see .github/sweep-prompt-scores.md.
+    - cron: "40 8 * * *"
+    # Mondays: the full research pass over the mid-size and small-model list.
     - cron: "0 9 * * 1"
   workflow_dispatch:
     inputs:
@@ -50,6 +54,12 @@ jobs:
     runs-on: ubuntu-latest
     # Without a key the job would burn a runner to fail at the last step; skip early.
     if: ${{ github.event_name == 'workflow_dispatch' || vars.ENABLE_WEEKLY_SWEEP == 'true' }}
+    env:
+      # Which of the two jobs this run is. The daily one is bounded on purpose:
+      # every full-research run so far has ended in error_max_turns — 61 turns,
+      # $2.44, no edit — so the job that runs unattended every morning is the one
+      # whose work is mechanical and finishes.
+      MODE: ${{ github.event.schedule == '0 9 * * 1' && 'weekly' || 'daily' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,7 +82,8 @@ jobs:
           # The weekly issue is this agent's list of leads, and only that one: the
           # frontier issue is somebody's morning reading, and researching it here
           # would bill for work that is usually already done by Monday.
-          gh issue list --label source-check-small --state open --limit 1 \
+          LABEL=$([ "$MODE" = weekly ] && echo source-check-small || echo source-check)
+          gh issue list --label "$LABEL" --state open --limit 1 \
             --json number,title,body > findings.json || echo '[]' > findings.json
           echo "count=$(jq length findings.json)" >> "$GITHUB_OUTPUT"
 
@@ -87,7 +98,7 @@ jobs:
           SWEEP_MODEL: ${{ inputs.model || 'sonnet' }}
         run: |
           set -euo pipefail
-          BRANCH="sweep/$(date -u +%Y-%m-%d)"
+          BRANCH="sweep/$MODE-$(date -u +%Y-%m-%d)"
           git config user.name  "model-atlas-bot"
           git config user.email "noreply@anthropic.com"
           git checkout -b "$BRANCH"
@@ -100,20 +111,31 @@ jobs:
           # exit code is captured instead of aborting the step: the JSON holds the
           # cost and the error either way, and the step re-exits with it below.
           set +e
-          claude -p "$(cat .github/sweep-prompt.md)
+          if [ "$MODE" = weekly ]; then
+            PROMPT_FILE=.github/sweep-prompt.md
+            SCOPE="Scope for this run: the mid-size models and SLMs below the frontier.
+          The frontier labs' flagships are reconciled daily — if a finding here is
+          about one of them, leave it alone and say so."
+            TURNS=60
+          else
+            PROMPT_FILE=.github/sweep-prompt-scores.md
+            SCOPE="Scope for this run: the frontier list only, and only scores, links
+          and config drift. Adding a model is explicitly out of scope."
+            TURNS=25
+          fi
 
-          Scope for this run: the mid-size models and SLMs below the frontier. The
-          frontier labs' flagships are worked by hand in a daily pass — if a finding
-          here is about one of them, leave it alone and say so.
+          claude -p "$(cat "$PROMPT_FILE")
 
-          Findings from the weekly source check (may be empty):
+          $SCOPE
+
+          Findings from the source check (may be empty):
           $(cat findings.json)
 
           Extra focus for this run, if any: ${FOCUS:-none}" \
             --model "$SWEEP_MODEL" \
             --permission-mode acceptEdits \
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch,WebSearch" \
-            --max-turns 60 \
+            --max-turns "$TURNS" \
             --output-format json > sweep-result.json
           CLAUDE_EXIT=$?
           set -e
@@ -153,13 +175,13 @@ jobs:
             exit 0
           fi
           git add -A
-          git commit -m "Weekly sweep: $(date -u +%Y-%m-%d)"
+          git commit -m "$MODE sweep: $(date -u +%Y-%m-%d)"
           git push -u origin "$BRANCH"
           # Needs Settings -> Actions -> "Allow GitHub Actions to create and approve
           # pull requests". Without it the push still lands and the branch is opened
           # by hand; the run should not fail for it.
           gh pr create \
-            --title "Weekly sweep: $(date -u +%Y-%m-%d)" \
+            --title "$MODE sweep: $(date -u +%Y-%m-%d)" \
             --body-file .github/sweep-pr-body.md \
-            --label source-check-small \
+            --label "$([ "$MODE" = weekly ] && echo source-check-small || echo source-check)" \
             || echo "::warning title=No PR::Branch $BRANCH pushed; Actions cannot open PRs in this repo."
