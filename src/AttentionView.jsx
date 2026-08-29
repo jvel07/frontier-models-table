@@ -403,6 +403,17 @@ const EXPLAIN = {
       caption="No exact layer in the stack; the index is computed once and reused." />,
   },
 
+  "KDA + MLA (5:1 layers)": {
+    family: "remember",
+    how: [
+      "The cheapest ratio in this table: five linear KDA layers for every one that keeps a real cache, and even that one is MLA, compressing its keys and values into a low-rank latent rather than storing them per head.",
+      "What sets Ling 3.0 apart is not the ratio but when it was chosen. Most hybrids are softmax models converted afterwards, the linear layers distilled to imitate what the attention layers already learned. Ant Group says this stacking was in place from the first pre-training step, so the model never had exact attention everywhere to lose.",
+    ],
+    cost: "One exact layer in six is a thin thread for precise long-range recall, and a native hybrid cannot be un-converted if the ratio turns out to be too aggressive — there is no softmax original to fall back to.",
+    fig: <LayerStack layers={ratio(42, 6)} legend="35 KDA · 7 MLA"
+      caption="Seven exact layers in forty-two, fixed before training began." />,
+  },
+
   "KDA + DSA (34:11 layers)": {
     family: "remember",
     how: [

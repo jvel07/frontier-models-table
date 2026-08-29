@@ -433,7 +433,13 @@ export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = 
     const params = m.safetensors?.total ?? null;
     // Same tier rule as everywhere else, minus the lab half: nobody has decided
     // yet whether an unknown lab is a frontier one, so size decides alone.
-    const isBig = params == null || params >= FRONTIER_MIN_PARAMS;
+    //
+    // Unknown size goes to the weekly list here, the opposite of the org sweep.
+    // There, an unknown count from a named frontier lab is worth a same-day look;
+    // here it usually means a repo too small or too unusual to publish tensor
+    // metadata. Needle 2 — 45M parameters in a 14MB binary — reached the daily
+    // frontier list this way before this line said otherwise.
+    const isBig = params != null && params >= FRONTIER_MIN_PARAMS;
     if ((tier === "frontier") !== isBig) continue;
     hits.push({ id, likes: m.likes ?? 0, downloads: m.downloads ?? 0, params, created, org });
   }
