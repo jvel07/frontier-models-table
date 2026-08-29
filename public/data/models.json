@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-08-27",
+ "version": "2026-08-29",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-27},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-29},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 78,
+ "count": 79,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -1600,6 +1600,94 @@
    }
   },
   {
+   "name": "Hy4 preview",
+   "provider": "Tencent",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "770B",
+   "active": "49B",
+   "attn": "Gated DSA + IndexCache",
+   "modality": "Text",
+   "context": 1000000,
+   "maxOut": null,
+   "license": "Apache 2.0",
+   "open": true,
+   "intel": null,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": null,
+   "vision": null,
+   "training": [
+    {
+     "label": "Pre-training",
+     "tokens": null,
+     "detail": "No token budget published. Tencent names the three axes it scaled — model size, context length and training data — and claims the largest generation-over-generation gain it has measured, but publishes no figure for any of them."
+    },
+    {
+     "label": "Post-training",
+     "tokens": null,
+     "detail": "Described as substantially larger than the previous generation's, and as built on data drawn from work done inside Tencent: software engineers, game developers, finance analysts and security teams. The claim is that the training data came from the tasks those teams actually ship rather than from a synthetic proxy for them. No budget, stage list or method is published."
+    }
+   ],
+   "note": "A preview, and the name says so — Tencent's flagship generation is not finished, and preview figures may not survive to GA. 770B total against 49B active, on a backbone of 78 layers where only the first carries a dense FFN and the other 77 are MoE with 256 routed experts and 1 shared, 8 routed firing per token. A separate 10B multi-token-prediction layer for speculative decoding sits outside that count, which is why the weights on Hugging Face total 780B and this row says 770B: the card's own table is explicitly backbone-only. Attention is gated DeepSeek Sparse Attention on every one of the 78 layers, with an indexer of 32 heads selecting 2,048 blocks, and Tencent's IndexCache reusing those sparse indices across layers rather than recomputing them. The residual stream is replaced by four parallel streams under identity hyper-connections. Apache 2.0, which at this size is unusual. Artificial Analysis has not rated it, so every index column is blank.",
+   "spec": {
+    "vocab": "120,832",
+    "layers": 78,
+    "hidden": "6,144",
+    "heads": "64 Q / 8 KV; DSA indexer 32 heads, top-k 2,048",
+    "experts": "256 routed · 8 active · 1 shared",
+    "layerMix": "Gated DSA on all 78 layers; layer 1 dense FFN, 77 MoE; 4 residual streams (iHC)",
+    "window": "—",
+    "posEmb": "RoPE on 64 of 256 head dims; MLA latent 512, query latent 2,048",
+    "ffn": "18,432 dense · 2,048 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-5)",
+    "headDim": 64,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/tencent/Hy4-preview",
+   "report": "https://huggingface.co/tencent/Hy4-preview",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 770000000000,
+    "activeParams": 49000000000,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": 159744,
+    "kvCacheFormula": "2 * layers * kvHeads * headDim * 2 bytes; head_dim as published in config.json",
+    "weightBytesFp16": 1540000000000,
+    "disclosureScore": 10,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": true,
+     "tokens": false,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
+   }
+  },
+  {
    "name": "GLM-5.3",
    "provider": "Zhipu",
    "released": "2026/08",
@@ -1611,17 +1699,31 @@
    "modality": "Text",
    "context": 1000000,
    "maxOut": 128000,
-   "license": "Undisclosed",
-   "open": false,
+   "license": "GLM-5.3 License",
+   "open": true,
    "intel": 60,
    "codingAgent": null,
    "codingAgentVia": null,
    "agentic": 59,
    "training": null,
    "trainingSource": "Z.ai describes 5.3 as GLM-5.2's base carried forward through a longer post-training run — harder agent environments, fuller trajectories, stronger verification — rather than a new pre-training run. No token budget is published for either stage, so none is shown.",
-   "note": "Shipped 14 August 2026, six weeks after 5.2, and deliberately not a new architecture: Z.ai's own framing is that the base is unchanged and the gains come from scaling post-training for long-horizon coding and agentic work. The attention stack and expert layout recorded here are therefore 5.2's. Weights had not appeared under zai-org when this row was written and still had not on 22 August; Artificial Analysis links a Hugging Face repository for it that does not resolve, so this stays closed and the licence blank rather than assuming 5.2's MIT terms carry over. Z.ai's documentation adds that input is text-only, that the window is 1M against a 128K maximum output, and that reasoning can no longer be switched off — the efforts are low, high and max, and a request that disables thinking is rejected. What it does describe of the post-training is environment scaling: reinforcement learning against synthesised long-horizon task environments, with verifiers generated without sight of the reference solution and checked against oracle, no-op and unsolved states before their reward is trusted, keeping 5.2's SAO-with-compaction. Z.ai reports Terminal-Bench 3.0 moving from 4.6 to 28.3 and DeepSWE v1.1 from 46.2 to 66.9 on that basis. Artificial Analysis has since rated it: 60 on intelligence and 59 on agentic, from the max-effort rows.",
-   "spec": null,
-   "huggingface": null,
+   "note": "Shipped 14 August 2026, six weeks after 5.2, and deliberately not a new architecture: Z.ai's own framing is that the base is unchanged and the gains come from scaling post-training for long-horizon coding and agentic work. The attention stack and expert layout recorded here are therefore 5.2's. Weights were not published at launch and this row recorded it as closed; zai-org/GLM-5.3 went up on 25 August, so the specs here are now read from its own config.json rather than inferred. They are not under 5.2's MIT terms — the repo carries a model-specific GLM-5.3 licence — which is why the earlier refusal to assume MIT carried over mattered. Z.ai's documentation adds that input is text-only, that the window is 1M against a 128K maximum output, and that reasoning can no longer be switched off — the efforts are low, high and max, and a request that disables thinking is rejected. What it does describe of the post-training is environment scaling: reinforcement learning against synthesised long-horizon task environments, with verifiers generated without sight of the reference solution and checked against oracle, no-op and unsolved states before their reward is trusted, keeping 5.2's SAO-with-compaction. Z.ai reports Terminal-Bench 3.0 moving from 4.6 to 28.3 and DeepSWE v1.1 from 46.2 to 66.9 on that basis. Artificial Analysis has since rated it: 60 on intelligence and 59 on agentic, from the max-effort rows.",
+   "spec": {
+    "vocab": "154,880",
+    "layers": 78,
+    "hidden": "6,144",
+    "heads": "64 Q / 64 KV; DSA indexer 32 heads, top-k 2,048",
+    "experts": "256 routed · 8 active · 1 shared",
+    "layerMix": "DeepSeek Sparse Attention throughout; first 3 layers dense FFN",
+    "window": "—",
+    "posEmb": "RoPE on 64 of 256 head dims; MLA latent 512, query latent 2,048",
+    "ffn": "12,288 dense · 2,048 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-5)",
+    "headDim": 192,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/zai-org/GLM-5.3",
    "report": "https://docs.z.ai/guides/llm/glm-5.3",
    "derived": {
     "_note": "Computed from the fields above, not published by the lab.",
@@ -1634,30 +1736,30 @@
     "tokensPerParam": null,
     "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
     "kvCacheBytesPerTokenFp16": null,
-    "kvCacheFormula": null,
+    "kvCacheFormula": "MLA caches a compressed latent, not per-head K/V",
     "weightBytesFp16": 1486000000000,
-    "disclosureScore": 6,
+    "disclosureScore": 9,
     "disclosureTotal": 12,
     "disclosureFields": {
      "arch": true,
      "params": true,
      "active": true,
      "attn": true,
-     "config": false,
-     "pos": false,
-     "vocab": false,
+     "config": true,
+     "pos": true,
+     "vocab": true,
      "context": true,
      "pipeline": false,
      "tokens": false,
      "curriculum": false,
      "report": true
     },
-    "opennessTier": "closed",
+    "opennessTier": "open",
     "opennessVerbs": {
-     "download": false,
-     "inspect": false,
-     "modify": false,
-     "run": false
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
     },
     "licenseClass": "other"
    }

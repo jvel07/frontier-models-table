@@ -392,6 +392,17 @@ const EXPLAIN = {
       caption="Roughly three linear layers per exact one, through 93 layers." />,
   },
 
+  "Gated DSA + IndexCache": {
+    family: "less",
+    how: [
+      "Sparse attention keeps the whole cache and reads a slice of it. An indexer scores the sequence, the top 2,048 blocks are attended to, everything else is skipped. Hy4 preview runs that on all 78 of its layers \u2014 there is no exact layer anywhere in the stack \u2014 with a gate on the output.",
+      "The indexer is the part that gets expensive when every layer needs one, because each layer scores the sequence again to reach nearly the same answer. IndexCache computes the selection once and reuses it in the layers above, on the bet that which tokens matter is a property of the sequence more than of the depth.",
+    ],
+    cost: "That bet is the risk. If the useful context genuinely shifts between early and late layers, a reused index hides the shift, and nothing downstream can recover a block the first indexer passed over.",
+    fig: <LayerStack layers={Array.from({ length: 26 }, () => 0)} legend="78 layers, all sparse"
+      caption="No exact layer in the stack; the index is computed once and reused." />,
+  },
+
   "KDA + DSA (34:11 layers)": {
     family: "remember",
     how: [
