@@ -7,7 +7,7 @@
  "citation": {
   "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-08-29},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 79,
+ "count": 80,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -1587,6 +1587,95 @@
      "pipeline": true,
      "tokens": true,
      "curriculum": true,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
+   }
+  },
+  {
+   "name": "Ornith 1.5 397B",
+   "provider": "Ornith",
+   "released": "2026/08",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "397B",
+   "active": "—",
+   "attn": "Gated DeltaNet + gated attn",
+   "modality": "Text",
+   "context": 262144,
+   "maxOut": null,
+   "license": "MIT",
+   "open": true,
+   "intel": null,
+   "codingAgent": null,
+   "codingAgentVia": null,
+   "agentic": null,
+   "vision": null,
+   "trainingSource": "The architecture is not Ornith's. Ornith-1.0 was built on top of Qwen3.5 and Gemma 4, and 1.5 extends it, so every structural field in this row — the 3:1 Gated DeltaNet layout, the 512-expert MoE, the 248,320 vocabulary, the qwen3_5_moe_text model type in its own config — describes Qwen3.5's design carried forward. What Ornith reports as its own is the training loop below and the weights it produced.",
+   "training": [
+    {
+     "label": "Continued pre-training + mid-training",
+     "tokens": null,
+     "detail": "Inherited from Ornith 1.0, which the lab describes as Qwen3.5 and Gemma 4 taken through additional continued pre-training, mid-training and post-training. No token budget, corpus description or mixture is published for any of those stages, and none is inferred here."
+    },
+    {
+     "label": "Self-improvement loop (RL)",
+     "tokens": null,
+     "detail": "The part Ornith presents as its own contribution, and the reason this row exists. Where 1.0 optimised scaffolds and rollouts against a fixed set of human-written tasks, 1.5 also generates the tasks: it writes new training problems, searches for harnesses that solve them, and improves the policy by reinforcement learning over the result. Task generation, scaffold construction and rollout are optimised jointly rather than in sequence. Reward design is described in the lab's blog rather than a paper, and no budget or step count is published."
+    }
+   ],
+   "note": "Read the provenance first: this is Qwen3.5 continued-pretrained and post-trained by someone else, not a model Ornith designed. It is here because the training loop is theirs and is the interesting part — a self-improvement cycle that writes its own tasks rather than consuming a fixed human-curated set — and because the result is not marginal: Ornith reports 86.1 on Terminal-Bench 2.1 and 56.0 on DeepSWE against Claude Opus 4.8's 85.0 and 59.0. Treat those as the lab's own numbers; nobody independent has published on it. 397B total under MIT, with no active-parameter count disclosed, so that column stays blank rather than being computed from the expert layout. The native window is 262K, and the card's 1M figure is YaRN scaling applied at serve time, not a trained context. Artificial Analysis has not rated it.",
+   "spec": {
+    "vocab": "248,320",
+    "layers": 60,
+    "hidden": "4,096",
+    "heads": "32 Q / 2 KV",
+    "experts": "512 routed · 10 active",
+    "layerMix": "3 Gated DeltaNet : 1 full attention (45:15)",
+    "window": "—",
+    "posEmb": "Partial RoPE (factor 0.25); YaRN ×4 offered at serve time for 1M",
+    "ffn": "1,024 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-6)",
+    "headDim": 256,
+    "source": "config.json (Qwen3.5-derived)"
+   },
+   "huggingface": "https://huggingface.co/ornith-ai/Ornith-1.5-397B",
+   "report": "https://huggingface.co/ornith-ai/Ornith-1.5-397B",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 397000000000,
+    "activeParams": null,
+    "disclosedTrainingTokens": null,
+    "disclosedTokensAreApproximate": null,
+    "trainingFlops": null,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": null,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": null,
+    "kvCacheFormula": "hybrid: linear layers carry a fixed state that does not grow per token",
+    "weightBytesFp16": 794000000000,
+    "disclosureScore": 8,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": false,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": false,
+     "tokens": false,
+     "curriculum": false,
      "report": true
     },
     "opennessTier": "open",

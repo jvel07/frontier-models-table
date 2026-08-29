@@ -370,11 +370,17 @@ function commonPrefix(ids) {
  * were the only thing the org sweep would have surfaced from those weeks.
  *
  * So this asks Hugging Face for the most-liked recent text models across the whole
- * hub and subtracts what we already know. Likes rather than downloads because a
- * download count is dominated by mirrors and CI; likes track what practitioners
- * actually noticed.
+ * hub and subtracts what we already know.
+ *
+ * Likes alone would be the wrong gate, and Ornith is why. Its 397B flagship had 84
+ * likes against the 35B sibling's 486 — a big model is liked by the people who can
+ * run it, which is not many, while its downloads ran to six figures. Ranking the
+ * hub by approval systematically demotes exactly the frontier-scale releases this
+ * table exists for. Either signal admits a model; downloads alone would let mirrors
+ * and CI traffic in, so both gates are kept and neither is trusted on its own.
  */
 const HUB_MIN_LIKES = 60;
+const HUB_MIN_DOWNLOADS = 20000;
 
 export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = {}) {
   const known = new Set(Object.values(maps.HF_LINKS).map((r) => r.toLowerCase()));
@@ -408,7 +414,7 @@ export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = 
     const id = String(m.id);
     if (known.has(id.toLowerCase())) continue;
     if (REPACKAGED.test(id)) continue;
-    if ((m.likes ?? 0) < HUB_MIN_LIKES) continue;
+    if ((m.likes ?? 0) < HUB_MIN_LIKES && (m.downloads ?? 0) < HUB_MIN_DOWNLOADS) continue;
     // Somebody else's finetune, quantisation or distill of a model already here.
     // On an unfiltered hub these outnumber real releases several to one.
     if (derivative(id)) continue;
@@ -429,10 +435,13 @@ export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = 
     // yet whether an unknown lab is a frontier one, so size decides alone.
     const isBig = params == null || params >= FRONTIER_MIN_PARAMS;
     if ((tier === "frontier") !== isBig) continue;
-    hits.push({ id, likes: m.likes ?? 0, params, created, org });
+    hits.push({ id, likes: m.likes ?? 0, downloads: m.downloads ?? 0, params, created, org });
   }
 
-  hits.sort((a, b) => b.likes - a.likes);
+  // Rank on both, so a heavily-downloaded flagship is not buried under a smaller
+  // sibling that more people could run.
+  const reach = (h) => h.likes + h.downloads / 1000;
+  hits.sort((a, b) => reach(b) - reach(a));
   // Whether the org is one we sweep changes what the finding means: an untracked
   // lab is a gap in coverage, a tracked one that only turns up here means the org
   // sweep saw it and something else — a tier rule, a filter — dropped it.
@@ -443,7 +452,7 @@ export async function discoverHub(maps, { tier = "frontier", sinceDays = 45 } = 
     url: `https://huggingface.co/${h.id}`,
     detail: `published ${new Date(h.created).toISOString().slice(0, 10)}, `
       + `${h.params ? `${(h.params / 1e9).toFixed(0)}B params` : "parameter count not published"}, `
-      + `${h.likes} likes — `
+      + `${h.likes} likes, ${h.downloads} downloads — `
       + (tracked.has(h.org)
         ? `${h.org} is swept by the org check too, so this one is worth a second look at why that check did not raise it`
         : `from a lab no org sweep here covers`),
