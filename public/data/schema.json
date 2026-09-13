@@ -1,5 +1,5 @@
 {
- "version": "2026-08-29",
+ "version": "2026-09-13",
  "note": "Fields under `derived` are computed by this project, not published by the lab. Everything else is recorded from a primary source; a null means no source stated it, never zero.",
  "fields": {
   "name": "Model name as the atlas records it. Primary key.",
@@ -15,7 +15,8 @@
   "maxOut": "Max output tokens, null where unpublished.",
   "license": "Licence string as published.",
   "open": "Whether weights are downloadable.",
-  "intel": "Artificial Analysis Intelligence Index. Third-party.",
+  "intel": "Artificial Analysis Intelligence Index. Third-party. Read intelVersion before comparing two models: the column holds figures from two versions of the index.",
+  "intelVersion": "The version of the AA Intelligence Index the intel figure was measured under. AA re-based the index at v4.2 and again at v4.3 by adding harder evaluations rather than re-testing, which moved every score down 12-18 points, and it has re-rated only some of these models. A '4.1' figure and a '4.3' figure are not on the same scale and must not be compared, ranked or averaged together. null where intel is null.",
   "codingAgent": "Artificial Analysis Coding Agent Index v1.3. Third-party. Scores an agent harness driving the model, not the model alone, so it is only meaningful together with codingAgentVia.",
   "codingAgentVia": "The agent harness that produced codingAgent — the highest-scoring pairing AA publishes for this model.",
   "vision": "MMMU-Pro percentage as published by Artificial Analysis. Third-party, and a single benchmark rather than an index — none of intel, codingAgent or agentic includes a vision evaluation, so a null here is common on models that lead those.",

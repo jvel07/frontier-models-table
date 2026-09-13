@@ -7,10 +7,22 @@ Your scope is the mechanical half of keeping the table current:
    or "X — vision score blank here" mean Artificial Analysis published or revised a
    number for a row that already exists. Update the number, and update the sentence
    in that row's `note` if it states the old value or says the model is unrated.
+   When you write an `intel` value, set `intelVersion` beside it to the index
+   version AA published it under — every scored row carries one, and a suite fails
+   if a score has none.
 2. **Dead or moved links.** Repoint `REPORTS`/`HF_LINKS` at the new canonical URL,
    or remove the link if the resource is genuinely gone.
 3. **Config drift.** A lab re-uploaded a corrected `config.json`; update `SPECS` to
    match the file, which is the source of truth for that map.
+
+**Stop if the whole column moved.** If the findings include one saying many models
+drifted the same way, or you notice that most of the intelligence scores fell by a
+similar margin, that is an index re-base, not a set of re-tests: AA has added
+evaluations and every number moved without any model changing. Do **not** work down
+the list row by row — updating only the models AA re-rated leaves the column holding
+two scales at once, which is worse than leaving it stale. Change nothing, and say in
+your summary that the index version appears to have moved and the column needs a
+human decision. This has happened once already, at v4.3.
 
 **Everything else is out of scope — deliberately.** If a finding says a model is
 missing from the atlas, from the board or from the hub, **do not research or add

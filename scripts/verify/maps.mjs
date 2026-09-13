@@ -61,6 +61,23 @@ const orphans = [...attnUsed].filter((a) => !attnKeys.has(a));
 ok(`every attn value has a description (${attnUsed.size - orphans.length}/${attnUsed.size})`,
   orphans.length === 0, orphans.join(", "));
 
+// Every intelligence score has to say which version of the AA index measured it.
+// The column holds two at once — AA re-based at v4.3 and re-rated only some of these
+// models — so a bare score is one nobody can place on a scale, and the page has no
+// way to mark it. Checked structurally rather than in the browser so the daily sweep,
+// which runs only this suite, cannot write one and get away with it.
+// The lookahead must not consume the newline that opens the next row, or matchAll
+// resumes past it and silently reads every second model.
+const scored = [...modelsBlock.matchAll(/\n {2}\{ name: "([^"]+)"[\s\S]*?(?=\n {2}\{ name: "|$)/g)];
+const untagged = [];
+for (const [chunk, name] of scored.map((m) => [m[0], m[1]])) {
+  const intel = chunk.match(/intel: (null|-?\d+(?:\.\d+)?)/);
+  if (!intel || intel[1] === "null") continue;
+  if (!/intelVersion: "\d+\.\d+"/.test(chunk)) untagged.push(name);
+}
+ok(`every intelligence score records its index version (${scored.length - untagged.length}/${scored.length} rows)`,
+  untagged.length === 0, untagged.join(", "));
+
 // diagram slugs need their local fallback files
 const slugs = [...block("DIAGRAMS").matchAll(/slug: "([^"]+)"/g)].map((m) => m[1]);
 const missing = slugs.flatMap((s) => ["thumbnails", "full"]

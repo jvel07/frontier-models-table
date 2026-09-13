@@ -210,19 +210,38 @@ console.log("\n=== METER ===");
 // would be worse than decoration — it would be a claim about the data that is wrong.
 const lit = await page.locator(".atlas-meter-lead").count();
 t("some meters are lit", lit > 0, `${lit} lit`);
+// Intelligence holds two index versions at once, because AA re-based the index at
+// v4.3 and re-rated only some of these models. So the top score in the column is not
+// the leader — it usually belongs to a model that simply was not re-tested, and
+// lighting it would be a claim that the older scale and the newer one are one scale.
+// The lead is the best among rows on the live basis, which the cell marks by *not*
+// carrying a version tag.
 const intelLead = await page.locator("table tbody tr[data-model]").evaluateAll((rows) => {
-  const vals = rows.map((r) => ({
-    name: r.dataset.model,
-    v: parseInt(r.querySelectorAll("td")[1].textContent, 10),
-    lit: !!r.querySelectorAll("td")[1].querySelector(".atlas-meter-lead"),
-  })).filter((x) => !Number.isNaN(x.v));
-  const max = Math.max(...vals.map((x) => x.v));
-  return { max, litNames: vals.filter((x) => x.lit).map((x) => x.name),
-    shouldBe: vals.filter((x) => x.v === max).map((x) => x.name) };
+  const vals = rows.map((r) => {
+    const cell = r.querySelectorAll("td")[1];
+    const text = cell.textContent.replace(/\s+/g, " ").trim();
+    return {
+      name: r.dataset.model,
+      v: parseInt(text, 10),
+      superseded: / v\d+\.\d+ scoring/.test(text),
+      lit: !!cell.querySelector(".atlas-meter-lead"),
+    };
+  }).filter((x) => !Number.isNaN(x.v));
+  const live = vals.filter((x) => !x.superseded);
+  const max = Math.max(...live.map((x) => x.v));
+  return { max,
+    highestAnywhere: Math.max(...vals.map((x) => x.v)),
+    litNames: vals.filter((x) => x.lit).map((x) => x.name),
+    shouldBe: live.filter((x) => x.v === max).map((x) => x.name) };
 });
-t("the lit intelligence meters are exactly the top-scoring rows",
+t("the lit intelligence meters are exactly the top rows on the live index version",
   JSON.stringify(intelLead.litNames.sort()) === JSON.stringify(intelLead.shouldBe.sort()),
   `lit ${intelLead.litNames.join(",")} vs top ${intelLead.shouldBe.join(",")} at ${intelLead.max}`);
+// And the case that makes the rule worth stating: a superseded score outranks the
+// live leader numerically, so "highest number" and "lead" really are different rows.
+t("a superseded score does outrank the live leader, so the distinction is load-bearing",
+  intelLead.highestAnywhere > intelLead.max,
+  `highest anywhere ${intelLead.highestAnywhere} vs live leader ${intelLead.max}`);
 
 console.log("\n=== BACKDROP ===");
 // The parallax layer is fixed, so it must never lengthen the document or widen it;

@@ -101,13 +101,18 @@ const AXES = [
   { group: "Identity", label: "Licence", pick: (m) => m.license },
   { group: "Identity", label: "Weights", pick: (m) => (m.open ? "Open" : "Proprietary"),
     hint: "Whether you can download and run the model yourself" },
-  { group: "Identity", label: "Intelligence (AA)", pick: (m) => (m.intel == null ? null : String(m.intel)),
-    hint: "Artificial Analysis Intelligence Index v4.1 — a composite of 9 evaluations. Higher is better; the scale is not a percentage." },
+  // The basis travels with the number here more than anywhere else: this view exists
+  // to put two models side by side, and 51 against 57 reads as a verdict unless the
+  // reader can see the 57 was measured on an index AA has since replaced.
+  { group: "Identity", label: "Intelligence (AA)",
+    pick: (m) => (m.intel == null ? null
+      : m.intelVersion && m.intelVersion !== "4.3" ? `${m.intel} · v${m.intelVersion} scoring` : String(m.intel)),
+    hint: "Artificial Analysis Intelligence Index v4.3 — a composite of 10 evaluations. Higher is better; the scale is not a percentage. AA re-based the index at v4.2 and v4.3 by adding harder evaluations rather than re-testing, moving every score down 12-18 points, and has re-rated only some of these models: a figure marked “v4.1 scoring” is on the superseded scale and is not comparable to an unmarked one." },
   { group: "Identity", label: "Coding agent (AA)",
     pick: (m) => (m.codingAgent == null ? null : `${m.codingAgent} · via ${m.codingAgentVia}`),
-    hint: "Artificial Analysis Coding Agent Index v1.3 — DeepSWE, Terminal-Bench v2 and SWE-Atlas-QnA averaged, scored 0-100. It measures an agent driving a model, so the harness is part of the figure and is named alongside it; the highest-scoring pairing AA publishes for the model is shown." },
+    hint: "Artificial Analysis Coding Agent Index v1.3 — DeepSWE, Terminal-Bench v2 and SWE-Atlas-QnA averaged, scored 0-100. It measures an agent driving a model, so the harness is part of the figure and is named alongside it; the highest-scoring pairing AA publishes for the model is shown. AA has since moved to v1.5 and publishes the per-evaluation rewards rather than the index, so these figures stay at the v1.3 basis they were read at." },
   { group: "Identity", label: "Agentic (AA)", pick: (m) => (m.agentic == null ? null : String(m.agentic)),
-    hint: "Artificial Analysis Agentic Index — GDPval-AA v2 and 𝜏³-Banking averaged, scored 0-100. Long-horizon tool use rather than single answers. Both evaluations also sit inside the Intelligence Index, so this is that score re-cut, not an independent measurement." },
+    hint: "Artificial Analysis Agentic Index — GDPval-AA v2 and 𝜏³-Banking averaged, scored 0-100. Long-horizon tool use rather than single answers. Both evaluations also sit inside the Intelligence Index, so this is that score re-cut, not an independent measurement. AA withdrew this composite at the v4.3 re-base and now publishes the underlying evaluations only, so these are its last reported figures rather than current ones." },
 
   { group: "Identity", label: "Vision (AA)", pick: (m) => (m.vision == null ? null : `${m.vision}%`),
     hint: "MMMU-Pro as published by Artificial Analysis — college-level questions across 30 subjects that cannot be answered without reading the image. A single benchmark rather than an index, and the only vision figure AA reports per model; none of the three scores above includes one." },

@@ -5,6 +5,11 @@ import { dirname, resolve } from "node:path";
 const MODELS = JSON.parse(readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", ".verify", "models.json"), "utf8"));
 
+// The AA Intelligence Index version the table treats as live. Scores measured under
+// anything older render with their version beside them; this is the value they are
+// compared against. Kept in step with CURRENT_INTEL_INDEX in FrontierModelsTable.jsx.
+const CURRENT_INTEL_INDEX = "4.3";
+
 const URL = process.argv[2] || "http://localhost:4173/frontier-models-table/";
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
@@ -51,7 +56,16 @@ for (const row of rows) {
   // params, attention, context — then provenance. Attention (index 7) has no source
   // field to diff against.
   const checks = [
-    ["intel", cells[1].trim(), m.intel == null ? "—" : String(m.intel)],
+    // Intelligence prints the index version under any score AA measured on a
+    // superseded scale, for the same reason the coding-agent cell prints its
+    // harness: the number means nothing without it. AA's v4.3 re-based the index
+    // 12-18 points below v4.1 and re-rated only some of these models, so a v4.1
+    // figure that renders bare reads as if it were level with a v4.3 one — the
+    // failure this assertion exists to catch.
+    ["intel", cells[1].trim().replace(/\s+/g, " "),
+      m.intel == null ? "—"
+        : m.intelVersion && m.intelVersion !== CURRENT_INTEL_INDEX
+          ? `${m.intel} v${m.intelVersion} scoring` : String(m.intel)],
     // The coding-agent cell prints the harness under the score, because the figure
     // describes the pair. Asserting on both is the point: a score that lost its
     // harness is the failure this column has to be protected against.
@@ -81,10 +95,24 @@ for (const row of rows) {
   if (!/^\d{4}\/\d{2}$/.test(cells[9].trim())) {
     console.log(`FAIL "${name}": Released column ("${cells[9].trim()}") is not a YYYY/MM date`); fail++;
   }
-  for (const [label, idx] of [["Intelligence", 1], ["Agentic", 3]]) {
-    const v = cells[idx].trim();
+  {
+    const v = cells[3].trim();
     if (v !== "—" && !/^\d+$/.test(v)) {
-      console.log(`FAIL "${name}": ${label} column ("${v}") is not a bare number`); fail++;
+      console.log(`FAIL "${name}": Agentic column ("${v}") is not a bare number`); fail++;
+    }
+  }
+  // Intelligence is a number optionally followed by the basis tag, and nothing else.
+  // Checked as a shape rather than left to the diff above so that a tag which drifts
+  // into some other wording still fails here.
+  {
+    const v = cells[1].trim().replace(/\s+/g, " ");
+    if (v !== "—" && !/^\d+( v\d+\.\d+ scoring)?$/.test(v)) {
+      console.log(`FAIL "${name}": Intelligence column ("${v}") is not a number with an optional basis tag`); fail++;
+    }
+    // Every scored row must record which index version it was measured under: an
+    // untagged score is one nobody can place on a scale.
+    if (m.intel != null && !m.intelVersion) {
+      console.log(`FAIL "${name}": has an intelligence score but no intelVersion`); fail++;
     }
   }
   // Vision carries its unit, so it is checked for the shape the others must not have.

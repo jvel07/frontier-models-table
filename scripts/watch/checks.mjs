@@ -597,22 +597,56 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
   // link and citation checks — not a question about which tier a model belongs to.
   if (tier !== "frontier") return { findings, checked: records.size, skipped: 0 };
 
+  // A field AA has stopped publishing reconciles as "no drift" on every row, which
+  // is the quietest way for a column to go stale: nothing looks wrong because
+  // nothing is compared. The Agentic Index went this way at the v4.3 re-base — the
+  // page now carries its component evaluations and no composite. Said once, as a
+  // finding, because it is a real editorial event rather than a blocked request:
+  // the atlas holds a column its source no longer maintains.
+  const intelDrift = [];
+  const agenticLive = [...records.values()].some((r) => r.agentic != null);
+  if (!agenticLive && records.size) {
+    findings.push({
+      subject: "Agentic Index — AA no longer publishes it",
+      url: AA_BOARD,
+      detail: `none of the ${records.size} rated models carries an agenticIndex any more, so the agentic column here cannot be reconciled against the source and has not been. Either AA renamed the field — in which case this check needs the new name — or it withdrew the composite, in which case the recorded figures are its last published ones and the column should say so.`,
+    });
+  }
+
   for (const entry of records.values()) {
     const ours = match(entry.label);
     if (!ours) continue;
     const url = `https://artificialanalysis.ai/models/${entry.slug}`;
     for (const [field, mine, theirs] of [["intelligence index", ours.intel, entry.intel],
-                                         ["agentic index", ours.agentic, entry.agentic],
+                                         ["agentic index", ours.agentic, agenticLive ? entry.agentic : null],
                                          ["vision score", ours.vision, entry.vision]]) {
       if (theirs == null) continue;
       if (mine == null) {
         findings.push({ subject: `${ours.name} — ${field} blank here`, url,
           detail: `AA rates "${entry.label}" at ${theirs.toFixed(1)} and this row records nothing — check the variant matches before filling it in` });
       } else if (Math.abs(theirs - mine) >= INTEL_TOLERANCE) {
+        if (field === "intelligence index") intelDrift.push(theirs - mine);
         findings.push({ subject: `${ours.name} — ${field}`, url,
           detail: `atlas records ${mine}, AA now shows ${theirs.toFixed(1)} for "${entry.label}" — AA re-tests, so confirm which run the row should quote` });
       }
     }
+  }
+
+  // Drift on one model is a re-test. Drift on most of them, all the same way, is a
+  // re-based index — AA adds evaluations and every score moves, without any model
+  // having changed. The two need opposite responses: a re-test is a row to edit, a
+  // re-base is a decision about the whole column, and working down the list row by
+  // row quietly mixes two scales in one column. This says which one is in front of
+  // you before the first edit, because the per-row findings below cannot.
+  const sameWay = intelDrift.length >= 5
+    && (intelDrift.every((d) => d < 0) || intelDrift.every((d) => d > 0));
+  if (sameWay) {
+    const lo = Math.min(...intelDrift.map(Math.abs)), hi = Math.max(...intelDrift.map(Math.abs));
+    findings.unshift({
+      subject: `Intelligence index — ${intelDrift.length} models drifted the same way, which looks like a re-base`,
+      url: AA_BOARD,
+      detail: `every one of them moved ${intelDrift[0] < 0 ? "down" : "up"}, by ${lo.toFixed(1)}-${hi.toFixed(1)} points. Models do not move in step, so read the index version on AA's page before editing anything: if it has changed, these are one decision about the whole column rather than ${intelDrift.length} separate corrections, and updating only the re-rated rows would leave the column holding two scales at once. The per-model findings below are listed anyway, since the version may well be unchanged.`,
+    });
   }
 
   const coding = await checkCodingAgents(match);

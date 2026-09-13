@@ -350,6 +350,19 @@ const EXPLAIN = {
       caption="A hybrid stack: the cheap layer type dominates, punctuated by the exact one." />,
   },
 
+  "CSA2 (Compressed Sparse Attn 2)": {
+    family: "less",
+    how: [
+      "Sparse attention already skips most of the sequence. What CSA2 goes after is the work that survives the skipping: every layer still projects its own keys and values, and every layer still runs an indexer to decide which blocks are worth reading.",
+      "So each layer is given one of three fixed modes. A Full layer does the work and publishes it. A Reindex layer reuses the keys and values from below but picks its own blocks. A Reuse layer takes both — the same cache and the same selection. The modes are static, set at design time rather than chosen per token, so the serving cost of a layer is known before a request arrives.",
+      "The decoder adds a hierarchy on top: the first Full layer proposes a candidate pool and every indexer above it chooses only from that pool. Indexing then costs the same whether the context is 64K or a million tokens, because the pool is a fixed size.",
+    ],
+    cost: "Everything above a Full layer inherits its judgement. A block that layer's indexer passed over is not merely unread — it is absent from the candidate pool, so no later layer can ask for it however much it would have mattered. The gain is bought by making a few early layers responsible for what the rest of the stack is allowed to see.",
+    fig: <LayerStack layers={[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]}
+      legend="40 layers · 4 in Full mode"
+      caption="Only the wide layers project KV; the rest reindex or reuse what those publish." />,
+  },
+
   "Mamba-2 SSM + GQA attn": {
     family: "remember",
     how: [
