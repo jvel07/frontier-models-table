@@ -32,6 +32,33 @@ const firstFewIntel = await page.locator("table tbody tr td:nth-child(2)").allTe
 const nums = firstFewIntel.slice(0, 8).map((s) => parseInt(s)).filter((n) => !Number.isNaN(n));
 const sorted = [...nums].every((v, i) => i === 0 || nums[i - 1] >= v);
 t("rows are actually sorted by intelligence desc", sorted, nums.join(","));
+
+// Descending on the number alone is not enough, and asserting only that missed the
+// real bug: the table opened on a v4.1 score of 58 above a v4.3 score of 51, which
+// is still a descending sequence. The column holds two scales, so the order has to
+// group by index version first — live basis, then superseded, then unrated — or the
+// default view ranks models against a scale they were never measured on.
+const intelOrder = firstFewIntel
+  .map((s) => s.replace(/\s+/g, " ").trim())
+  .filter((s) => s !== "" && s !== "—")
+  .map((s) => ({ v: parseInt(s, 10), superseded: / v\d+\.\d+ scoring/.test(s) }))
+  .filter((x) => !Number.isNaN(x.v));
+const firstSuperseded = intelOrder.findIndex((x) => x.superseded);
+const strays = firstSuperseded < 0 ? []
+  : intelOrder.slice(firstSuperseded).filter((x) => !x.superseded);
+t("the default order puts every live-basis score above every superseded one",
+  strays.length === 0,
+  `${strays.length} live-basis row(s) below the first superseded one at index ${firstSuperseded}`);
+t("the top row is on the live index version, not merely the highest number",
+  intelOrder.length > 0 && !intelOrder[0].superseded,
+  `top cell: ${firstFewIntel[0]}`);
+// Within each version block the order must still be by score.
+for (const [label, block] of [["live", intelOrder.filter((x) => !x.superseded)],
+                              ["superseded", intelOrder.filter((x) => x.superseded)]]) {
+  t(`the ${label} block is ordered by score`,
+    block.every((x, i) => i === 0 || block[i - 1].v >= x.v),
+    block.map((x) => x.v).join(","));
+}
 await page.locator("thead th").filter({ hasText: "Intelligence" }).first().hover();
 await page.waitForTimeout(300);
 const tipText = await page.locator("body").evaluate(() => document.body.innerText);

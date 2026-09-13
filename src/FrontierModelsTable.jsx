@@ -977,6 +977,7 @@ const COLUMNS = [
         "AA re-based the index at v4.2 and v4.3 by adding harder evaluations, not by re-testing: the same model scores 12-18 points lower than it did under v4.1",
         "It has re-rated only some of the models here, so a figure marked “v4.1 scoring” was measured on the superseded scale and is not comparable to an unmarked one",
         "The lead marker compares only within v4.3, since a lead across two scales is not a lead",
+        "Sorting this column groups by index version before score, so v4.3 rows rank above v4.1 ones whatever the numbers say",
         "Where AA lists several reasoning-effort variants, the highest-scoring one is shown",
         "“—” = not on the AA leaderboard",
       ] } },
@@ -1276,7 +1277,21 @@ export default function FrontierModelsTable({ focus } = {}) {
         const toNum = (s) => { const [y, m] = String(s).split("/").map(Number); return y * 12 + (m - 1); };
         av = toNum(a.released); bv = toNum(b.released);
       }
-      else if (sortKey === "intel" || sortKey === "codingAgent" || sortKey === "agentic" || sortKey === "vision") {
+      // Intelligence sorts on two keys, index version before score, because the
+      // column holds two scales and a single numeric sort silently ranks across
+      // them. Sorted on the number alone the table opened on Qwen3.8 Max at 58 —
+      // top of the atlas only because AA has not re-tested it — while Opus 5 at 51
+      // on the current index sat six rows down. That is the same cross-scale
+      // comparison the lead marker refuses to make, and the default view is where
+      // it misleads most, since it is the order nobody chose.
+      else if (sortKey === "intel") {
+        const rank = (m) => (m.intel == null ? -1 : m.intelVersion === CURRENT_INTEL_INDEX ? 1 : 0);
+        const ar = rank(a), br = rank(b);
+        if (ar !== br) return sortDir === "asc" ? ar - br : br - ar;
+        av = a.intel == null ? -1 : a.intel;
+        bv = b.intel == null ? -1 : b.intel;
+      }
+      else if (sortKey === "codingAgent" || sortKey === "agentic" || sortKey === "vision") {
         av = a[sortKey] == null ? -1 : a[sortKey];
         bv = b[sortKey] == null ? -1 : b[sortKey];
       }
