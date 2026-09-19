@@ -606,11 +606,20 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
   const intelDrift = [];
   const agenticLive = [...records.values()].some((r) => r.agentic != null);
   if (!agenticLive && records.size) {
-    findings.push({
-      subject: "Agentic Index — AA no longer publishes it",
-      url: AA_BOARD,
-      detail: `none of the ${records.size} rated models carries an agenticIndex any more, so the agentic column here cannot be reconciled against the source and has not been. Either AA renamed the field — in which case this check needs the new name — or it withdrew the composite, in which case the recorded figures are its last published ones and the column should say so.`,
-    });
+    // The withdrawal itself is known, and the table says so on the column, so
+    // repeating it every morning would be the cry-wolf failure this file is
+    // otherwise careful about. What is still worth catching is the other reading
+    // of the same silence: that AA renamed the field rather than dropping it, and
+    // the check is reconciling nothing while a live figure sits under a new name.
+    const renamed = [...new Set([...res.body.matchAll(/"([a-zA-Z0-9_]*[aA]gentic[a-zA-Z0-9_]*)":/g)]
+      .map((m) => m[1]))].filter((k) => k !== "agenticIndex");
+    if (renamed.length) {
+      findings.push({
+        subject: "Agentic Index — the field may have come back under a new name",
+        url: AA_BOARD,
+        detail: `no record carries \`agenticIndex\` any more, which is why the agentic column is not being reconciled, but the page does carry ${renamed.map((k) => "`" + k + "`").join(", ")}. If one of those is the composite renamed, this check should read it instead; otherwise the recorded figures stay AA's last published ones.`,
+      });
+    }
   }
 
   for (const entry of records.values()) {
@@ -676,23 +685,55 @@ async function checkCodingAgents(match) {
   if (start < 0) return { findings: [], checked: 0, skipped: 1 };
   const region = body.slice(start, start + 200000);
 
-  const gaps = new Map();
-  const labels = new Set([...region.matchAll(/"displayLabel":"([^"]+)"/g)].map((m) => m[1]));
-  for (const label of labels) {
+  // AA now publishes the index itself, per row, as `indexScore` on a 0-1 scale —
+  // it used to carry only the per-evaluation rewards it is computed from. That
+  // changes what this check can honestly say. Reading a figure AA publishes is
+  // exactly what the rule asked for; it was working the weighted mean out here
+  // that would have put this project's arithmetic in a column of AA's numbers.
+  // So the check now reports the figure, and the rule it was protecting is intact.
+  //
+  // The score is read from the row's own slice of the page: each row runs from its
+  // displayLabel to the next one, so an indexScore can never be attributed to the
+  // row above or below it.
+  const marks = [...region.matchAll(/"displayLabel":"([^"]+)"/g)];
+  const rows = new Map();
+  for (let i = 0; i < marks.length; i++) {
+    const slice = region.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : region.length);
+    const raw = slice.match(/"indexScore":(-?[0-9.eE+-]+|null)/);
+    const label = marks[i][1];
     const [harness, ...rest] = label.split(" - ");
     const ours = match(rest.join(" - "));
-    if (!ours || ours.codingAgent != null) continue;
-    // One model appears once per reasoning effort, all under the same harness;
-    // the set is what a reviewer needs, not the repetition.
-    gaps.set(ours.name, (gaps.get(ours.name) || new Set()).add(harness));
+    if (!ours) continue;
+    // AA scores 0-1 where this column stores 0-100, as it does for MMMU-Pro.
+    const score = raw && raw[1] !== "null" ? +raw[1] * 100 : null;
+    // One model appears once per reasoning effort under the same harness; keep the
+    // highest, which is the pairing this table records everywhere else.
+    const prev = rows.get(ours.name);
+    if (!prev || (score ?? -1) > (prev.score ?? -1)) rows.set(ours.name, { ours, harness, score });
   }
 
-  const findings = [...gaps].slice(0, 10).map(([name, harnesses]) => ({
-    subject: `${name} — coding-agent index blank here`,
-    url: "https://artificialanalysis.ai/#coding-agents",
-    detail: `AA runs it under ${[...harnesses].join(" and ")} and this row records nothing. The page publishes the per-evaluation rewards rather than the index, so read the figure off the leaderboard rather than computing it, and set codingAgentVia to the harness it came from.`,
-  }));
-  return { findings, checked: labels.size, skipped: 0 };
+  const findings = [];
+  for (const [name, { ours, harness, score }] of rows) {
+    const url = "https://artificialanalysis.ai/#coding-agents";
+    if (score == null) {
+      if (ours.codingAgent == null) {
+        findings.push({ subject: `${name} — coding-agent index blank here`, url,
+          detail: `AA runs it under ${harness} and this row records nothing, but publishes no index figure for the pairing — read it off the leaderboard by hand, and set codingAgentVia to the harness it came from.` });
+      }
+      continue;
+    }
+    if (ours.codingAgent == null) {
+      findings.push({ subject: `${name} — coding-agent index blank here`, url,
+        detail: `AA rates it ${score.toFixed(1)} under ${harness} and this row records nothing — check the harness and the reasoning-effort variant match before filling it in, and set codingAgentVia to ${harness}.` });
+    } else if (Math.abs(score - ours.codingAgent) >= INTEL_TOLERANCE) {
+      findings.push({ subject: `${name} — coding-agent index`, url,
+        detail: `atlas records ${ours.codingAgent} via ${ours.codingAgentVia}, AA now shows ${score.toFixed(1)} under ${harness}. If most of this column moved at once it is a re-based index rather than a re-test — check the version on AA's page before editing rows one by one.` });
+    } else if (ours.codingAgentVia && harness !== ours.codingAgentVia) {
+      findings.push({ subject: `${name} — coding-agent harness changed`, url,
+        detail: `the score still matches, but AA now publishes this pairing under ${harness} where this row credits ${ours.codingAgentVia}. The harness is part of the figure, so one of the two is wrong.` });
+    }
+  }
+  return { findings: findings.slice(0, 10), checked: rows.size, skipped: 0 };
 }
 
 /**

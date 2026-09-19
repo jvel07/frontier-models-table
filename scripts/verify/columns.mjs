@@ -5,10 +5,11 @@ import { dirname, resolve } from "node:path";
 const MODELS = JSON.parse(readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", ".verify", "models.json"), "utf8"));
 
-// The AA Intelligence Index version the table treats as live. Scores measured under
-// anything older render with their version beside them; this is the value they are
-// compared against. Kept in step with CURRENT_INTEL_INDEX in FrontierModelsTable.jsx.
-const CURRENT_INTEL_INDEX = "4.3";
+// The AA index versions the table treats as live, per column. Scores measured under
+// anything older render with their version beside them; these are the values they are
+// compared against. Kept in step with CURRENT_INDEX in FrontierModelsTable.jsx.
+const CURRENT_INDEX = { intel: "4.3", codingAgent: "1.5" };
+const CURRENT_INTEL_INDEX = CURRENT_INDEX.intel;
 
 const URL = process.argv[2] || "http://localhost:4173/frontier-models-table/";
 const browser = await chromium.launch();
@@ -68,9 +69,14 @@ for (const row of rows) {
           ? `${m.intel} v${m.intelVersion} scoring` : String(m.intel)],
     // The coding-agent cell prints the harness under the score, because the figure
     // describes the pair. Asserting on both is the point: a score that lost its
-    // harness is the failure this column has to be protected against.
+    // harness is the failure this column has to be protected against. It carries a
+    // basis tag too, for the same reason Intelligence does: AA re-based this index
+    // at v1.5 and re-rated only some pairings.
     ["codingAgent", cells[2].trim().replace(/\s+/g, " "),
-      m.codingAgent == null ? "—" : `${m.codingAgent} via ${m.codingAgentVia}`],
+      m.codingAgent == null ? "—"
+        : `${m.codingAgent} via ${m.codingAgentVia}`
+          + (m.codingAgentVersion && m.codingAgentVersion !== CURRENT_INDEX.codingAgent
+            ? ` v${m.codingAgentVersion} scoring` : "")],
     ["agentic", cells[3].trim(), m.agentic == null ? "—" : String(m.agentic)],
     // Vision is a percentage where the three columns before it are index points.
     // Asserting the unit is the point: dropping the % would make it read as a
@@ -113,6 +119,9 @@ for (const row of rows) {
     // untagged score is one nobody can place on a scale.
     if (m.intel != null && !m.intelVersion) {
       console.log(`FAIL "${name}": has an intelligence score but no intelVersion`); fail++;
+    }
+    if (m.codingAgent != null && !m.codingAgentVersion) {
+      console.log(`FAIL "${name}": has a coding-agent score but no codingAgentVersion`); fail++;
     }
   }
   // Vision carries its unit, so it is checked for the shape the others must not have.
