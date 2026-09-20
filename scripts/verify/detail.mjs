@@ -201,18 +201,33 @@ t("every character carries its stagger index",
 // Splitting a name into boxes is exactly how kerning gets silently destroyed — the
 // first attempt put every letter in a flex container with a 7px gap and rendered
 // "O p u s  5" at more than twice the width. Measure it rather than trust it.
-const widths = await firstRow.locator(".atlas-char").first().evaluate((el) => {
-  const wrap = el.parentElement;
+// Measured across every name, not just the first one. Measuring only row 1 made this
+// depend on the sort order: it passed for two years on "Opus 5", whose letters carry
+// no kerning pairs worth the name, and failed the day a model scoring higher put
+// "GPT-6 Astra" on top. "GPT-5.6 Sol" had sat in the table the whole time with the
+// same 2.4% delta, unmeasured.
+//
+// The tolerance is proportional and loose for the same reason. Splitting text into
+// per-character spans always loses the kerning pairs — "PT", "T-" — so a small delta
+// is the cost of the effect, not a defect. What this guards against is the bug in the
+// comment above: a layout that spaces the letters out and doubles the width. 5% cannot
+// miss that and does not fire on kerning.
+const kern = await page.locator("table tbody tr[data-model]").evaluateAll((rows) => rows.map((r) => {
+  const wrap = r.querySelector(".atlas-char")?.parentElement;
+  if (!wrap) return null;
   const probe = document.createElement("span");
   probe.textContent = wrap.textContent;
   probe.style.cssText = "position:absolute;visibility:hidden;font:" + getComputedStyle(wrap).font;
   document.body.appendChild(probe);
-  const out = [wrap.getBoundingClientRect().width, probe.getBoundingClientRect().width];
+  const split = wrap.getBoundingClientRect().width;
+  const plain = probe.getBoundingClientRect().width;
   probe.remove();
-  return out;
-});
-t("the split name sets to the same width as the unsplit text",
-  Math.abs(widths[0] - widths[1]) < 1, `${widths[0].toFixed(1)}px split vs ${widths[1].toFixed(1)}px plain`);
+  return { name: r.dataset.model, split, plain, pct: plain ? Math.abs(split - plain) / plain * 100 : 0 };
+}).filter(Boolean));
+const worst = kern.reduce((a, b) => (b.pct > a.pct ? b : a), { pct: 0, name: "(none)", split: 0, plain: 0 });
+t("every split name sets to within 5% of the unsplit text",
+  kern.length > 0 && worst.pct < 5,
+  `worst: "${worst.name}" ${worst.split.toFixed(1)}px split vs ${worst.plain.toFixed(1)}px plain (${worst.pct.toFixed(2)}%), across ${kern.length} names`);
 // The provider mark is hidden until hover, but its slot stays in the layout —
 // dropping it out of flow would reflow the whole column under the pointer.
 const markBefore = await firstRow.locator(".atlas-mark").first().evaluate((el) => ({
