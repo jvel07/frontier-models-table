@@ -274,16 +274,26 @@ const intelLead = await page.locator("table tbody tr[data-model]").evaluateAll((
   return { max,
     highestAnywhere: Math.max(...vals.map((x) => x.v)),
     litNames: vals.filter((x) => x.lit).map((x) => x.name),
-    shouldBe: live.filter((x) => x.v === max).map((x) => x.name) };
+    shouldBe: live.filter((x) => x.v === max).map((x) => x.name),
+    supersededAtOrAboveMax: vals.filter((x) => x.superseded && x.v >= max) };
 });
 t("the lit intelligence meters are exactly the top rows on the live index version",
   JSON.stringify(intelLead.litNames.sort()) === JSON.stringify(intelLead.shouldBe.sort()),
   `lit ${intelLead.litNames.join(",")} vs top ${intelLead.shouldBe.join(",")} at ${intelLead.max}`);
-// And the case that makes the rule worth stating: a superseded score outranks the
-// live leader numerically, so "highest number" and "lead" really are different rows.
-t("a superseded score does outrank the live leader, so the distinction is load-bearing",
-  intelLead.highestAnywhere > intelLead.max,
-  `highest anywhere ${intelLead.highestAnywhere} vs live leader ${intelLead.max}`);
+// The case that makes the rule worth stating: a superseded score at or above the live
+// leader's number, which this asserts is still never lit. Checked as "at or above"
+// rather than "strictly above", because the fact this project cares about is that a
+// bare numeric comparison would get it wrong — a tie misleads exactly as a win does —
+// and which one holds on a given day is a fact about the dataset, not about the code.
+// Asserting the stronger "strictly outranks" form once made the suite fail the day
+// Opus 5.5 happened to tie the superseded high-water mark it was built against.
+t("a superseded score at or above the live leader's number is still not lit",
+  intelLead.highestAnywhere < intelLead.max
+    || intelLead.supersededAtOrAboveMax.every((x) => !x.lit),
+  intelLead.highestAnywhere < intelLead.max
+    ? `no superseded score reaches the live leader (${intelLead.max}) right now`
+    : `live leader ${intelLead.max}; superseded rows at or above it: `
+      + intelLead.supersededAtOrAboveMax.map((x) => `${x.name}=${x.v}${x.lit ? " [WRONGLY LIT]" : ""}`).join(", "));
 
 console.log("\n=== BACKDROP ===");
 // The parallax layer is fixed, so it must never lengthen the document or widen it;

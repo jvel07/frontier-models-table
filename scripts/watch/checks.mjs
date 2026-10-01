@@ -533,23 +533,45 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
   // The ranked board is a short list of labels against their index — AA's own
   // answer to "what is at the frontier", and the list the daily run reports as
   // missing. Behind it sits a full record per model AA has tested, and that is
-  // where the scores actually live: the board carries twenty labels, the records
-  // carry every rating on the page. Reading only the board left scores AA had
-  // already published sitting in blank columns here.
+  // where the scores actually live: the board carries ten or twenty labels, the
+  // records carry every rating on the page. Reading only the board left scores AA
+  // had already published sitting in blank columns here.
+  //
+  // The board's own JSON shape is not a stable thing to parse: AA rebuilt this
+  // page once already, from {label, intelligenceIndex, detailsUrl} objects to
+  // {id, label, color, logo, url, pattern, value, displayValue} ones, and the same
+  // {id, label, ..., value} shape now repeats for every chart on the page — cost,
+  // speed, tokens per task — each with its own array of models. Matching the shape
+  // alone, as the old regex did, is an accident waiting to parse the wrong chart;
+  // the first rebuild just happened to put Intelligence first. What does not move
+  // between rebuilds is the chart's own English heading, so the region is bounded
+  // by that heading on one side and the next chart's data array on the other.
+  const body = res.body.replace(/\\"/g, '"');
+  const introLabel = '"Artificial Analysis Intelligence Index · Higher is better"';
+  const introAt = body.indexOf(introLabel);
+  if (introAt < 0) {
+    return { findings: [], checked: 0, skipped: 1,
+      blocked: "the Intelligence Index chart's heading is no longer on the page in the shape this check looks for." };
+  }
+  const nextChartAt = body.indexOf('"data":[{"id":"', body.indexOf('"data":[{"id":"', introAt) + 1);
+  const chartRegion = body.slice(introAt, nextChartAt > 0 ? nextChartAt : introAt + 20000);
+
   const ranked = new Map();
-  for (const m of res.body.matchAll(/\{"label":"([^"]+)","intelligenceIndex":([0-9.]+|null),"detailsUrl":"([^"]+)"\}/g)) {
-    ranked.set(m[3], { label: m[1], intel: m[2] === "null" ? null : +m[2], url: m[3] });
+  for (const m of chartRegion.matchAll(
+    /\{"id":"[0-9a-f-]+","label":"([^"]+)","color":"[^"]*","logo":"[^"]*","url":"([^"]+)","pattern":"[^"]*","value":([0-9.]+),"displayValue":"[^"]*"\}/g
+  )) {
+    ranked.set(m[2], { label: m[1], intel: +m[3], url: m[2] });
   }
   if (!ranked.size) {
     return { findings: [], checked: 0, skipped: 1,
-      blocked: "the board is no longer embedded in the page in a shape this check can read." };
+      blocked: "the Intelligence Index chart's heading is on the page, but no model entries could be read from the region after it." };
   }
 
   // Records are split on their opening id and read one at a time. AA lists a model
   // once per reasoning effort, so the highest-scoring row for a slug wins — the
   // max-effort variant is what this table records everywhere else.
   const records = new Map();
-  for (const chunk of res.body.replace(/\\"/g, '"').split('{"id":"').slice(1)) {
+  for (const chunk of body.split('{"id":"').slice(1)) {
     const w = chunk.slice(0, 6000);
     const head = w.match(/^[^"]*","slug":"([^"]+)","name":"([^"]+)"/);
     if (!head) continue;
