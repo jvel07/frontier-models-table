@@ -868,6 +868,19 @@ export async function checkGallery(maps, sinceDays = 45) {
   }
   if (!cards.size) return { findings: [], checked: 0, skipped: 1, blocked: true };
 
+  // The card's anchor and its image are not the same string. GLM-5.3-Flash is
+  // "#card-glm-5-3-flash" but its picture is glm-5.3-flash.webp, dots and all, as
+  // glm-5.2 already was — so the anchor-derived slug this check used to print sent
+  // a reviewer to a 404 whose HTML error page, saved as .webp, looks exactly like a
+  // successful download until something tries to render it. The only slug worth
+  // reporting is the one the card itself points its <img> at.
+  const imageSlug = new Map();
+  for (const chunk of index.body.split('<article class="llm-architecture-overview__card" id="card-').slice(1)) {
+    const id = chunk.match(/^([a-z0-9.-]+)"/);
+    const img = chunk.match(/data-zoom-src="[^"]*\/images\/architectures\/([a-z0-9.-]+)\.webp"/);
+    if (id && img) imageSlug.set(id[1], img[1]);
+  }
+
   const known = new Set(Object.keys(maps.DIAGRAMS));
   const slugs = new Set(Object.values(maps.DIAGRAMS).map((d) => d.slug));
   const cutoff = Date.now() - sinceDays * 864e5;
@@ -890,11 +903,14 @@ export async function checkGallery(maps, sinceDays = 45) {
       if (!title.includes(cardName) || seen.has(cardName)) continue;
       seen.add(cardName);
       const ours = matchModel(maps.MODELS, cardName);
-      if (ours && (known.has(ours) || slugs.has(slug))) continue;
+      const image = imageSlug.get(slug);
+      if (ours && (known.has(ours) || slugs.has(slug) || (image && slugs.has(image)))) continue;
       findings.push(ours
         ? { subject: `${ours} — gallery card, no diagram here`,
             url: `${GALLERY}/#card-${slug}`,
-            detail: `${date}: "${title}". Slug ${slug}; add to DIAGRAMS and mirror into public/diagrams/.` }
+            detail: image
+              ? `${date}: "${title}". Image slug ${image} (read from the card, not guessed); add to DIAGRAMS and mirror into public/diagrams/.`
+              : `${date}: "${title}". The card names no image this check could read, so the slug is unverified — find the <img> on the card before adding it.` }
         : { subject: `${cardName} — in the gallery, not in the atlas`,
             url: `${GALLERY}/#card-${slug}`,
             detail: `${date}: "${title}". Needs the full research pass, not just a diagram.` });

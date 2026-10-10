@@ -122,5 +122,17 @@
  "Tiny Aya": {
   "slug": "tiny-aya-3-35b",
   "title": "Tiny Aya (3.35B)"
+ },
+ "DeepSeek V4.1 Flash": {
+  "slug": "deepseek-v4-1-flash",
+  "title": "DeepSeek V4.1-Flash (552B)"
+ },
+ "GLM-5.3-Flash": {
+  "slug": "glm-5.3-flash",
+  "title": "GLM-5.3-Flash (320B)"
+ },
+ "Ling 3.0 flash": {
+  "slug": "ling-3-0-flash",
+  "title": "Ling 3.0 Flash (124B)"
  }
 }
