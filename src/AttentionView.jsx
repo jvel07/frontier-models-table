@@ -416,6 +416,17 @@ const EXPLAIN = {
       caption="No exact layer in the stack; the index is computed once and reused." />,
   },
 
+  "KDA + gated MLA (7:1 layers)": {
+    family: "remember",
+    how: [
+      "Ling 3.0's design pushed one step further: seven linear KDA layers to every MLA layer instead of five, so only nine layers in seventy-two keep a real cache, and each of those compresses it into a low-rank latent.",
+      "The one structural addition is a per-head gate on the MLA layers' output, which lets each head scale down what it contributes. On a stack where so few layers do exact retrieval, it gives those layers a way to stay quiet when they have nothing precise to add rather than mixing noise into every token.",
+    ],
+    cost: "One exact layer in eight is thinner than Ling 3.0's one in six, at a model four and a half times larger. Whatever long-range recall the KDA state cannot hold now rests on nine layers, and nothing in the stack can be swapped back to full attention afterwards if that proves too few.",
+    fig: <LayerStack layers={ratio(72, 8)} legend="63 KDA \u00b7 9 gated MLA"
+      caption="Nine exact layers in seventy-two, one in every eight." />,
+  },
+
   "KDA + MLA (5:1 layers)": {
     family: "remember",
     how: [

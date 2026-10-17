@@ -703,9 +703,20 @@ async function checkCodingAgents(match) {
   const res = await get(AA_HOME);
   if (INCONCLUSIVE.has(res.status) || !res.ok) return { findings: [], checked: 0, skipped: 1 };
   const body = res.body.replace(/\\"/g, '"');
-  const start = body.indexOf('"title":"Coding Agent Index"');
-  if (start < 0) return { findings: [], checked: 0, skipped: 1 };
-  const region = body.slice(start, start + 200000);
+
+  // Every leaderboard row on the page, with no section marker and no fixed window.
+  //
+  // This used to anchor on a `"title":"Coding Agent Index"` string and read the next
+  // 200,000 characters. Both were wrong in ways that looked like findings. The
+  // leaderboard is 42 rows spread over about 300,000 characters, so the window
+  // dropped a third of them, and *which* third changed whenever AA reordered the
+  // list. A model's best row would fall outside it and the check would report its
+  // second-best as drift: Sonnet 5.5 as 62.9 one day and 45.9 the next, Haiku 5.5 as
+  // 36.5, against recorded figures of 68 and 41 that were right all along. The title
+  // marker was absent from some renderings of the page altogether. Row labels are
+  // unique on the page, and each row is bounded by the next label, so reading all of
+  // them needs neither.
+  const region = body;
 
   // AA now publishes the index itself, per row, as `indexScore` on a 0-1 scale —
   // it used to carry only the per-evaluation rewards it is computed from. That
@@ -720,7 +731,8 @@ async function checkCodingAgents(match) {
   const marks = [...region.matchAll(/"displayLabel":"([^"]+)"/g)];
   const rows = new Map();
   for (let i = 0; i < marks.length; i++) {
-    const slice = region.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : region.length);
+    const slice = region.slice(marks[i].index,
+      i + 1 < marks.length ? marks[i + 1].index : marks[i].index + 40000);
     const raw = slice.match(/"indexScore":(-?[0-9.eE+-]+|null)/);
     const label = marks[i][1];
     const [harness, ...rest] = label.split(" - ");
@@ -784,8 +796,18 @@ const spellPlus = (s) => s.replace(/\+/g, " plus ");
  * "(with fallback)" — while this table parenthesises a size, "Qwen3.8 (27B)". Drop
  * the qualifier, keep the size, and the two sides meet at "qwen3827b".
  */
-const dropQualifier = (s) =>
-  s.replace(/\s*\(([^)]*)\)\s*$/, (whole, inner) => (/\d\s*[bmt]\b/i.test(inner) ? whole : ""));
+const dropQualifier = (s) => {
+  // Repeatedly, not once. The coding leaderboard labels a row "GPT-6.1 Sol (xhigh)
+  // ({'reasoning_effort': 'xhigh'})" — two qualifiers — and stripping only the last
+  // left "(xhigh)" behind, so the highest-effort rows, which are the ones this table
+  // records, matched no model at all and the next-best row was reported as drift.
+  let prev;
+  do {
+    prev = s;
+    s = s.replace(/\s*\(([^)]*)\)\s*$/, (whole, inner) => (/\d\s*[bmt]\b/i.test(inner) ? whole : ""));
+  } while (s !== prev);
+  return s;
+};
 const boardKey = (label) =>
   spellPlus(dropQualifier(String(label)))
     .replace(VENDOR_PREFIX, "")
@@ -806,7 +828,7 @@ const boardKey = (label) =>
  * which of two sizes a score belongs to is exactly the error worth avoiding.
  */
 const EFFORT_WORDS = new Set(["reasoning", "thinking", "max", "high", "xhigh", "low", "medium",
-  "minimal", "standard", "with", "fallback", "preview", "instruct", "chat"]);
+  "minimal", "standard", "with", "fallback", "preview", "instruct", "chat", "effort"]);
 const SIZE_TOKEN = /^\d+(\.\d+)?[bmt]$/i;
 
 const tokenSet = (label) => {
