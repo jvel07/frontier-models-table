@@ -200,7 +200,12 @@ export async function checkSpecs(maps) {
  * leads on 2026-08-20 and a list that long gets skimmed, not worked.
  */
 const FRONTIER_ORGS = [
-  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "google", "openai", "xai-org",
+  "Qwen", "deepseek-ai", "moonshotai", "zai-org", "meta-llama", "meta-models", "google", "openai", "xai-org",
+  // meta-models is where Meta has published since the Muse line began. Muse Spark
+  // Open, an 816B flagship, went up there on 15 October 2026 and the daily sweep did
+  // not see it, because this list still named only meta-llama, which has been silent
+  // since April 2025. The weekly sweep covers the org through Muse Glimmer's link, but
+  // weekly is the wrong cadence for a frontier lab's flagship.
 ];
 
 const OTHER_ORGS = [
