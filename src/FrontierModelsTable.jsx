@@ -1375,9 +1375,18 @@ export default function FrontierModelsTable({ focus } = {}) {
         // notes as well would find more, and every extra hit would be a row with no
         // visible reason to be there; a reader cannot see why "distillation" matched
         // when the word is three clicks away inside a panel.
-        const q = searchKey(query);
-        const hit = [m.name, m.provider, m.arch, m.attn, m.license, m.modality, m.type]
-          .some((f) => searchKey(f).includes(q));
+        //
+        // Two fields are added for the reader who arrives with a model in hand rather
+        // than a word for it. The Hugging Face repo, because pasting a repo id or its
+        // URL is how someone checks whether an open model is here, and a repo name is
+        // usually longer than the row's own: "Muse-Spark-Open-816B-A42B" contains
+        // "Muse Spark Open", so matching against the name alone could never find it,
+        // and the model looked missing from a table that had carried it for days. And
+        // the parameter counts, which the table displays, so "816B" finds that row too.
+        const q = searchKey(query.trim().replace(/^https?:\/\/(www\.)?huggingface\.co\//i, ""));
+        const hit = [m.name, m.provider, m.arch, m.attn, m.license, m.modality, m.type,
+          HF_LINKS[m.name], m.params, m.active]
+          .some((f) => f && searchKey(f).includes(q));
         if (!hit) return false;
       }
       return true;

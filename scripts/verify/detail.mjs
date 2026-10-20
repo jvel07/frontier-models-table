@@ -162,6 +162,17 @@ t("every hit really uses it", (await page.locator("table tbody tr[data-model] td
 t("the live count matches the rows shown",
   (await page.locator("[data-search-count]").textContent()) === `${mamba.length}/${TOTAL}`);
 
+// Someone checking whether an open model is here pastes its repo id or URL, and a
+// repo name is longer than the row's name, so this once found nothing for a model
+// the table had carried for days. Each form has to land on exactly that row.
+for (const q of ["meta-models/Muse-Spark-Open-816B-A42B", "Muse-Spark-Open-816B-A42B",
+                 "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B"]) {
+  await page.locator("[data-search]").fill(q);
+  await page.waitForTimeout(250);
+  const got = await page.locator("table tbody tr[data-model]").evaluateAll((els) => els.map((e) => e.dataset.model));
+  t(`searching ${JSON.stringify(q)} finds that model`, got.length === 1 && got[0] === "Muse Spark Open", got.join(",") || "(none)");
+}
+
 await page.locator("[data-search]").fill("zzzznope");
 await page.waitForTimeout(250);
 t("no matches shows an empty state, not a bare header",
