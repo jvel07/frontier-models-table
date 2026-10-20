@@ -284,7 +284,7 @@ const EXPLAIN = {
     family: "less",
     how: [
       "Most of what a word needs in order to be understood is sitting right next to it. Full attention ignores that: every token dutifully re-reads the entire history, whether or not it was ever going to matter.",
-      "So most layers are given a window — they may look back a fixed span, say 512 or 1024 tokens, and no further. Every sixth layer or so is left global and may see everything. Local layers do the cheap work; the occasional global layer carries information across the long distances.",
+      "So most layers are given a window — they may look back a fixed span, say 512 or 1024 tokens, and no further. Every few layers one is left global and may see everything — every other layer in some models here, every seventh in others. Local layers do the cheap work; the occasional global layer carries information across the long distances.",
     ],
     cost: "Anything that has to travel further than the window can only do so by riding through a global layer, so long-range facts pass through a narrow channel. Set the ratio too aggressively and the model stops being able to connect distant things at all.",
     fig: <Grid cell={band(4)} caption="A windowed layer: only the band near the diagonal is read." />,

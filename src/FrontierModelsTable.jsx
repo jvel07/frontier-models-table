@@ -300,7 +300,7 @@ export const MODELS = [
       { label: "Pre-training", tokens: "45T", detail: "Trained from scratch on a multimodal corpus of 45T tokens. Sparse attention is trained at a 64K sequence length and the window is extended to 1M at the 34T-token mark, so the long-context work sits inside this budget rather than in a stage of its own." },
       { label: "Post-training", tokens: null, detail: "SFT, then RL, then on-policy distillation, which DeepSeek states it ran without algorithmic modification — every substantive change is in the data pipeline, which synthesises agent tasks and environments at scale and grows data, tasks and rollouts together. Reasoning effort is exposed at inference as an integer from 1 to 100, so the cost/accuracy trade is set per request rather than by picking a variant." },
     ],
-    note: "A bigger break than the point release in the name suggests. The stack is a causal encoder-decoder: 40 layers split into a 20-layer causal encoder and a 20-layer decoder, with the decoder's global KV projected from the encoder's final hidden states instead of from each decoder layer's own. That split is what lets it activate 8B parameters per token during prefill against 16B during decode — the active column records the decode figure, since that is what governs generation, and the prefill number is the one that matters for input-heavy agent work. Attention is CSA2, which gives every layer one of three static modes (Full, Reindex, Reuse) so main KV and indexer keys are shared across layers rather than recomputed, with a hierarchical indexer in the decoder confining later selection to a candidate pool built by the first Full-mode layer. With FP4 main-KV caching DeepSeek reports 890 bytes per token, about a quarter of V4 Flash. Two components sit outside the backbone: Engram, a 196B-parameter conditional memory reached by token lookup rather than by routing, and DSpark speculative decoding. That is why this row reads 552B — DeepSeek's own backbone figure — while the checkpoint on Hugging Face totals 763B once Engram and the vision encoder are counted. Vision is trained in from the start of language-model pre-training rather than attached to a finished text model. DeepSeek published a refreshed checkpoint, DeepSeek-V4.1-Flash-1017, on 17 October 2026, which it calls a minor update with stronger reasoning, coding, agentic and visual results and shorter outputs. Its config.json is identical to the original's field for field, so every architecture field here stands. The intelligence and MMMU-Pro figures are that checkpoint's, five and four points above the original's." },
+    note: "A bigger break than the point release in the name suggests. The stack is what DeepSeek calls a causal encoder-decoder: 40 layers split into a 20-layer causal encoder and a 20-layer decoder, with the decoder's global KV projected from the encoder's final hidden states instead of from each decoder layer's own. Both halves are causal Transformer stacks, so it still generates text autoregressively like any decoder-only model; this is not an encoder-decoder in the T5 sense, and the technical report describes the same 20 + 20 split. That split is what lets it activate 8B parameters per token during prefill against 16B during decode — the active column records the decode figure, since that is what governs generation, and the prefill number is the one that matters for input-heavy agent work. Attention is CSA2, which gives every layer one of three static modes (Full, Reindex, Reuse) so main KV and indexer keys are shared across layers rather than recomputed, with a hierarchical indexer in the decoder confining later selection to a candidate pool built by the first Full-mode layer. With FP4 main-KV caching DeepSeek reports 890 bytes per token, about a quarter of V4 Flash. Two components sit outside the backbone: Engram, a 196B-parameter conditional memory reached by token lookup rather than by routing, and DSpark speculative decoding. That is why this row reads 552B — DeepSeek's own backbone figure — while the checkpoint on Hugging Face totals 763B once Engram and the vision encoder are counted. Vision is trained in from the start of language-model pre-training rather than attached to a finished text model. DeepSeek published a refreshed checkpoint, DeepSeek-V4.1-Flash-1017, on 17 October 2026, which it calls a minor update with stronger reasoning, coding, agentic and visual results and shorter outputs. Its config.json is identical to the original's field for field, so every architecture field here stands. The intelligence and MMMU-Pro figures are that checkpoint's, five and four points above the original's." },
   { name: "DeepSeek V4 Pro", provider: "DeepSeek", released: "2026/04", type: "Frontier", arch: "Sparse MoE", params: "1.6T", active: "49B",
     attn: "Hybrid: CSA + HCA", modality: "Text + image + video + audio", context: 1048576, maxOut: 384000, license: "MIT", open: true, intel: 36, intelVersion: "4.3", codingAgent: 43, codingAgentVia: "Codex", codingAgentVersion: "1.5", agentic: 50, training: [{ label: "Pre-training", tokens: "32T+", detail: "Diverse, filtered high-quality tokens; Muon optimizer, mHC residual connections, anticipatory routing for MoE stability." }, { label: "Context extension", tokens: null, detail: "Two-stage long-context extension to the 1M window (token count not separately broken out)." }, { label: "Specialist SFT + RL", tokens: null, detail: "Independent domain experts (math, code, agent, instruction) each get SFT then GRPO with domain reward signals." }, { label: "On-policy distillation", tokens: null, detail: "A single student model distills from 10+ specialist teachers on its own rollouts (OPD), merging skills into one model." }],
     note: "61 layers, 384 routed experts + 1 shared, 6 active per token, so only 49B of 1.6T params fire per token. Hybrid attention interleaves Compressed Sparse Attention (4x KV compression + FP4 'lightning indexer' top-k selection) with Hierarchical Chunked Attention, plus manifold-constrained hyper-connections (mHC) replacing the standard residual stream. 384K max output is 3-6x its peers. DeepSeek published DeepSeek-V4-Pro-0813 on 13 August 2026 as the official release superseding the preview, adding a DSpark speculative-decoding module; every architecture field recorded here is unchanged in its config. The intelligence score is that release's, now read from AA's v4.3 index, while the coding and agentic scores still predate the re-base and sit on the older one." },
@@ -487,7 +487,7 @@ export const ARCH_COLORS = {
 export const SPECS = {
   "Muse Spark Open": { vocab: "202,048", layers: 62, hidden: "8,192", heads: "128 Q / 16 KV (GQA 8:1)", experts: "256 routed \u00b7 8 active", layerMix: "Gated attention on every layer: output gate and output norm, QK-norm enabled", window: "\u2014", ffn: "\u2014", activation: "\u2014", norm: "\u2014", headDim: 64, source: "model card (config.json is gated)" },
   "Beam 1.0": { vocab: "151,936", layers: 52, hidden: "5,120", heads: "48 Q / 8 KV (GQA 6:1)", experts: "256 routed \u00b7 8 active", layerMix: "5 sliding-window : 1 full attention (43:9), last layer full; first 3 layers dense", window: "512", posEmb: "RoPE \u03b8=10K on sliding-window layers; config.json sets none for full-attention layers", ffn: "20,480 dense \u00b7 2,560 per expert", activation: "silu", norm: "RMSNorm (\u03b5=1e-6)", headDim: 128, source: "config.json" },
-  "DeepSeek V4.1 Flash": { vocab: "129,280", layers: 40, hidden: "5,120", heads: "64 Q / 1 KV (GQA 64:1)", experts: "384 routed · 6 active · 1 shared", layerMix: "20-layer causal encoder + 20-layer decoder; CSA2 assigns each layer Full, Reindex or Reuse mode", window: "128", posEmb: "RoPE θ=10K + yarn ×16 over a 65,536 base; 64 RoPE dims per head", ffn: "2,304 per expert", activation: "silu", norm: "RMSNorm (ε=1e-20)", headDim: 512, source: "config.json (text_config)" },
+  "DeepSeek V4.1 Flash": { vocab: "129,280", layers: 40, hidden: "5,120", heads: "64 Q / 1 KV (GQA 64:1)", experts: "384 routed · 6 active · 1 shared", layerMix: "20-layer causal encoder + 20-layer decoder; CSA2 assigns each layer Full, Reindex or Reuse mode", window: "128", posEmb: "RoPE θ=10K + yarn ×16 over a 65,536 base; 64 RoPE dims per head", ffn: "2,304 per expert", activation: "silu", norm: "RMSNorm (ε=1e-20, as published in config.json; V4 used 1e-6)", headDim: 512, source: "config.json (text_config)" },
   "MiMo-V2.6-Pro": { vocab: "152,576", layers: 70, hidden: "6,144", heads: "128 Q / 8 KV (GQA 16:1)", experts: "384 routed · 8 active · 0 shared", layerMix: "6 SWA : 1 GA across 70 layers (60 SWA, 10 GA); layer 0 is GA with a dense FFN, the rest MoE", window: "128", posEmb: "RoPE θ=10M (GA) / θ=10K (SWA); 64 of 192 head dims rotated", ffn: "16,384 dense · 2,048 per expert", activation: "silu", norm: "RMSNorm (ε=1e-5)", headDim: 192, source: "config.json" },
   "MiMo-V2.6-Flash": { vocab: "152,576", layers: 48, hidden: "4,096", heads: "64 Q / 8 KV SWA, 64 Q / 4 KV GA (GQA 8:1 / 16:1)", experts: "256 routed · 8 active · 0 shared", layerMix: "39 SWA : 9 GA across 48 layers; layer 0 is GA with a dense FFN, the rest MoE", window: "128", posEmb: "RoPE θ=10M (GA) / θ=10K (SWA); 64 of 192 head dims rotated", ffn: "16,384 dense · 2,048 per expert", activation: "silu", norm: "RMSNorm (ε=1e-6)", headDim: 192, source: "config.json" },
   "K2 Horizon 375B-A23B": { vocab: "250,624", layers: 61, hidden: "6,144", heads: "48 Q / 8 KV (GQA 6:1)", experts: "192 routed · 8 active · 1 shared", layerMix: "First 3 layers dense, 58 MoE; no sliding window", window: "—", posEmb: "RoPE θ=10M, 64 of 128 head dims rotated", ffn: "16,384 dense · 1,792 per expert", activation: "silu", norm: "RMSNorm (ε=1e-6)", headDim: 128, source: "config.json" },
@@ -849,7 +849,7 @@ export const ATTENTION_INFO = {
     paper: { label: "RoPE / RoFormer (arXiv 2104.09864)", url: "https://arxiv.org/abs/2104.09864" },
   },
   "Sliding-window + global": {
-    desc: "Alternates cheap local sliding-window attention (each token attends to a fixed nearby window) with occasional global-attention layers; Gemma keeps the final layer global to preserve whole-context awareness.",
+    desc: "Alternates cheap local sliding-window attention, where each token attends only to a fixed nearby window, with occasional global-attention layers that see the whole context. The ratio of local to global layers, the window size and which layers are global all vary by model, from strict 1:1 alternation to six local layers per global one; each model's spec panel gives its own.",
     paper: { label: "Longformer sliding window (arXiv 2004.05150)", url: "https://arxiv.org/abs/2004.05150" },
   },
   "Sliding-window + attention sinks": {
@@ -1189,9 +1189,18 @@ export function splitNote(note) {
   return out;
 }
 
+/**
+ * A token count in the table's short form.
+ *
+ * Millions keep up to two decimals and drop trailing zeros. One decimal, as this
+ * used to round, printed 1,048,576 as "1.0M" beside a plain "1M" for 1,000,000 —
+ * which read as a typo — and printed GPT-6's 1,050,000 as "1.1M", overstating it.
+ * Both are now "1.05M", and the cell carries the exact count on hover, because
+ * those two figures differ and the short form cannot show it.
+ */
 export function fmtTokens(n) {
   if (n == null) return "—";
-  if (n >= 1000000) return (n / 1000000) % 1 === 0 ? `${n / 1000000}M` : `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000000) return `${+(n / 1000000).toFixed(2)}M`;
   if (n >= 1000) return `${Math.round(n / 1000)}K`;
   return `${n}`;
 }
@@ -1690,7 +1699,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                           ) : m.attn;
                         })()}
                       </td>
-                      <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.context)}</td>
+                      <td style={{ ...S.td, ...S.num }} title={m.context == null ? undefined : `${m.context.toLocaleString("en-US")} tokens`}>{fmtTokens(m.context)}</td>
                       <td style={{ ...S.td, ...S.num, ...S.releasedCell }}>{m.released}</td>
                       <td style={S.td}>{m.provider}</td>
                       <td style={S.td}>
@@ -1699,7 +1708,7 @@ export default function FrontierModelsTable({ focus } = {}) {
                         </span>
                       </td>
                       <td style={S.td}>{m.modality}</td>
-                      <td style={{ ...S.td, ...S.num }}>{fmtTokens(m.maxOut)}</td>
+                      <td style={{ ...S.td, ...S.num }} title={m.maxOut == null ? undefined : `${m.maxOut.toLocaleString("en-US")} tokens`}>{fmtTokens(m.maxOut)}</td>
                       <td style={{ ...S.td, color: m.open ? "var(--open-fg)" : "var(--ink-faint)" }}>{m.license}</td>
                     </tr>
                     {isOpen && (

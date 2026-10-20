@@ -36,7 +36,7 @@ const byName = Object.fromEntries(MODELS.map((m) => [m.name, m]));
 
 function fmtTokens(n) {
   if (n == null) return "—";
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + "M";
+  if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return Math.round(n / 1000) + "K";
   return String(n);
 }
