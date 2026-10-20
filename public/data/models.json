@@ -2,12 +2,12 @@
  "name": "The Model Atlas",
  "description": "How frontier and small language models are actually built.",
  "url": "https://jvel07.github.io/frontier-models-table/",
- "version": "2026-10-17",
+ "version": "2026-10-20",
  "license": "Data compiled from primary sources; see each model's report field.",
  "citation": {
-  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-10-17},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
+  "bibtex": "@misc{modelatlas2026,\n  title  = {The Model Atlas: how frontier and small language models are actually built},\n  author = {{The Model Atlas}},\n  year   = {2026},\n  note   = {Snapshot 2026-10-20},\n  url    = {https://jvel07.github.io/frontier-models-table/}\n}"
  },
- "count": 104,
+ "count": 105,
  "models": [
   {
    "name": "Sarvam 105B",
@@ -2631,6 +2631,96 @@
    }
   },
   {
+   "name": "Beam 1.0",
+   "provider": "Reflection",
+   "released": "2026/10",
+   "type": "Frontier",
+   "arch": "Sparse MoE",
+   "params": "501B",
+   "active": "23B",
+   "attn": "Sliding-window + global",
+   "modality": "Text",
+   "context": 1048576,
+   "maxOut": null,
+   "license": "Apache 2.0",
+   "open": true,
+   "intel": 30,
+   "intelVersion": "4.3",
+   "codingAgent": 28,
+   "codingAgentVia": "Mirror",
+   "codingAgentVersion": "1.5",
+   "agentic": null,
+   "vision": null,
+   "training": [
+    {
+     "label": "Pre-training",
+     "tokens": "23.8T",
+     "detail": "Pretrained on 23.8T tokens drawn from the web and from proprietary licensed datasets, which Reflection describes as diverse, curated and high quality. It claims the base model matches or beats open base models of similar size, but publishes no stage breakdown or data mixture."
+    },
+    {
+     "label": "RL",
+     "tokens": null,
+     "detail": "A high-compute reinforcement learning run that generated over 100 million rollouts on 10,500 NVIDIA GB300 GPUs across four weeks. The budget is given in rollouts and GPU-time rather than tokens, so no token figure is recorded here."
+    }
+   ],
+   "note": "Reflection's first open-weight model, announced 5 October 2026 with the weights following on Hugging Face two days later under Apache 2.0, in BF16, FP8 and NVFP4. 501.3B total and 23.4B active across 52 layers, the first three dense and the other 49 MoE, with 256 routed experts, 8 firing per token and no shared expert. Attention is what the card calls gated GQA with sliding-window attention: 48 query heads to 8 KV, and five 512-token sliding-window layers to every full-attention layer, with the last layer also full, which gives 43 sliding and 9 full. config.json sets RoPE at θ=10K on the sliding-window layers and sets no positional parameters for the full-attention ones; the card does not say how the full layers handle position, so this row does not claim they use none. The 1M window is native in config.json. Text only, mainly English, with a knowledge cutoff of 30 June 2026. Reflection leads with token efficiency, claiming comparable answers to leading open models on about a third of the reasoning tokens. Artificial Analysis rates it 30 on Index v4.3 and 28 on the Coding Agent Index, through a harness AA lists as Mirror. The technical report is listed as coming.",
+   "spec": {
+    "vocab": "151,936",
+    "layers": 52,
+    "hidden": "5,120",
+    "heads": "48 Q / 8 KV (GQA 6:1)",
+    "experts": "256 routed · 8 active",
+    "layerMix": "5 sliding-window : 1 full attention (43:9), last layer full; first 3 layers dense",
+    "window": "512",
+    "posEmb": "RoPE θ=10K on sliding-window layers; config.json sets none for full-attention layers",
+    "ffn": "20,480 dense · 2,560 per expert",
+    "activation": "silu",
+    "norm": "RMSNorm (ε=1e-6)",
+    "headDim": 128,
+    "source": "config.json"
+   },
+   "huggingface": "https://huggingface.co/reflection/Beam-1.0-501B-A23B",
+   "report": "https://reflection.ai/blog/introducing-beam",
+   "derived": {
+    "_note": "Computed from the fields above, not published by the lab.",
+    "totalParams": 501000000000,
+    "activeParams": 23000000000,
+    "disclosedTrainingTokens": 23800000000000,
+    "disclosedTokensAreApproximate": false,
+    "trainingFlops": 3.2844e+24,
+    "trainingFlopsFormula": "6 * activeParams * disclosedTrainingTokens",
+    "tokensPerParam": 47.50499001996008,
+    "tokensPerParamFormula": "disclosedTrainingTokens / totalParams",
+    "kvCacheBytesPerTokenFp16": 212992,
+    "kvCacheFormula": "2 * layers * kvHeads * headDim * 2 bytes; head_dim as published in config.json",
+    "weightBytesFp16": 1002000000000,
+    "disclosureScore": 11,
+    "disclosureTotal": 12,
+    "disclosureFields": {
+     "arch": true,
+     "params": true,
+     "active": true,
+     "attn": true,
+     "config": true,
+     "pos": true,
+     "vocab": true,
+     "context": true,
+     "pipeline": true,
+     "tokens": true,
+     "curriculum": false,
+     "report": true
+    },
+    "opennessTier": "open",
+    "opennessVerbs": {
+     "download": true,
+     "inspect": true,
+     "modify": true,
+     "run": true
+    },
+    "licenseClass": "permissive"
+   }
+  },
+  {
    "name": "MiMo-V2.6-Pro",
    "provider": "Xiaomi",
    "released": "2026/09",
@@ -4739,12 +4829,12 @@
    "maxOut": null,
    "license": "MIT",
    "open": true,
-   "intel": 40,
+   "intel": 45,
    "intelVersion": "4.3",
    "codingAgent": null,
    "codingAgentVia": null,
    "agentic": null,
-   "vision": 77,
+   "vision": 81,
    "training": [
     {
      "label": "Pre-training",
@@ -4757,7 +4847,7 @@
      "detail": "SFT, then RL, then on-policy distillation, which DeepSeek states it ran without algorithmic modification — every substantive change is in the data pipeline, which synthesises agent tasks and environments at scale and grows data, tasks and rollouts together. Reasoning effort is exposed at inference as an integer from 1 to 100, so the cost/accuracy trade is set per request rather than by picking a variant."
     }
    ],
-   "note": "A bigger break than the point release in the name suggests. The stack is a causal encoder-decoder: 40 layers split into a 20-layer causal encoder and a 20-layer decoder, with the decoder's global KV projected from the encoder's final hidden states instead of from each decoder layer's own. That split is what lets it activate 8B parameters per token during prefill against 16B during decode — the active column records the decode figure, since that is what governs generation, and the prefill number is the one that matters for input-heavy agent work. Attention is CSA2, which gives every layer one of three static modes (Full, Reindex, Reuse) so main KV and indexer keys are shared across layers rather than recomputed, with a hierarchical indexer in the decoder confining later selection to a candidate pool built by the first Full-mode layer. With FP4 main-KV caching DeepSeek reports 890 bytes per token, about a quarter of V4 Flash. Two components sit outside the backbone: Engram, a 196B-parameter conditional memory reached by token lookup rather than by routing, and DSpark speculative decoding. That is why this row reads 552B — DeepSeek's own backbone figure — while the checkpoint on Hugging Face totals 763B once Engram and the vision encoder are counted. Vision is trained in from the start of language-model pre-training rather than attached to a finished text model.",
+   "note": "A bigger break than the point release in the name suggests. The stack is a causal encoder-decoder: 40 layers split into a 20-layer causal encoder and a 20-layer decoder, with the decoder's global KV projected from the encoder's final hidden states instead of from each decoder layer's own. That split is what lets it activate 8B parameters per token during prefill against 16B during decode — the active column records the decode figure, since that is what governs generation, and the prefill number is the one that matters for input-heavy agent work. Attention is CSA2, which gives every layer one of three static modes (Full, Reindex, Reuse) so main KV and indexer keys are shared across layers rather than recomputed, with a hierarchical indexer in the decoder confining later selection to a candidate pool built by the first Full-mode layer. With FP4 main-KV caching DeepSeek reports 890 bytes per token, about a quarter of V4 Flash. Two components sit outside the backbone: Engram, a 196B-parameter conditional memory reached by token lookup rather than by routing, and DSpark speculative decoding. That is why this row reads 552B — DeepSeek's own backbone figure — while the checkpoint on Hugging Face totals 763B once Engram and the vision encoder are counted. Vision is trained in from the start of language-model pre-training rather than attached to a finished text model. DeepSeek published a refreshed checkpoint, DeepSeek-V4.1-Flash-1017, on 17 October 2026, which it calls a minor update with stronger reasoning, coding, agentic and visual results and shorter outputs. Its config.json is identical to the original's field for field, so every architecture field here stands. The intelligence and MMMU-Pro figures are that checkpoint's, five and four points above the original's.",
    "spec": {
     "vocab": "129,280",
     "layers": 40,
