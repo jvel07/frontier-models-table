@@ -75,7 +75,9 @@ t("hovering Intelligence header shows AA tooltip", tipText.includes("Artificial 
 console.log("\n=== #5 READABILITY: clamp + reader modal ===");
 await page.locator("[data-search]").fill("Kimi K3");
 await page.waitForTimeout(250);
-await page.locator("table tbody tr").first().click();
+// Click Kimi K3 by name, not the first hit: a search for "Kimi K3" also finds Kimi
+// K3.1 Pro, which sorts above it on the newer index and has a different note.
+await page.locator('table tbody tr[data-model="Kimi K3"]').click();
 await page.waitForTimeout(400);
 // architecture notes now render as separate statements, clamped by count
 const bullets = page.locator("td[colspan] ul li");
@@ -123,7 +125,9 @@ await page.waitForTimeout(250);
 console.log("\n=== #1 LOCAL IMAGE FALLBACK ===");
 await page.locator("[data-search]").fill("Kimi K3");
 await page.waitForTimeout(250);
-await page.locator("table tbody tr").first().click();
+// Click Kimi K3 by name, not the first hit: a search for "Kimi K3" also finds Kimi
+// K3.1 Pro, which sorts above it on the newer index and has a different note.
+await page.locator('table tbody tr[data-model="Kimi K3"]').click();
 await page.waitForTimeout(500);
 const thumb = page.locator("td[colspan] img").first();
 const src1 = await thumb.getAttribute("src");
