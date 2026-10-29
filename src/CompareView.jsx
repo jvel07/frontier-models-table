@@ -106,13 +106,13 @@ const AXES = [
   // reader can see the 57 was measured on an index AA has since replaced.
   { group: "Identity", label: "Intelligence (AA)",
     pick: (m) => (m.intel == null ? null
-      : m.intelVersion && m.intelVersion !== "4.3" ? `${m.intel} · v${m.intelVersion} scoring` : String(m.intel)),
-    hint: "Artificial Analysis Intelligence Index v4.3 — a composite of 10 evaluations. Higher is better; the scale is not a percentage. AA re-based the index at v4.2 and v4.3 by adding harder evaluations rather than re-testing, moving every score down 12-18 points, and has re-rated only some of these models: a figure marked “v4.1 scoring” is on the superseded scale and is not comparable to an unmarked one." },
+      : m.intelVersion && m.intelVersion !== "5.0" ? `${m.intel} · v${m.intelVersion} scoring` : String(m.intel)),
+    hint: "Artificial Analysis Intelligence Index v5.0 — a composite of 9 evaluations. Higher is better; the scale is not a percentage. AA has re-based the index twice, at v4.3 and v5.0, and has re-rated only some of these models: a figure marked with an older version is on a superseded scale and is not comparable to an unmarked one." },
   { group: "Identity", label: "Coding agent (AA)",
     pick: (m) => (m.codingAgent == null ? null
       : `${m.codingAgent} · via ${m.codingAgentVia}`
-        + (m.codingAgentVersion && m.codingAgentVersion !== "1.5" ? ` · v${m.codingAgentVersion} scoring` : "")),
-    hint: "Artificial Analysis Coding Agent Index v1.5 — DeepSWE v1.1, Terminal-Bench v4 and SWE-Atlas-QnA averaged, scored 0-100. It measures an agent driving a model, so the harness is part of the figure and is named alongside it; the highest-scoring pairing AA publishes for the model is shown. AA re-based the index from v1.3 and has re-rated only some pairings, so a figure marked “v1.3 scoring” is on the superseded scale and is not comparable to an unmarked one." },
+        + (m.codingAgentVersion && m.codingAgentVersion !== "2.0" ? ` · v${m.codingAgentVersion} scoring` : "")),
+    hint: "Artificial Analysis Coding Agent Index v2.0 — FrontierCode v1.1, Terminal-Bench 4.0 and SWE-Atlas-QnA-AA averaged, scored 0-100. It measures an agent driving a model, so the harness is part of the figure and is named alongside it; the highest-scoring pairing AA publishes for the model is shown. AA re-based the index at v2.0 and has re-rated only some pairings, so a figure marked with an older version is on a superseded scale." },
   { group: "Identity", label: "Agentic (AA)", pick: (m) => (m.agentic == null ? null : String(m.agentic)),
     hint: "Artificial Analysis Agentic Index — GDPval-AA v2 and 𝜏³-Banking averaged, scored 0-100. Long-horizon tool use rather than single answers. Both evaluations also sit inside the Intelligence Index, so this is that score re-cut, not an independent measurement. AA withdrew this composite at the v4.3 re-base and now publishes the underlying evaluations only, so these are its last reported figures rather than current ones." },
 

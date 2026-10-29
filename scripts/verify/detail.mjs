@@ -41,7 +41,8 @@ t("rows are actually sorted by intelligence desc", sorted, nums.join(","));
 const intelOrder = firstFewIntel
   .map((s) => s.replace(/\s+/g, " ").trim())
   .filter((s) => s !== "" && s !== "—")
-  .map((s) => ({ v: parseInt(s, 10), superseded: / v\d+\.\d+ scoring/.test(s) }))
+  .map((s) => { const tag = s.match(/ v(\d+\.\d+) scoring/);
+    return { v: parseInt(s, 10), superseded: !!tag, version: tag ? parseFloat(tag[1]) : Infinity }; })
   .filter((x) => !Number.isNaN(x.v));
 const firstSuperseded = intelOrder.findIndex((x) => x.superseded);
 const strays = firstSuperseded < 0 ? []
@@ -53,9 +54,16 @@ t("the top row is on the live index version, not merely the highest number",
   intelOrder.length > 0 && !intelOrder[0].superseded,
   `top cell: ${firstFewIntel[0]}`);
 // Within each version block the order must still be by score.
-for (const [label, block] of [["live", intelOrder.filter((x) => !x.superseded)],
-                              ["superseded", intelOrder.filter((x) => x.superseded)]]) {
-  t(`the ${label} block is ordered by score`,
+// Since the v5.0 re-base the column holds three scales, so the superseded rows are
+// themselves two blocks: v4.3, then v4.1. Version order first, score order within
+// each version — the two older scales are no more comparable to each other than to
+// the live one.
+t("version blocks run newest to oldest",
+  intelOrder.every((x, i) => i === 0 || intelOrder[i - 1].version >= x.version),
+  [...new Set(intelOrder.map((x) => (x.version === Infinity ? "live" : "v" + x.version)))].join(" > "));
+for (const version of [...new Set(intelOrder.map((x) => x.version))]) {
+  const block = intelOrder.filter((x) => x.version === version);
+  t(`the ${version === Infinity ? "live" : "v" + version} block is ordered by score`,
     block.every((x, i) => i === 0 || block[i - 1].v >= x.v),
     block.map((x) => x.v).join(","));
 }

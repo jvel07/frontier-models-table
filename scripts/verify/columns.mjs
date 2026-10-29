@@ -8,7 +8,7 @@ const MODELS = JSON.parse(readFileSync(
 // The AA index versions the table treats as live, per column. Scores measured under
 // anything older render with their version beside them; these are the values they are
 // compared against. Kept in step with CURRENT_INDEX in FrontierModelsTable.jsx.
-const CURRENT_INDEX = { intel: "4.3", codingAgent: "1.5" };
+const CURRENT_INDEX = { intel: "5.0", codingAgent: "2.0" };
 const CURRENT_INTEL_INDEX = CURRENT_INDEX.intel;
 
 const URL = process.argv[2] || "http://localhost:4173/frontier-models-table/";

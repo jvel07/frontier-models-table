@@ -685,7 +685,11 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
     });
   }
 
-  const coding = await checkCodingAgents(match);
+  const intelVersion = indexVersionFinding(body, /Intelligence Index v(\d+(?:\.\d+)*)/g, maps.MODELS,
+    "intelVersion", "Intelligence Index", AA_BOARD);
+  if (intelVersion) findings.unshift(intelVersion);
+
+  const coding = await checkCodingAgents(match, maps);
   return { findings: [...findings, ...coding.findings],
     checked: records.size + coding.checked, skipped: coding.skipped };
 }
@@ -704,7 +708,31 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
  * coding-agent cell in the table is blank because AA has not rated that pairing,
  * not because nobody looked. This is what will say so when that stops being true.
  */
-async function checkCodingAgents(match) {
+/**
+ * Has AA moved an index to a version newer than any figure the atlas records?
+ *
+ * Drift alone does not say. The v4.3 re-base added harder evaluations and moved every
+ * score down, which the same-direction test above catches; the v5.0 re-base swapped
+ * evaluations in and out, moved models both ways, and that test stayed silent while
+ * twenty rows changed. The version string on the page is the direct signal, so this
+ * compares it — major.minor only, since AA ships patch versions like v4.3.2 that keep
+ * the same evaluations — with the newest version recorded on any row.
+ */
+function indexVersionFinding(body, pattern, models, field, label, url) {
+  const mm = (v) => { const [a, b = "0"] = String(v).split("."); return parseFloat(`${a}.${b}`); };
+  const onPage = [...body.matchAll(pattern)].map((m) => mm(m[1]));
+  if (!onPage.length) return null;
+  const live = Math.max(...onPage);
+  const recorded = Math.max(...models.map((m) => (m[field] ? mm(m[field]) : 0)));
+  if (!(live > recorded)) return null;
+  return {
+    subject: `${label} — AA has moved to v${live}, the atlas is on v${recorded}`,
+    url,
+    detail: `this is a re-based index, not ${label === "Intelligence Index" ? "twenty" : "a handful of"} separate re-tests: read the new version's evaluation list, take v${live} figures wherever AA publishes them, keep the rest tagged with their old version, and update the column's live version, tooltip and legend. Editing the drift findings below one row at a time would mix scales in the column.`,
+  };
+}
+
+async function checkCodingAgents(match, maps) {
   const res = await get(AA_HOME);
   if (INCONCLUSIVE.has(res.status) || !res.ok) return { findings: [], checked: 0, skipped: 1 };
   const body = res.body.replace(/\\"/g, '"');
@@ -772,7 +800,9 @@ async function checkCodingAgents(match) {
         detail: `the score still matches, but AA now publishes this pairing under ${harness} where this row credits ${ours.codingAgentVia}. The harness is part of the figure, so one of the two is wrong.` });
     }
   }
-  return { findings: findings.slice(0, 10), checked: rows.size, skipped: 0 };
+  const codingVersion = maps && indexVersionFinding(body, /Coding Agent Index v(\d+(?:\.\d+)*)/g, maps.MODELS,
+    "codingAgentVersion", "Coding Agent Index", "https://artificialanalysis.ai/#coding-agents");
+  return { findings: [...(codingVersion ? [codingVersion] : []), ...findings].slice(0, 10), checked: rows.size, skipped: 0 };
 }
 
 /**
@@ -965,3 +995,18 @@ function matchModel(models, cardName) {
 
 // Punctuation and spacing differ on both sides; compare on letters and digits only.
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * The label matcher this file uses, for scripts that need to line AA's rows up with
+ * the atlas by the same rules — re-basing a whole column, for one. Reconciling with a
+ * second, hand-copied matcher is how two answers to "which row is this" appear.
+ */
+export function atlasMatcher(maps) {
+  const byKey = new Map(maps.MODELS.map((m) => [boardKey(m.name), m]));
+  const bySet = new Map();
+  for (const m of maps.MODELS) {
+    const k = tokenSet(m.name);
+    bySet.set(k, [...(bySet.get(k) || []), m]);
+  }
+  return (label) => boardMatch(byKey, bySet, label);
+}
