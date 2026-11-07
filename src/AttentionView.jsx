@@ -394,6 +394,17 @@ const EXPLAIN = {
       caption="Three cheap layers per exact one, repeated through the stack." />,
   },
 
+  "KDA + gated DSA (69:24 layers)": {
+    family: "remember",
+    how: [
+      "Kimi K3.1 Pro keeps K3's split of 69 linear KDA layers to 24 others, and changes what the 24 do. In K3 they were full softmax attention; here they are gated DeepSeek Sparse Attention, which keeps every key in the cache but has a small indexer pick the 2,048 positions each query will actually read.",
+      "So the stack no longer contains a single layer that reads everything. The linear layers hold a fixed-size summary, and the sparse layers retrieve a chosen slice of the exact history.",
+    ],
+    cost: "Exact recall now depends on the indexer choosing well. A position it passes over is not read by that layer at all, and with no full-attention layer left, there is nowhere in the stack that is guaranteed to see it.",
+    fig: <LayerStack layers={Array.from({ length: 31 }, (_, i) => ((i + 1) % 4 === 0 || i === 30 ? 1 : 0))} legend="93 layers: 69 KDA · 24 gated DSA"
+      caption="Every fourth layer, and the last, is sparse attention rather than full attention." />,
+  },
+
   "KDA + full attn (69:24 layers)": {
     family: "remember",
     how: [

@@ -526,6 +526,17 @@ const AA_HOME = "https://artificialanalysis.ai/";
 /** How far an AA score may drift before it is worth re-reading the row. */
 const INTEL_TOLERANCE = 2;
 
+/**
+ * AA slugs that are deliberately not rows, because another row covers them.
+ *
+ * Without this the daily issue re-files the same decision every morning, which is how
+ * a watcher gets muted. Each entry says where the model is covered and when that was
+ * decided, so a stale one can be re-checked rather than trusted forever.
+ */
+const COVERED_ELSEWHERE = new Map([
+  ["muse-wonder-full", "a subscription-only variant of Muse Wonder, not on the API; its scores are in Muse Wonder's note (decided 2026-10-29)"],
+]);
+
 export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
   const res = await get(AA_BOARD);
   if (INCONCLUSIVE.has(res.status) || !res.ok) {
@@ -615,6 +626,7 @@ export async function checkFrontierBoard(maps, { tier = "frontier" } = {}) {
 
   for (const entry of missing) {
     if (match(entry.label)) continue;
+    if (COVERED_ELSEWHERE.has(entry.url.split("/").pop())) continue;
     findings.push({ subject: entry.label, url: entry.url,
       detail: `rated${entry.intel != null ? ` at ${entry.intel.toFixed(1)}` : ""} by Artificial Analysis, and no row here matches that name — either a release the atlas has not covered, or one it carries under a different name` });
   }
